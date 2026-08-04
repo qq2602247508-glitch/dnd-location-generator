@@ -535,17 +535,29 @@ def _realize_special_site(program: Mapping[str, Any]) -> dict[str, Any]:
     for row in range(canvas.height):
         for col in range(canvas.width):
             distance = math.hypot(row - center[0], col - center[1])
-            if distance > 27:
+            angle = math.atan2(row - center[0], col - center[1])
+            # A fixed angular/radial warp breaks the visual "layer cake" that
+            # a distance-only crater creates.  Including distance in the phase
+            # prevents every contour from being a merely translated copy of the
+            # previous one while retaining a legible central rift.
+            contour_warp = (
+                2.45 * math.sin(3.0 * angle + distance / 8.5)
+                + 1.35 * math.sin(5.0 * angle - distance / 6.7)
+                + 0.55 * math.sin((row + 2 * col) / 9.1)
+            )
+            warped_distance = distance + contour_warp
+            outer_warp = distance + 1.55 * math.sin(3.0 * angle + 0.4) + 0.65 * math.sin((row - col) / 10.7)
+            if outer_warp > 28.5:
                 continue
-            if distance <= 6:
+            if distance <= 5:
                 elevation, zone, surface, walkable = 0, "rift_floor", "arcane_rift", False
-            elif distance <= 10:
+            elif warped_distance <= 10:
                 elevation, zone, surface, walkable = 10, "rift_floor", "shattered_talus", True
-            elif distance <= 15:
+            elif warped_distance <= 15:
                 elevation, zone, surface, walkable = 20, "bonefield", "dragon_bonefield", True
-            elif distance <= 21:
+            elif warped_distance <= 21:
                 elevation, zone, surface, walkable = 30, "bonefield", "crater_slope", True
-            elif distance <= 25:
+            elif warped_distance <= 25:
                 elevation, zone, surface, walkable = 40, "crater_rim", "crater_rim", True
             else:
                 elevation, zone, surface, walkable = 50, "crater_rim", "high_rim", True
@@ -610,6 +622,7 @@ def _realize_special_site(program: Mapping[str, Any]) -> dict[str, Any]:
         "room_count": 0,
         "supports_large_creature": True,
         "vertical_route_ids": ["bone_ridge", "floating_path", "rift_loop"],
+        "contour_style": "warped_radial",
     }
     return grid
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import sys
 import tempfile
 from pathlib import Path
@@ -98,6 +99,28 @@ def main() -> None:
                     raise AssertionError("special site illegally depends on rooms")
                 if report["rules"].get("elevation_bands") not in {5, 6, 7}:
                     raise AssertionError("special site no longer has 5–7 elevation bands")
+                if grid["topology"].get("contour_style") != "warped_radial":
+                    raise AssertionError("special site lost its warped radial contour contract")
+                terrain_cells = [
+                    cell for cell in grid["cells"]
+                    if "open_tactical_site" in cell.get("tags", []) and "route" not in cell.get("tags", [])
+                ]
+                for elevation_cap in (20, 30, 40):
+                    sector_radii = []
+                    for sector in range(8):
+                        lower = -math.pi + sector * math.pi / 4
+                        upper = lower + math.pi / 4
+                        radii = [
+                            math.hypot(cell["row"] - 30, cell["col"] - 30)
+                            for cell in terrain_cells
+                            if cell["elevation"] <= elevation_cap
+                            and lower <= math.atan2(cell["row"] - 30, cell["col"] - 30) < upper
+                        ]
+                        if not radii:
+                            raise AssertionError("special site terrain is missing an angular contour sector")
+                        sector_radii.append(max(radii))
+                    if max(sector_radii) - min(sector_radii) < 2.0:
+                        raise AssertionError("special-site elevation boundary regressed to a near-perfect concentric ring")
             elif archetype == "city_district":
                 if not grid["source"].get("mapped_runtime") or not grid["topology"].get("mapped_from_v21"):
                     raise AssertionError("harbor did not map its existing V2.1 runtime")
