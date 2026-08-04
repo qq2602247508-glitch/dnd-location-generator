@@ -1,0 +1,59 @@
+{
+  "status": "generated",
+  "schema_version": "dnd-v22-render-manifest-1.0",
+  "scene_id": "sewer_dungeon_program",
+  "archetype": "infrastructure_dungeon",
+  "grid_file_sha256": "7688c331052c9897d306042d83586ce325c560c55fc385eb631d9a6e061c9f91",
+  "grid_semantic_sha256": "6ef5ed30308d3381934ba83c371b9f2a3bcd0ab0e1ebf42eef7a8da4cfc697e3",
+  "input_manifest_sha256": "ad74433a28cf0c5ed3de5094487c72403ad02b534cc540c333ba3628f8973c3c",
+  "blender_version": "4.5.10 LTS",
+  "grid": {
+    "cell_size_ft": 5,
+    "connectivity": "orthogonal_4_plus_declared_links",
+    "coordinate_contract": "cell(row,col,level_id)->world_ft(col*5,-row*5,elevation)",
+    "height": 56,
+    "width": 56
+  },
+  "elevation_range_ft": [
+    -20.0,
+    -15.0
+  ],
+  "walkable_cells": 349,
+  "prototype_objects": 36,
+  "estimated_draw_calls": 36,
+  "batched_boxes": 2020,
+  "mesh_vertices": 16160,
+  "object_kinds": {
+    "anchor": 2,
+    "feature": 6,
+    "grid": 2,
+    "infrastructure": 9,
+    "life_trace": 1,
+    "machinery": 5,
+    "route": 5,
+    "surface": 4,
+    "wall": 2
+  },
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 1522172,
+      "sha256": "36fecb9611a8b1c662ab4b3a3cbc330418ae88970e03c13ed561135a38b3a1f4"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 1953219,
+      "sha256": "f73a8bf439c0f1fa9baabd0f5fdda3a043caec890e7b1ed14adf820a9479403f"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1456915,
+      "sha256": "3a6a9fcd42ba5589f757620efce02c1bc2f0f05e365b248f1182decf3f464024"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1496572,
+      "sha256": "aba5f29b48000dc13b9bb001e6a246a5b6cdd9d303fc842c5cf02f8e5921b991"
+    }
+  ]
+}
