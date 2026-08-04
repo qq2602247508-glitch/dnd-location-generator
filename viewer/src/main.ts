@@ -4,7 +4,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-type SceneKey = "church" | "underdark" | "city" | "harbor";
+type SceneKey = "church" | "underdark" | "city" | "harbor" | "river_valley" | "sewer_dungeon" | "dragonbone_rift";
+type V22SceneKey = "river_valley" | "sewer_dungeon" | "dragonbone_rift";
 type ViewMode = "dm" | "player";
 type ExperienceMode = "theatre" | "exploration" | "tactical";
 type QualityPreset = "quality" | "balanced" | "performance";
@@ -236,6 +237,99 @@ interface GenericSceneRuntime {
   nav: { mode: "explicit"; edges: GenericRuntimeNavEdge[] };
 }
 
+/**
+ * Renderer-neutral tactical contract emitted by the V2.2 realizers.  Unlike
+ * the legacy scene formats it has no room dependency: a wilderness ridge,
+ * sewer loop, or mythic landmark can all be explored through the same grid.
+ */
+interface TacticalGridLevel {
+  id: string;
+  label: string;
+  z_base_ft: number;
+}
+
+interface TacticalGridCell {
+  id: string;
+  level_id: string;
+  row: number;
+  col: number;
+  elevation: number;
+  surface: string;
+  tags: string[];
+  visibility: "public" | "dm_only";
+  walkable: boolean;
+  zone: string;
+}
+
+interface TacticalGridAnchor {
+  id: string;
+  name: string;
+  kind: string;
+  level_id: string;
+  row: number;
+  col: number;
+  elevation: number;
+  cell_id: string;
+  tactical_role?: string;
+  visibility: "public" | "dm_only";
+  zone: string;
+}
+
+interface TacticalGridRoute {
+  id: string;
+  name: string;
+  role: string;
+  risk: string;
+  traversal: string;
+  visibility: "public" | "dm_only";
+  cell_ids: string[];
+}
+
+interface TacticalGridFeature {
+  id: string;
+  kind: string;
+  visibility: "public" | "dm_only";
+  blocks_movement: boolean;
+  cell_ids: string[];
+  tags: string[];
+  zone: string;
+}
+
+interface TacticalGridLink {
+  a?: string;
+  b?: string;
+  from_cell_id?: string;
+  to_cell_id?: string;
+  from?: string;
+  to?: string;
+  visibility?: "public" | "dm_only";
+}
+
+interface TacticalGrid {
+  schema_version: string;
+  scene: {
+    id: string;
+    name: string;
+    archetype: string;
+    grid: { cell_size_ft: number; width: number; height: number };
+  };
+  levels: TacticalGridLevel[];
+  cells: TacticalGridCell[];
+  anchors: TacticalGridAnchor[];
+  routes: TacticalGridRoute[];
+  features: TacticalGridFeature[];
+  links: TacticalGridLink[];
+  room_dependencies: boolean;
+}
+
+interface V22SceneDescriptor {
+  name: string;
+  description: string;
+  asset: string;
+  gridAsset: string;
+  theme: string;
+}
+
 interface CellSelection {
   row: number;
   col: number;
@@ -250,6 +344,7 @@ interface CellSelection {
   levelId?: string;
   volumeId?: string;
   zBaseFt?: number;
+  gridCell?: TacticalGridCell;
 }
 
 interface CameraState {
@@ -270,6 +365,33 @@ const CITY_FLOOR_HEIGHT = 3.4;
 const UNDERDARK_ELEVATION_HEIGHT = 0.78;
 const TOKEN_COLORS = [0xffa94d, 0x62e8ff, 0xc99cff, 0x69f0ae] as const;
 const TOKEN_NAMES = ["先锋", "斥候", "施法者", "支援"] as const;
+const V22_SCENES: Record<V22SceneKey, V22SceneDescriptor> = {
+  river_valley: {
+    name: "银瀑河谷",
+    description: "河流、浅滩、山脊险径与瀑后密道组成的开阔野外战术场。",
+    asset: "river-valley-v22.glb",
+    gridAsset: "river-valley-v22.grid.json",
+    theme: "河谷 · 高低差 · 渡河与洞口",
+  },
+  sewer_dungeon: {
+    name: "暗流泵房地下城",
+    description: "泵房、汇流口、检修环、闸门与暗流祭台构成的基础设施地下城。",
+    asset: "sewer-dungeon-v22.glb",
+    gridAsset: "sewer-dungeon-v22.grid.json",
+    theme: "下水道 · 环路 · 机械与暗门",
+  },
+  dragonbone_rift: {
+    name: "星陨龙骨裂谷",
+    description: "无传统房间依赖的巨型龙骨裂谷：高程带、骨桥、浮岩与奥术喷口。",
+    asset: "dragonbone-rift-v22.glb",
+    gridAsset: "dragonbone-rift-v22.grid.json",
+    theme: "奇观战术场 · 多高程 · 掩体与坠落风险",
+  },
+};
+
+function isV22Scene(sceneKey: SceneKey): sceneKey is V22SceneKey {
+  return sceneKey in V22_SCENES;
+}
 
 function required<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -418,6 +540,10 @@ const harborCells = new Map<string, GenericRuntimeCell>();
 const harborNav = new Map<string, GenericRuntimeNavEdge[]>();
 const harborConnectors = new Map<string, GenericRuntimeConnector>();
 const harborRooms = new Map<string, GenericRuntimeRoom>();
+const v22Grids = new Map<V22SceneKey, TacticalGrid>();
+const v22Cells = new Map<V22SceneKey, Map<string, TacticalGridCell>>();
+const v22RouteNeighbors = new Map<V22SceneKey, Map<string, Set<string>>>();
+const v22BlockedCells = new Map<V22SceneKey, Set<string>>();
 const tacticalSurfaces: THREE.Mesh[] = [];
 const transitionSurfaces: THREE.Mesh[] = [];
 const semanticInfo = new WeakMap<THREE.Mesh, SemanticMesh>();
@@ -438,6 +564,8 @@ let currentLayer: LayerFilter = "all";
 let currentCityScope: CityScope = "outdoor";
 let currentHarborFocus = "surface";
 let currentHarborLevelId: string | "all" = "surface";
+let currentV22LevelId: string | "all" = "all";
+let currentV22Elevation: LayerFilter = "all";
 let cityDistrictCameraState: CameraState | null = null;
 let cityNotice: string | null = null;
 let currentRoot: THREE.Group | null = null;
@@ -474,8 +602,18 @@ const dmTuning: DmTuning = {
 function syncViewerState(): void {
   viewerState.sceneKey = currentScene;
   viewerState.accessMode = currentMode;
-  viewerState.focusId = currentScene === "city" ? currentCityScope : currentScene === "harbor" ? currentHarborFocus : `${currentScene}:${currentLayer}`;
-  viewerState.layer = currentScene === "harbor" ? currentHarborLevelId : currentLayer;
+  viewerState.focusId = currentScene === "city"
+    ? currentCityScope
+    : currentScene === "harbor"
+      ? currentHarborFocus
+      : isV22Scene(currentScene)
+        ? currentV22LevelId
+        : `${currentScene}:${currentLayer}`;
+  viewerState.layer = currentScene === "harbor"
+    ? currentHarborLevelId
+    : isV22Scene(currentScene)
+      ? currentV22Elevation
+      : currentLayer;
   viewerState.selectedToken = selectedToken;
 }
 
@@ -539,6 +677,71 @@ async function ensureData(): Promise<void> {
   }
 }
 
+function v22Grid(sceneKey: SceneKey = currentScene): TacticalGrid | undefined {
+  return isV22Scene(sceneKey) ? v22Grids.get(sceneKey) : undefined;
+}
+
+function v22CellAt(sceneKey: V22SceneKey, levelId: string, row: number, col: number): TacticalGridCell | undefined {
+  return v22Cells.get(sceneKey)?.get(`${levelId}:${row}:${col}`);
+}
+
+function v22Level(sceneKey: V22SceneKey, levelId: string): TacticalGridLevel | undefined {
+  return v22Grids.get(sceneKey)?.levels.find((level) => level.id === levelId);
+}
+
+function v22WorldHeight(elevationFt: number, sceneKey: SceneKey = currentScene): number {
+  return elevationFt / (v22Grid(sceneKey)?.scene.grid.cell_size_ft ?? 5);
+}
+
+function v22CellAllowed(cell: TacticalGridCell): boolean {
+  return cell.visibility !== "dm_only" || (currentMode === "dm" && dmTuning.showDmOnly);
+}
+
+function v22LinkEndpoints(link: TacticalGridLink): [string, string] | null {
+  const a = link.a ?? link.from_cell_id ?? link.from;
+  const b = link.b ?? link.to_cell_id ?? link.to;
+  return typeof a === "string" && typeof b === "string" ? [a, b] : null;
+}
+
+function indexV22Grid(sceneKey: V22SceneKey, grid: TacticalGrid): void {
+  const cells = new Map<string, TacticalGridCell>();
+  const routeNeighbors = new Map<string, Set<string>>();
+  const blocked = new Set<string>();
+  const connect = (a: string, b: string): void => {
+    if (!cells.has(a) || !cells.has(b) || a === b) return;
+    (routeNeighbors.get(a) ?? routeNeighbors.set(a, new Set()).get(a)!).add(b);
+    (routeNeighbors.get(b) ?? routeNeighbors.set(b, new Set()).get(b)!).add(a);
+  };
+  for (const cell of grid.cells) cells.set(cell.id, cell);
+  for (const route of grid.routes ?? []) {
+    for (let index = 1; index < route.cell_ids.length; index += 1) {
+      const previous = route.cell_ids[index - 1];
+      const next = route.cell_ids[index];
+      if (previous && next) connect(previous, next);
+    }
+  }
+  for (const link of grid.links ?? []) {
+    const endpoints = v22LinkEndpoints(link);
+    if (endpoints) connect(...endpoints);
+  }
+  for (const feature of grid.features ?? []) {
+    if (!feature.blocks_movement) continue;
+    feature.cell_ids.forEach((cellId) => blocked.add(cellId));
+  }
+  v22Cells.set(sceneKey, cells);
+  v22RouteNeighbors.set(sceneKey, routeNeighbors);
+  v22BlockedCells.set(sceneKey, blocked);
+}
+
+async function ensureV22Grid(sceneKey: V22SceneKey): Promise<TacticalGrid> {
+  const cached = v22Grids.get(sceneKey);
+  if (cached) return cached;
+  const grid = await fetchJson<TacticalGrid>(V22_SCENES[sceneKey].gridAsset);
+  v22Grids.set(sceneKey, grid);
+  indexV22Grid(sceneKey, grid);
+  return grid;
+}
+
 function loadModel(name: string): Promise<THREE.Group> {
   let promise = modelCache.get(name);
   if (!promise) {
@@ -561,6 +764,7 @@ function loadModel(name: string): Promise<THREE.Group> {
 }
 
 function sceneAsset(sceneKey: SceneKey, mode: ViewMode): string {
+  if (isV22Scene(sceneKey)) return V22_SCENES[sceneKey].asset;
   if (sceneKey === "underdark") return "underdark-dm.glb";
   if (sceneKey === "city") return "city-dm.glb";
   if (sceneKey === "harbor") return "harbor-v2.glb";
@@ -578,6 +782,20 @@ function scenePreset(sceneKey: SceneKey): CameraState {
   if (sceneKey === "church") return { position: new THREE.Vector3(27, 24, 24), target: new THREE.Vector3(10, 3.6, -8) };
   if (sceneKey === "city") return { position: new THREE.Vector3(47, 38, 32), target: new THREE.Vector3(16, 1.8, -14) };
   if (sceneKey === "harbor") return { position: new THREE.Vector3(82, 70, 66), target: new THREE.Vector3(32, 4, -26) };
+  if (isV22Scene(sceneKey)) {
+    const grid = v22Grid(sceneKey);
+    if (grid) {
+      const { width, height, cell_size_ft: cellSizeFt } = grid.scene.grid;
+      const maxElevation = Math.max(...grid.cells.map((cell) => cell.elevation));
+      const minElevation = Math.min(...grid.cells.map((cell) => cell.elevation));
+      const target = new THREE.Vector3(width / 2, ((maxElevation + minElevation) / 2) / cellSizeFt, -height / 2);
+      const span = Math.max(width, height);
+      return {
+        position: target.clone().add(new THREE.Vector3(span * 1.12, span * 0.84 + Math.max(0, maxElevation - minElevation) / cellSizeFt, span * 1.08)),
+        target,
+      };
+    }
+  }
   return { position: new THREE.Vector3(69, 53, 42), target: new THREE.Vector3(24, 1.3, -18) };
 }
 
@@ -640,6 +858,17 @@ function objectElevation(object: THREE.Object3D): number | null {
   const position = object.getWorldPosition(new THREE.Vector3());
   const cell = underdarkCells.get(cellKey(Math.floor(-position.z), Math.floor(position.x)));
   return cell?.walkable ? cell.elevation : null;
+}
+
+function objectV22LevelId(object: THREE.Object3D): string {
+  return objectMetadata(object, "level_id");
+}
+
+function objectV22Elevation(object: THREE.Object3D): number | null {
+  const direct = object.userData.elevation_ft;
+  if (typeof direct === "number" && Number.isFinite(direct)) return direct;
+  if (typeof direct === "string" && direct.trim() !== "" && Number.isFinite(Number(direct))) return Number(direct);
+  return null;
 }
 
 function objectMetadata(object: THREE.Object3D, key: string): string {
@@ -748,7 +977,7 @@ function buildSemanticCatalog(root: THREE.Group): void {
     const pickRole = objectMetadata(object, "pick_role");
     const entry: SemanticMesh = {
       mesh: object,
-      levelIds: currentScene === "harbor" ? objectHarborLevelIds(object) : [],
+      levelIds: currentScene === "harbor" || isV22Scene(currentScene) ? objectHarborLevelIds(object) : [],
       volumeIds: currentScene === "harbor" ? objectHarborVolumeIds(object) : [],
       prototypeKind,
       pickRole,
@@ -792,6 +1021,14 @@ function harborObjectVisible(object: THREE.Mesh): boolean {
   }
   if (!volumeIds.includes(currentHarborFocus) || kind === "roof" || pickRole === "hideable") return false;
   return currentHarborLevelId === "all" || levelIds.includes(currentHarborLevelId);
+}
+
+function v22ObjectVisible(object: THREE.Mesh): boolean {
+  const levelId = objectV22LevelId(object);
+  const elevation = objectV22Elevation(object);
+  const levelAllowed = currentV22LevelId === "all" || !levelId || levelId === currentV22LevelId;
+  const elevationAllowed = currentV22Elevation === "all" || elevation === null || elevation === currentV22Elevation;
+  return levelAllowed && elevationAllowed;
 }
 
 function cityObjectVisible(object: THREE.Mesh): boolean {
@@ -941,6 +1178,10 @@ function applyLayerFilter(): void {
       setObjectFilteredVisible(object, harborObjectVisible(object));
       return;
     }
+    if (isV22Scene(currentScene)) {
+      setObjectFilteredVisible(object, v22ObjectVisible(object));
+      return;
+    }
     if (currentLayer === "all") {
       setObjectFilteredVisible(object, true);
       return;
@@ -977,7 +1218,9 @@ function rebuildTacticalSurfaces(): void {
         ? objectMetadata(object, "pick_role") === "tactical_floor" || objectMetadata(object, "prototype_kind") === "floor" || /^Floor_City_|^City_Outdoor_/.test(object.name)
         : currentScene === "harbor"
           ? objectMetadata(object, "pick_role") === "tactical_floor" || objectMetadata(object, "prototype_kind") === "floor"
-          : object.name.startsWith("Terrain_Elevation_");
+          : isV22Scene(currentScene)
+            ? objectMetadata(object, "pick_role") === "tactical_floor" || objectMetadata(object, "prototype_kind") === "surface"
+            : object.name.startsWith("Terrain_Elevation_");
     if (tactical) tacticalSurfaces.push(object);
     const transition = currentScene === "city" && (
       objectMetadata(object, "pick_role") === "transition"
@@ -1209,6 +1452,62 @@ function harborReachable(startId: string, targetId: string): boolean {
   return false;
 }
 
+function v22CellInFocus(cell: TacticalGridCell): boolean {
+  return (currentV22LevelId === "all" || cell.level_id === currentV22LevelId)
+    && (currentV22Elevation === "all" || cell.elevation === currentV22Elevation);
+}
+
+function v22CanStep(sceneKey: V22SceneKey, from: TacticalGridCell, to: TacticalGridCell): boolean {
+  if (!from.walkable || !to.walkable || from.level_id !== to.level_id) return false;
+  if (!v22CellAllowed(to) || v22BlockedCells.get(sceneKey)?.has(to.id)) return false;
+  const routeEdge = v22RouteNeighbors.get(sceneKey)?.get(from.id)?.has(to.id) ?? false;
+  if (routeEdge) return true;
+  const orthogonal = Math.abs(from.row - to.row) + Math.abs(from.col - to.col) === 1;
+  // Generic open terrain accepts ordinary five-foot climbs.  Larger jumps must
+  // be declared by a route or link, so a player cannot walk straight through a
+  // cliff, a sealed sewer wall, or an unplanned floating-island gap.
+  return orthogonal && Math.abs(from.elevation - to.elevation) <= 5;
+}
+
+function v22Reachable(sceneKey: V22SceneKey, startId: string, targetId: string): boolean {
+  if (startId === targetId) return true;
+  const cells = v22Cells.get(sceneKey);
+  const start = cells?.get(startId);
+  const target = cells?.get(targetId);
+  if (!cells || !start || !target || !v22CellAllowed(start) || !v22CellAllowed(target) || start.level_id !== target.level_id) return false;
+  const visited = new Set<string>([start.id]);
+  const queue = [start];
+  for (let index = 0; index < queue.length; index += 1) {
+    const current = queue[index];
+    if (!current) continue;
+    const adjacentIds = new Set<string>(v22RouteNeighbors.get(sceneKey)?.get(current.id) ?? []);
+    const neighbors: Array<[number, number]> = [[current.row - 1, current.col], [current.row + 1, current.col], [current.row, current.col - 1], [current.row, current.col + 1]];
+    for (const [row, col] of neighbors) {
+      const neighbor = v22CellAt(sceneKey, current.level_id, row, col);
+      if (neighbor) adjacentIds.add(neighbor.id);
+    }
+    for (const neighborId of adjacentIds) {
+      const next = cells.get(neighborId);
+      if (!next || visited.has(next.id) || !v22CanStep(sceneKey, current, next)) continue;
+      if (next.id === targetId) return true;
+      visited.add(next.id);
+      queue.push(next);
+    }
+  }
+  return false;
+}
+
+function v22RouteNamesAt(sceneKey: V22SceneKey, cellId: string): string[] {
+  return (v22Grids.get(sceneKey)?.routes ?? [])
+    .filter((route) => route.cell_ids.includes(cellId) && (route.visibility !== "dm_only" || (currentMode === "dm" && dmTuning.showDmOnly)))
+    .map((route) => route.name);
+}
+
+function v22FeaturesAt(sceneKey: V22SceneKey, cellId: string): TacticalGridFeature[] {
+  return (v22Grids.get(sceneKey)?.features ?? [])
+    .filter((feature) => feature.cell_ids.includes(cellId) && (feature.visibility !== "dm_only" || (currentMode === "dm" && dmTuning.showDmOnly)));
+}
+
 function showCityNotice(message: string): void {
   cityNotice = message;
   selectionMarker.visible = false;
@@ -1257,6 +1556,23 @@ function cellFromHit(hit: THREE.Intersection): CellSelection | null {
       walkable: true, movement: `消耗 ${cell.movement.walk ?? 1} · 5 尺`,
     };
   }
+  if (isV22Scene(currentScene)) {
+    const grid = v22Grid(currentScene);
+    const levelId = objectV22LevelId(hit.object)
+      || (currentV22LevelId === "all" ? grid?.levels[0]?.id : currentV22LevelId)
+      || "surface";
+    const cell = v22CellAt(currentScene, levelId, row, col);
+    if (!cell?.walkable || !v22CellAllowed(cell) || !v22CellInFocus(cell) || v22BlockedCells.get(currentScene)?.has(cell.id)) return null;
+    const routes = v22RouteNamesAt(currentScene, cell.id);
+    const features = v22FeaturesAt(currentScene, cell.id);
+    const context = [routes[0], features[0]?.kind.replaceAll("_", " ")].filter(Boolean).join(" · ");
+    return {
+      row, col, layer: cell.elevation, levelId: cell.level_id, zBaseFt: cell.elevation,
+      area: context ? `${cell.zone} · ${context}` : cell.zone,
+      spaceKind: cell.surface, walkable: true, gridCell: cell,
+      movement: `可走 · ${cell.surface.replaceAll("_", " ")} · 5 尺`,
+    };
+  }
   const cell = underdarkCells.get(cellKey(row, col));
   if (!cell?.walkable) return null;
   return {
@@ -1273,6 +1589,7 @@ function groundHeight(layer: number): number {
   if (currentScene === "church") return (layer - 1) * CHURCH_FLOOR_HEIGHT;
   if (currentScene === "city") return layer === 0 ? 0 : (layer - 1) * CITY_FLOOR_HEIGHT;
   if (currentScene === "harbor") return 0;
+  if (isV22Scene(currentScene)) return v22WorldHeight(layer);
   return layer * UNDERDARK_ELEVATION_HEIGHT;
 }
 
@@ -1301,6 +1618,21 @@ function showSelection(cell: CellSelection): void {
       <div><dt>层级</dt><dd>${level?.label ?? cell.levelId ?? "—"} · ${cell.zBaseFt ?? 0} ft</dd></div>
       <div><dt>焦点</dt><dd>${cell.volumeId || "港区地表"}</dd></div>
       <div><dt>区域</dt><dd>${cell.area}</dd></div>
+      <div><dt>移动</dt><dd>${cell.movement}</dd></div>`;
+    return;
+  }
+  if (isV22Scene(currentScene) && cell.gridCell) {
+    const grid = v22Grid(currentScene);
+    const level = v22Level(currentScene, cell.gridCell.level_id);
+    const anchor = grid?.anchors.find((item) => item.cell_id === cell.gridCell?.id && (item.visibility !== "dm_only" || (currentMode === "dm" && dmTuning.showDmOnly)));
+    const routes = v22RouteNamesAt(currentScene, cell.gridCell.id);
+    const features = v22FeaturesAt(currentScene, cell.gridCell.id);
+    const details = [anchor?.name, ...routes, ...features.map((feature) => feature.kind.replaceAll("_", " "))].filter(Boolean).join(" · ") || "—";
+    cellInspector.innerHTML = `
+      <div><dt>坐标</dt><dd>row ${cell.row} · col ${cell.col}</dd></div>
+      <div><dt>层级/高程</dt><dd>${level?.label ?? cell.gridCell.level_id} · ${cell.gridCell.elevation >= 0 ? "+" : ""}${cell.gridCell.elevation} ft</dd></div>
+      <div><dt>地表/区域</dt><dd>${cell.gridCell.surface.replaceAll("_", " ")} · ${cell.gridCell.zone}</dd></div>
+      <div><dt>路线/特性</dt><dd>${details}</dd></div>
       <div><dt>移动</dt><dd>${cell.movement}</dd></div>`;
     return;
   }
@@ -1362,6 +1694,20 @@ function ensureTokenStates(sceneKey: SceneKey): TokenState[] {
         return da - db || a.row - b.row || a.col - b.col;
       });
     states = cells.slice(0, TOKEN_NAMES.length).map((cell) => ({ row: cell.row, col: cell.col, layer: 0, levelId: cell.level_id, zBaseFt: cell.z_base_ft }));
+  } else if (isV22Scene(sceneKey)) {
+    const grid = v22Grids.get(sceneKey);
+    const entry = grid?.anchors.find((anchor) => anchor.kind === "entry" && anchor.visibility === "public")
+      ?? grid?.anchors.find((anchor) => anchor.visibility === "public");
+    const cells = [...(v22Cells.get(sceneKey)?.values() ?? [])]
+      .filter((cell) => cell.walkable && cell.visibility === "public" && !v22BlockedCells.get(sceneKey)?.has(cell.id))
+      .sort((a, b) => {
+        const da = Math.abs(a.row - (entry?.row ?? 0)) + Math.abs(a.col - (entry?.col ?? 0));
+        const db = Math.abs(b.row - (entry?.row ?? 0)) + Math.abs(b.col - (entry?.col ?? 0));
+        return da - db || a.row - b.row || a.col - b.col;
+      });
+    states = cells.slice(0, TOKEN_NAMES.length).map((cell) => ({
+      row: cell.row, col: cell.col, layer: cell.elevation, levelId: cell.level_id, zBaseFt: cell.elevation,
+    }));
   } else {
     const start = cityGrid?.anchors.party_start ?? [14, 15];
     const outdoor = [...cityCells.values()]
@@ -1405,6 +1751,10 @@ function tokenIsVisible(state: TokenState): boolean {
   if (currentScene === "harbor") {
     const cell = state.levelId ? harborCellAt(state.levelId, state.row, state.col) : undefined;
     return Boolean(cell && harborFocusAllows(cell) && (currentHarborLevelId === "all" || cell.level_id === currentHarborLevelId));
+  }
+  if (isV22Scene(currentScene)) {
+    const cell = state.levelId ? v22CellAt(currentScene, state.levelId, state.row, state.col) : undefined;
+    return Boolean(cell && v22CellAllowed(cell) && v22CellInFocus(cell));
   }
   if (currentScene === "city") {
     const cell = cityCells.get(cityCellKey(state.layer, state.row, state.col));
@@ -1452,6 +1802,17 @@ function moveSelectedToken(cell: CellSelection): void {
   const state = states[selectedToken];
   const object = tokenHolder.children[selectedToken];
   if (!state || !object) return;
+  if (isV22Scene(currentScene)) {
+    const start = state.levelId ? v22CellAt(currentScene, state.levelId, state.row, state.col) : undefined;
+    const target = cell.gridCell;
+    if (!start || !target || !v22CellInFocus(target) || !v22Reachable(currentScene, start.id, target.id)) {
+      showCityNotice("该格不可达：需沿同层可走格移动；高差超过 5 尺时必须走已声明路线或连接点");
+      return;
+    }
+    state.levelId = target.level_id;
+    state.zBaseFt = target.elevation;
+    clearCityNotice();
+  }
   if (currentScene === "city") {
     const start = cityCellAt(state.layer, state.row, state.col);
     const target = cityCellAt(cell.layer, cell.row, cell.col);
@@ -1639,7 +2000,10 @@ function pick(event: PointerEvent): void {
 function normalizeExperienceFocus(): void {
   if (viewerState.experienceMode === "theatre") {
     if (currentScene === "harbor") currentHarborLevelId = "all";
-    else currentLayer = "all";
+    else if (isV22Scene(currentScene)) {
+      currentV22LevelId = "all";
+      currentV22Elevation = "all";
+    } else currentLayer = "all";
     return;
   }
   if (viewerState.experienceMode !== "tactical") return;
@@ -1651,6 +2015,15 @@ function normalizeExperienceFocus(): void {
   if (currentScene === "harbor" && currentHarborLevelId === "all") {
     const first = (harborRuntime?.scene.levels ?? []).find((level) => currentHarborFocus === "surface" ? level.id === "surface" : level.volume_id === currentHarborFocus);
     currentHarborLevelId = first?.id ?? "surface";
+  }
+  if (isV22Scene(currentScene)) {
+    const grid = v22Grid(currentScene);
+    const levelExists = currentV22LevelId !== "all" && Boolean(grid?.levels.some((level) => level.id === currentV22LevelId));
+    if (!levelExists) currentV22LevelId = grid?.levels[0]?.id ?? "surface";
+    const elevations = [...new Set((grid?.cells ?? []).filter((cell) => cell.walkable && cell.level_id === currentV22LevelId).map((cell) => cell.elevation))].sort((a, b) => a - b);
+    if (currentV22Elevation === "all" || !elevations.includes(currentV22Elevation)) {
+      currentV22Elevation = elevations[0] ?? "all";
+    }
   }
 }
 
@@ -1683,7 +2056,13 @@ function updateDebugReadout(): void {
   const visibleMeshes = semanticCatalog.objects.filter((entry) => entry.mesh.visible).length;
   const visibleTactical = tacticalSurfaces.filter((surface) => surface.visible).length;
   const visibleTransitions = transitionSurfaces.filter((surface) => surface.visible).length;
-  const navEdges = currentScene === "harbor" ? harborRuntime?.nav.edges.length ?? 0 : currentScene === "city" ? cityGrid?.transitions.length ?? 0 : 0;
+  const navEdges = currentScene === "harbor"
+    ? harborRuntime?.nav.edges.length ?? 0
+    : currentScene === "city"
+      ? cityGrid?.transitions.length ?? 0
+      : isV22Scene(currentScene)
+        ? (v22Grids.get(currentScene)?.routes.reduce((count, route) => count + Math.max(0, route.cell_ids.length - 1), 0) ?? 0)
+        : 0;
   dmDebugReadout.textContent = `${lastFrameFps || "—"} FPS · ${renderer.info.render.calls} calls · ${renderer.info.render.triangles.toLocaleString()} tris\n可见 ${visibleMeshes} meshes · 战术面 ${visibleTactical} · 连接 ${visibleTransitions} · 导航边 ${navEdges}`;
 }
 
@@ -1739,6 +2118,53 @@ function renderLayerControls(): void {
         fitView();
       });
       layerControls.append(button);
+    }
+    return;
+  }
+  if (isV22Scene(currentScene)) {
+    const grid = v22Grid(currentScene);
+    layerControls.innerHTML = "";
+    if (!grid) return;
+    const appendControl = (text: string, active: boolean, group: "level" | "elevation", onClick: () => void, title: string): void => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.disabled = viewerState.experienceMode === "theatre";
+      button.className = `v22-filter v22-filter-${group}${active ? " active" : ""}`;
+      button.textContent = text;
+      button.title = title;
+      button.addEventListener("click", onClick);
+      layerControls.append(button);
+    };
+    if (grid.levels.length > 1) {
+      appendControl("全层", currentV22LevelId === "all", "level", () => {
+        currentV22LevelId = "all";
+        currentV22Elevation = "all";
+        renderLayerControls();
+        applyLayerFilter();
+      }, "显示全部地图层");
+    }
+    for (const level of grid.levels) {
+      const label = level.label === "Surface" ? "地图层" : level.label;
+      appendControl(`层 · ${label}`, currentV22LevelId === level.id, "level", () => {
+        currentV22LevelId = level.id;
+        currentV22Elevation = "all";
+        renderLayerControls();
+        applyLayerFilter();
+      }, `${level.id} · 基准 ${level.z_base_ft} ft`);
+    }
+    const scopedCells = grid.cells.filter((cell) => cell.walkable && (currentV22LevelId === "all" || cell.level_id === currentV22LevelId));
+    const elevations = [...new Set(scopedCells.map((cell) => cell.elevation))].sort((a, b) => a - b);
+    appendControl("全部高度", currentV22Elevation === "all", "elevation", () => {
+      currentV22Elevation = "all";
+      renderLayerControls();
+      applyLayerFilter();
+    }, "显示当前地图层的全部高程");
+    for (const elevation of elevations) {
+      appendControl(`${elevation >= 0 ? "+" : ""}${elevation}′`, currentV22Elevation === elevation, "elevation", () => {
+        currentV22Elevation = elevation;
+        renderLayerControls();
+        applyLayerFilter();
+      }, `仅显示 ${elevation >= 0 ? "+" : ""}${elevation} ft 高程的可走格`);
     }
     return;
   }
@@ -1834,10 +2260,18 @@ function setCityScope(nextScope: CityScope): void {
 
 function updateHud(): void {
   syncViewerState();
-  const name = currentScene === "church" ? "教堂" : currentScene === "city" ? "城市街区" : currentScene === "harbor" ? "潮钟港区 V2" : "幽暗地域";
+  const name = currentScene === "church"
+    ? "教堂"
+    : currentScene === "city"
+      ? "城市街区"
+      : currentScene === "harbor"
+        ? "潮钟港区 V2"
+        : isV22Scene(currentScene)
+          ? V22_SCENES[currentScene].name
+          : "幽暗地域";
   const experience = viewerState.experienceMode === "theatre" ? "剧场" : viewerState.experienceMode === "exploration" ? "探索" : "战术";
   hudScene.textContent = `${name} · ${currentMode === "dm" ? "DM" : "玩家"} · ${experience}`;
-  if ((currentScene === "city" || currentScene === "harbor") && cityNotice) {
+  if (cityNotice) {
     hudFilter.textContent = cityNotice;
     return;
   }
@@ -1847,6 +2281,14 @@ function updateHud(): void {
     hudFilter.textContent = currentHarborLevelId === "all"
       ? `${currentHarborFocus} · 全层`
       : levelLabel.includes("ft") ? levelLabel : `${levelLabel} · ${level?.z_base_ft ?? 0} ft`;
+    return;
+  }
+  if (isV22Scene(currentScene)) {
+    const level = currentV22LevelId === "all" ? undefined : v22Level(currentScene, currentV22LevelId);
+    const levelLabel = currentV22LevelId === "all" ? "全部地图层" : level?.label === "Surface" ? "地图层" : level?.label ?? currentV22LevelId;
+    hudFilter.textContent = currentV22Elevation === "all"
+      ? `${levelLabel} · 全部高度`
+      : `${levelLabel} · ${currentV22Elevation >= 0 ? "+" : ""}${currentV22Elevation} ft`;
     return;
   }
   hudFilter.textContent = currentLayer === "all"
@@ -1859,17 +2301,34 @@ function updateUi(): void {
   const church = currentScene === "church";
   const city = currentScene === "city";
   const harbor = currentScene === "harbor";
-  sceneTitle.textContent = church ? churchSpec?.site.name ?? "圣烛教堂" : city ? citySpec?.name ?? "暮钟区 · 灰石街区" : harbor ? harborRuntime?.scene.name ?? "潮钟港区 · 塔影与暗渠" : "幽暗地域 · 紫晶裂谷";
+  const v22Descriptor = isV22Scene(currentScene) ? V22_SCENES[currentScene] : undefined;
+  const v22 = Boolean(v22Descriptor);
+  sceneTitle.textContent = church
+    ? churchSpec?.site.name ?? "圣烛教堂"
+    : city
+      ? citySpec?.name ?? "暮钟区 · 灰石街区"
+      : harbor
+        ? harborRuntime?.scene.name ?? "潮钟港区 · 塔影与暗渠"
+        : v22Descriptor
+          ? v22Descriptor.name
+          : "幽暗地域 · 紫晶裂谷";
   sceneDescription.textContent = church
     ? churchSpec?.site.brief ?? "三层建筑、房间、楼梯与 DM 隐藏密室。"
-    : city ? "街道、广场与 7 栋可进入建筑；切换内部战术范围。" : harbor ? "地表、塔楼、暗渠与密室；移动严格读取 runtime 导航图。" : "48×36 格的裂谷、桥梁、高地、遗迹与菌林。";
-  modeNote.textContent = church ? "独立模型 · 权限" : "当前仅 DM 资产";
-  layerTitle.textContent = currentScene === "underdark" ? "高度" : harbor ? "层级" : "楼层";
+    : city
+      ? "街道、广场与 7 栋可进入建筑；切换内部战术范围。"
+      : harbor
+        ? "地表、塔楼、暗渠与密室；移动严格读取 runtime 导航图。"
+        : v22Descriptor
+          ? v22Descriptor.description
+          : "48×36 格的裂谷、桥梁、高地、遗迹与菌林。";
+  modeNote.textContent = church ? "独立模型 · 权限" : v22 ? "同一资产 · public / DM 专属" : "当前仅 DM 资产";
+  layerTitle.textContent = currentScene === "underdark" ? "高度" : harbor ? "层级" : v22 ? "层级 / 高度" : "楼层";
   sceneButtons.forEach((button) => button.classList.toggle("active", button.dataset.scene === currentScene));
   modeButtons.forEach((button) => {
     const mode = button.dataset.mode as ViewMode;
-    button.disabled = !church && mode === "player";
-    button.title = !church && mode === "player" ? `${city ? "城市街区" : harbor ? "潮钟港区" : "幽暗地域"}当前没有独立玩家资产` : "";
+    const playerModeSupported = church || v22;
+    button.disabled = !playerModeSupported && mode === "player";
+    button.title = !playerModeSupported && mode === "player" ? `${city ? "城市街区" : harbor ? "潮钟港区" : "幽暗地域"}当前没有独立玩家资产` : "";
     button.classList.toggle("active", mode === currentMode);
   });
   renderLayerControls();
@@ -1891,6 +2350,10 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
       currentHarborFocus = "surface";
       currentHarborLevelId = "surface";
     }
+    if (isV22Scene(sceneKey)) {
+      currentV22LevelId = "all";
+      currentV22Elevation = "all";
+    }
   }
   normalizeExperienceFocus();
   selectedToken = null;
@@ -1900,6 +2363,8 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
   showLoading("正在加载场景");
   try {
     await ensureData();
+    if (isV22Scene(currentScene)) await ensureV22Grid(currentScene);
+    normalizeExperienceFocus();
     const root = await loadModel(sceneAsset(currentScene, currentMode));
     if (request !== loadSequence) return;
     restoreCutaway();
@@ -1942,7 +2407,7 @@ sceneButtons.forEach((button) => {
 modeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const next = button.dataset.mode as ViewMode;
-    if (currentScene !== "church" || next === currentMode) return;
+    if ((currentScene !== "church" && !isV22Scene(currentScene)) || next === currentMode) return;
     void activateScene(currentScene, next, false);
   });
 });

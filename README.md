@@ -141,6 +141,52 @@ python3 -m generator.v2.adventure_cli \
   --out output/adventures/sewer_dungeon.adventure.json
 ```
 
+### V2.2 几何与视觉实现场景
+
+`SceneProgram` 现已能确定性落为统一的 `dnd-tactical-grid-1.0`。合同包含逐格高度、
+可通行性、区域、表面、权限、锚点、实现后的路线、功能 feature，以及尚未解析的
+NPC / 遭遇 / 奖励 / 任务槽位。潮钟港区映射既有 V2.1 runtime，不重复制造一套几何。
+
+首批三种全新实现场景：
+
+- 银瀑河谷：`64×56` 格、0–60 尺、单调下坡河流、浅滩与旧桥、洞口、瀑布和错位等高线；
+- 暗流泵房：`56×56` 格、主渠低于走道 5 尺、四向汇流口、双检修环、泵机、闸门和秘密旧祠；
+- 星陨龙骨裂谷：`61×61` 格、六档高度、无房间依赖、龙首/脊骨/肋骨、浮岩、裂隙与巨型生物平台。
+
+生成并验证全部 grid：
+
+```bash
+python3 -m generator.v2.realize --all
+python3 tests/verify_scene_realizers.py
+```
+
+Blender 使用同一个入口读取 grid，再按 archetype 分发独立视觉规则。战术顶面保持精确，
+曲线、崖壁、植被、管网、骨架和生活痕迹只作为视觉皮肤，不改导航合同：
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python blender/build_v22_grid_scene.py -- \
+  --input-dir output/v22-scenes/river_valley
+
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python blender/build_v22_grid_scene.py -- \
+  --input-dir output/v22-scenes/sewer_dungeon
+
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python blender/build_v22_grid_scene.py -- \
+  --input-dir output/v22-scenes/dragonbone_rift
+
+python3 tests/verify_v22_scene_outputs.py
+```
+
+每个目录都包含 `scene.glb`、`scene-prototype.blend`、等距/俯视 PNG，以及记录输入和
+输出 SHA-256 的 render manifest。产物门禁会检查 GLB v2、图片尺寸、metadata 引用、
+DM-only 分批、语义对象种类和对象/顶点预算。
+
+Viewer 提供与 DM / 玩家权限正交的剧场、探索、战术三模式。剧场隐藏格子与 Token，
+探索保留环境阅读，战术收敛到可操作层；DM 还能调整近侧墙剖切、格子、雾、曝光、
+Token 尺寸、权限对象、连接点和质量预设。
+
 ## 尚未接入
 
 - 现有数据库和 API；
