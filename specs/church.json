@@ -1,0 +1,74 @@
+{
+  "schema_version": "prototype-1.0",
+  "seed": 20260804,
+  "site": {
+    "site_type": "building",
+    "name": "圣烛教堂",
+    "brief": "三层石砌教堂，每层包含功能房间和一处隐藏空间。",
+    "cell_size_ft": 5,
+    "floor_height_ft": 15
+  },
+  "levels": [
+    {
+      "level_index": 1,
+      "name": "一层 · 主礼拜堂",
+      "width": 20,
+      "height": 16,
+      "rooms": [
+        {"id": "l1_nave", "name": "主礼拜堂", "label": "NAVE", "room_index": 1, "room_type": "public_hall", "bounds": {"row": 2, "col": 2, "width": 10, "height": 10}},
+        {"id": "l1_vestry", "name": "祭衣间", "label": "VESTRY", "room_index": 2, "room_type": "service", "bounds": {"row": 2, "col": 12, "width": 5, "height": 4}},
+        {"id": "l1_confessional", "name": "告解室", "label": "CONFESS", "room_index": 3, "room_type": "private", "bounds": {"row": 6, "col": 12, "width": 5, "height": 4}},
+        {"id": "l1_entry", "name": "门厅", "label": "ENTRY", "room_index": 4, "room_type": "entrance", "bounds": {"row": 12, "col": 6, "width": 6, "height": 3}},
+        {"id": "l1_reliquary", "name": "祭坛后密室", "label": "SECRET", "room_index": 5, "room_type": "secret_room", "visibility": "dm_only", "bounds": {"row": 10, "col": 12, "width": 5, "height": 4}}
+      ],
+      "connectors": [
+        {"id": "l1_entry_nave", "from_room": "l1_entry", "to_room": "l1_nave", "connector_type": "door", "state": "open", "from_cell": [12, 8], "to_cell": [11, 8]},
+        {"id": "l1_nave_vestry", "from_room": "l1_nave", "to_room": "l1_vestry", "connector_type": "door", "state": "closed", "from_cell": [4, 11], "to_cell": [4, 12]},
+        {"id": "l1_nave_confessional", "from_room": "l1_nave", "to_room": "l1_confessional", "connector_type": "door", "state": "closed", "from_cell": [7, 11], "to_cell": [7, 12]},
+        {"id": "l1_secret_door", "from_room": "l1_nave", "to_room": "l1_reliquary", "connector_type": "secret_door", "state": "hidden", "from_cell": [10, 11], "to_cell": [10, 12]}
+      ],
+      "stairs": [{"id": "stairs_1_2", "row": 3, "col": 14, "to_level": 2, "direction": "up"}]
+    },
+    {
+      "level_index": 2,
+      "name": "二层 · 唱诗席与藏经室",
+      "width": 20,
+      "height": 16,
+      "rooms": [
+        {"id": "l2_choir", "name": "唱诗席", "label": "CHOIR", "room_index": 1, "room_type": "balcony", "open_to_below": true, "bounds": {"row": 2, "col": 2, "width": 10, "height": 7}},
+        {"id": "l2_library", "name": "藏经室", "label": "LIBRARY", "room_index": 2, "room_type": "library", "bounds": {"row": 2, "col": 12, "width": 6, "height": 5}},
+        {"id": "l2_quarters", "name": "牧师房", "label": "QUARTERS", "room_index": 3, "room_type": "private", "bounds": {"row": 9, "col": 2, "width": 7, "height": 5}},
+        {"id": "l2_hall", "name": "回廊", "label": "GALLERY", "room_index": 4, "room_type": "corridor", "bounds": {"row": 9, "col": 9, "width": 5, "height": 5}},
+        {"id": "l2_archive", "name": "书架后暗室", "label": "SECRET", "room_index": 5, "room_type": "secret_room", "visibility": "dm_only", "bounds": {"row": 7, "col": 14, "width": 4, "height": 5}}
+      ],
+      "connectors": [
+        {"id": "l2_choir_library", "from_room": "l2_choir", "to_room": "l2_library", "connector_type": "door", "state": "open", "from_cell": [4, 11], "to_cell": [4, 12]},
+        {"id": "l2_choir_quarters", "from_room": "l2_choir", "to_room": "l2_quarters", "connector_type": "door", "state": "closed", "from_cell": [8, 5], "to_cell": [9, 5]},
+        {"id": "l2_quarters_hall", "from_room": "l2_quarters", "to_room": "l2_hall", "connector_type": "door", "state": "open", "from_cell": [10, 8], "to_cell": [10, 9]},
+        {"id": "l2_secret_door", "from_room": "l2_hall", "to_room": "l2_archive", "connector_type": "secret_door", "state": "hidden", "from_cell": [10, 13], "to_cell": [10, 14]}
+      ],
+      "stairs": [
+        {"id": "stairs_2_1", "row": 3, "col": 14, "to_level": 1, "direction": "down"},
+        {"id": "stairs_2_3", "row": 5, "col": 15, "to_level": 3, "direction": "up"}
+      ]
+    },
+    {
+      "level_index": 3,
+      "name": "三层 · 钟楼",
+      "width": 20,
+      "height": 16,
+      "rooms": [
+        {"id": "l3_belfry", "name": "钟楼", "label": "BELFRY", "room_index": 1, "room_type": "tower", "bounds": {"row": 3, "col": 5, "width": 10, "height": 9}},
+        {"id": "l3_machine", "name": "钟械间", "label": "GEARS", "room_index": 2, "room_type": "service", "bounds": {"row": 3, "col": 15, "width": 4, "height": 5}},
+        {"id": "l3_landing", "name": "楼梯平台", "label": "LANDING", "room_index": 3, "room_type": "corridor", "bounds": {"row": 12, "col": 8, "width": 5, "height": 3}},
+        {"id": "l3_watch", "name": "隐藏观察室", "label": "SECRET", "room_index": 4, "room_type": "secret_room", "visibility": "dm_only", "bounds": {"row": 8, "col": 15, "width": 4, "height": 4}}
+      ],
+      "connectors": [
+        {"id": "l3_landing_belfry", "from_room": "l3_landing", "to_room": "l3_belfry", "connector_type": "door", "state": "open", "from_cell": [12, 10], "to_cell": [11, 10]},
+        {"id": "l3_belfry_machine", "from_room": "l3_belfry", "to_room": "l3_machine", "connector_type": "door", "state": "closed", "from_cell": [5, 14], "to_cell": [5, 15]},
+        {"id": "l3_secret_door", "from_room": "l3_belfry", "to_room": "l3_watch", "connector_type": "secret_door", "state": "hidden", "from_cell": [9, 14], "to_cell": [9, 15]}
+      ],
+      "stairs": [{"id": "stairs_3_2", "row": 5, "col": 15, "to_level": 2, "direction": "down"}]
+    }
+  ]
+}

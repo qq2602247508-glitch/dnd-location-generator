@@ -1,0 +1,23 @@
+{
+  "schema_version": "prototype-natural-1.0",
+  "seed": 20260805,
+  "name": "幽暗地域 · 紫晶裂谷",
+  "width": 48,
+  "height": 36,
+  "cell_size_ft": 5,
+  "elevation_step_ft": 5,
+  "theme": "underdark",
+  "features": {
+    "chasm": true,
+    "bridges": 2,
+    "fungal_forest": true,
+    "crystal_field": true,
+    "ruins": true,
+    "maximum_elevation": 4
+  },
+  "anchors": {
+    "party_start": [18, 8],
+    "fungal_basin": [24, 40],
+    "northern_ruin": [6, 35]
+  }
+}

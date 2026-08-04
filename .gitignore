@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+*.blend1
+
+viewer/node_modules/
+viewer/dist/
+viewer/public/assets/
+
+*.log

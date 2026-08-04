@@ -1,0 +1,103 @@
+{
+  "schema_version": "prototype-city-1.0",
+  "seed": 20260806,
+  "name": "暮钟区 · 灰石街区",
+  "width": 32,
+  "height": 28,
+  "cell_size_ft": 5,
+  "floor_height_ft": 15,
+  "theme": "fantasy_city",
+  "anchors": {
+    "party_start": [14, 15],
+    "market_plaza": [13, 16],
+    "inn_entry": [18, 10],
+    "guild_entry": [3, 5]
+  },
+  "buildings": [
+    {
+      "id": "guildhall", "name": "石鸦行会馆", "label": "GUILD", "building_type": "guildhall",
+      "bounds": {"row": 3, "col": 2, "width": 7, "height": 7},
+      "entrances": [{"row": 3, "col": 5, "room_id": "guild_foyer"}],
+      "floors": [
+        {"floor_index": 1, "rooms": [
+          {"id": "guild_foyer", "name": "行会门厅", "label": "FOYER", "bounds": {"row": 3, "col": 2, "width": 7, "height": 2}},
+          {"id": "guild_hall", "name": "委托大厅", "label": "HALL", "bounds": {"row": 5, "col": 2, "width": 7, "height": 5}}
+        ], "connectors": [{"from_room": "guild_foyer", "to_room": "guild_hall", "from_cell": [4, 5], "to_cell": [5, 5], "connector_type": "arch"}],
+        "stairs": [{"row": 4, "col": 3, "to_floor": 2, "direction": "up"}]},
+        {"floor_index": 2, "rooms": [
+          {"id": "guild_archive", "name": "档案室", "label": "ARCHIVE", "bounds": {"row": 3, "col": 2, "width": 4, "height": 4}},
+          {"id": "guild_council", "name": "议事室", "label": "COUNCIL", "bounds": {"row": 3, "col": 6, "width": 3, "height": 4}},
+          {"id": "guild_bunks", "name": "值夜室", "label": "BUNKS", "bounds": {"row": 7, "col": 2, "width": 7, "height": 3}}
+        ], "connectors": [
+          {"from_room": "guild_archive", "to_room": "guild_council", "from_cell": [4, 5], "to_cell": [4, 6], "connector_type": "door"},
+          {"from_room": "guild_archive", "to_room": "guild_bunks", "from_cell": [6, 3], "to_cell": [7, 3], "connector_type": "door"}
+        ], "stairs": [{"row": 4, "col": 3, "to_floor": 1, "direction": "down"}]}
+      ]
+    },
+    {
+      "id": "market_hall", "name": "铜铃市集", "label": "MARKET", "building_type": "market",
+      "bounds": {"row": 3, "col": 13, "width": 7, "height": 6},
+      "entrances": [{"row": 8, "col": 16, "room_id": "market_stalls"}],
+      "floors": [{"floor_index": 1, "rooms": [
+        {"id": "market_stalls", "name": "市集棚厅", "label": "STALLS", "bounds": {"row": 3, "col": 13, "width": 7, "height": 6}}
+      ], "connectors": [], "stairs": []}]
+    },
+    {
+      "id": "apothecary", "name": "月桂药坊", "label": "APOTHECARY", "building_type": "shop",
+      "bounds": {"row": 8, "col": 25, "width": 5, "height": 5},
+      "entrances": [{"row": 8, "col": 26, "room_id": "apoth_shop"}],
+      "floors": [{"floor_index": 1, "rooms": [
+        {"id": "apoth_shop", "name": "药剂铺面", "label": "SHOP", "bounds": {"row": 8, "col": 25, "width": 5, "height": 3}},
+        {"id": "apoth_lab", "name": "炼制间", "label": "LAB", "bounds": {"row": 11, "col": 25, "width": 5, "height": 2}}
+      ], "connectors": [{"from_room": "apoth_shop", "to_room": "apoth_lab", "from_cell": [10, 27], "to_cell": [11, 27], "connector_type": "door"}], "stairs": []}]
+    },
+    {
+      "id": "shrine", "name": "微光祠", "label": "SHRINE", "building_type": "shrine",
+      "bounds": {"row": 11, "col": 4, "width": 5, "height": 5},
+      "entrances": [{"row": 15, "col": 6, "room_id": "shrine_nave"}],
+      "floors": [{"floor_index": 1, "rooms": [
+        {"id": "shrine_nave", "name": "祈祷厅", "label": "NAVE", "bounds": {"row": 11, "col": 4, "width": 5, "height": 5}}
+      ], "connectors": [], "stairs": []}]
+    },
+    {
+      "id": "copper_inn", "name": "铜盏旅店", "label": "INN", "building_type": "inn",
+      "bounds": {"row": 16, "col": 3, "width": 8, "height": 7},
+      "entrances": [{"row": 18, "col": 10, "room_id": "inn_common"}],
+      "floors": [
+        {"floor_index": 1, "rooms": [
+          {"id": "inn_common", "name": "旅店大厅", "label": "COMMON", "bounds": {"row": 16, "col": 3, "width": 8, "height": 4}},
+          {"id": "inn_kitchen", "name": "后厨", "label": "KITCHEN", "bounds": {"row": 20, "col": 3, "width": 3, "height": 3}},
+          {"id": "inn_store", "name": "酒窖入口", "label": "STORE", "bounds": {"row": 20, "col": 6, "width": 5, "height": 3}}
+        ], "connectors": [
+          {"from_room": "inn_common", "to_room": "inn_kitchen", "from_cell": [19, 4], "to_cell": [20, 4], "connector_type": "door"},
+          {"from_room": "inn_common", "to_room": "inn_store", "from_cell": [19, 7], "to_cell": [20, 7], "connector_type": "door"}
+        ], "stairs": [{"row": 17, "col": 4, "to_floor": 2, "direction": "up"}]},
+        {"floor_index": 2, "rooms": [
+          {"id": "inn_room_a", "name": "榆木客房", "label": "ROOM A", "bounds": {"row": 16, "col": 3, "width": 4, "height": 4}},
+          {"id": "inn_room_b", "name": "塔楼客房", "label": "ROOM B", "bounds": {"row": 16, "col": 7, "width": 4, "height": 4}},
+          {"id": "inn_loft", "name": "阁楼走廊", "label": "LOFT", "bounds": {"row": 20, "col": 3, "width": 8, "height": 3}}
+        ], "connectors": [
+          {"from_room": "inn_room_a", "to_room": "inn_loft", "from_cell": [19, 5], "to_cell": [20, 5], "connector_type": "door"},
+          {"from_room": "inn_room_b", "to_room": "inn_loft", "from_cell": [19, 8], "to_cell": [20, 8], "connector_type": "door"}
+        ], "stairs": [{"row": 17, "col": 4, "to_floor": 1, "direction": "down"}]}
+      ]
+    },
+    {
+      "id": "smithy", "name": "黑砧铁匠铺", "label": "SMITHY", "building_type": "smithy",
+      "bounds": {"row": 19, "col": 14, "width": 5, "height": 5},
+      "entrances": [{"row": 23, "col": 16, "room_id": "smithy_forge"}],
+      "floors": [{"floor_index": 1, "rooms": [
+        {"id": "smithy_forge", "name": "锻造间", "label": "FORGE", "bounds": {"row": 19, "col": 14, "width": 5, "height": 5}}
+      ], "connectors": [], "stairs": []}]
+    },
+    {
+      "id": "watchhouse", "name": "街卫所", "label": "WATCH", "building_type": "watchhouse",
+      "bounds": {"row": 17, "col": 24, "width": 5, "height": 6},
+      "entrances": [{"row": 17, "col": 26, "room_id": "watch_desk"}],
+      "floors": [{"floor_index": 1, "rooms": [
+        {"id": "watch_desk", "name": "值勤厅", "label": "DESK", "bounds": {"row": 17, "col": 24, "width": 5, "height": 3}},
+        {"id": "watch_cells", "name": "拘留室", "label": "CELLS", "bounds": {"row": 20, "col": 24, "width": 5, "height": 3}}
+      ], "connectors": [{"from_room": "watch_desk", "to_room": "watch_cells", "from_cell": [19, 26], "to_cell": [20, 26], "connector_type": "door"}], "stairs": []}]
+    }
+  ]
+}

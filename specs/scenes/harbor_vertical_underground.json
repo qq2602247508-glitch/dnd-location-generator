@@ -1,0 +1,77 @@
+{
+  "schema_version": "dnd-scene-spec-2.0",
+  "scene": {
+    "id": "harbor_vertical_underground_v2",
+    "name": "潮钟港区 · 塔影与暗渠",
+    "seed": 20260805
+  },
+  "grid": {
+    "width": 72,
+    "height": 56,
+    "cell_size_ft": 5,
+    "origin_ft": [0, 0, 0]
+  },
+  "packs": [
+    {"id": "fantasy-harbor", "version": "1.0.0"},
+    {"id": "undertide-sewer", "version": "1.0.0"}
+  ],
+  "brief": {
+    "archetype": "harbor_district",
+    "tags": ["irregular", "vertical", "working_harbor", "underground", "secrets"],
+    "budgets": {"max_volumes": 12, "max_levels": 16, "max_features": 96}
+  },
+  "heroes": {
+    "signal_tower": {
+      "style": {"family": "deepwater_harbor_tower", "silhouette": "tapered_octagonal", "condition": "salt_weathered"},
+      "roof": {"shape": "copper_lantern_cap", "material": "verdigris_copper", "hero_feature": "beacon_crown"},
+      "facade": {"primary": "blue_gray_stone", "accents": ["iron_bands", "signal_shutters", "sea_green_banners"]},
+      "room_program": [
+        {"rooms": [
+          {"name": "入口值守厅", "role": "guard_post", "tags": ["entry", "watch", "public"]},
+          {"name": "信号器材储间", "role": "equipment_store", "tags": ["storage", "signal", "service"]}
+        ]},
+        {"rooms": [
+          {"name": "守塔人寝室", "role": "sleeping_quarters", "tags": ["bedroom", "domestic", "private"]},
+          {"name": "二层起居过厅", "role": "living_landing", "tags": ["domestic", "circulation"]}
+        ]},
+        {"rooms": [
+          {"name": "绞盘机械室", "role": "machinery", "tags": ["machinery", "winch", "work"]},
+          {"name": "信号操作间", "role": "signal_room", "tags": ["signal", "charts", "watch"]}
+        ]},
+        {"rooms": [
+          {"name": "港灯灯室", "role": "beacon_chamber", "tags": ["beacon", "light", "hero"]},
+          {"name": "顶层瞭望环廊", "role": "observation_gallery", "tags": ["vista", "signal", "circulation"]}
+        ]}
+      ]
+    },
+    "harbor_inn": {
+      "style": {"family": "dockside_inn", "condition": "busy_and_warm", "mood": "amber_lanterns"},
+      "roof": {"shape": "crooked_gable", "material": "tarred_shingle", "details": ["smoke_chimney", "hanging_sign"]},
+      "facade": {"primary": "dark_timber", "accents": ["lime_plaster", "salt_streaks", "red_shutters"]},
+      "room_program": [
+        {"rooms": [
+          {"name": "盐风酒馆大厅", "role": "tavern", "tags": ["public", "food", "social"]},
+          {"name": "后厨与酒桶储间", "role": "kitchen_store", "tags": ["kitchen", "storage", "service"]}
+        ]},
+        {"rooms": [
+          {"name": "面海客房", "role": "guest_room", "tags": ["bedroom", "private", "sea_view"]},
+          {"name": "客房过廊", "role": "guest_corridor", "tags": ["circulation", "domestic"]}
+        ]}
+      ]
+    },
+    "undertide_sewer": {
+      "style": {"family": "undertide_sewer", "condition": "wet_and_corroded", "mood": "blue_green_gloom"},
+      "roof": {"shape": "brick_barrel_vault", "material": "soaked_brick", "details": ["dripping_arches", "iron_grates"]},
+      "facade": {"primary": "wet_brick", "accents": ["verdigris_pipe", "black_sewage", "luminous_fungus"]}
+    }
+  },
+  "constraints": [
+    "party_start_reaches_all_public_anchors",
+    "at_least_four_non_rectangular_buildings",
+    "signal_tower_has_four_levels",
+    "sewer_has_two_surface_hatches",
+    "secret_cistern_requires_dm_only_connector",
+    "blocking_features_preserve_required_navigation",
+    "room_semantics_are_available_to_runtime"
+  ]
+}

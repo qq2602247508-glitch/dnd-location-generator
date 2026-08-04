@@ -1,0 +1,65 @@
+{
+  "status": "generated",
+  "schema_version": "prototype-natural-1.0",
+  "seed": 20260805,
+  "source_sha256": "4d2482f4d5b718a5fc9d1a68370fb5ce9c04c8f69f8e60993b9ff56853b1727c",
+  "validation": {
+    "status": "passed",
+    "width": 48,
+    "height": 36,
+    "physical_size_ft": [
+      240,
+      180
+    ],
+    "walkable_cells": 1127,
+    "blocked_cells": 601,
+    "reachable_cells": 1127,
+    "elevation_counts": {
+      "0": 237,
+      "1": 478,
+      "2": 8,
+      "3": 282,
+      "4": 122
+    },
+    "zone_counts": {
+      "basin_ramp": 21,
+      "central_cavern": 424,
+      "fungal_basin": 225,
+      "northern_ramp": 11,
+      "northern_ruin": 120,
+      "party_start": 1,
+      "stone_bridge": 28,
+      "western_ramp": 27,
+      "western_ridge": 270
+    },
+    "anchors": {
+      "party_start": [
+        18,
+        8
+      ],
+      "fungal_basin": [
+        24,
+        40
+      ],
+      "northern_ruin": [
+        6,
+        35
+      ]
+    },
+    "bridges_cells": 28
+  },
+  "prototype_objects": 226,
+  "props": {
+    "mushrooms": 46,
+    "crystals": 28,
+    "rocks": 48,
+    "ruin_pillars": 4
+  },
+  "outputs": [
+    "underdark-isometric.png",
+    "underdark-topdown.png",
+    "underdark-dm.glb",
+    "underdark-prototype.blend",
+    "underdark-grid.json"
+  ]
+}

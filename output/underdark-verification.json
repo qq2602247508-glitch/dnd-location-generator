@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "source_sha256": "4d2482f4d5b718a5fc9d1a68370fb5ce9c04c8f69f8e60993b9ff56853b1727c",
+  "physical_size_ft": [
+    240,
+    180
+  ],
+  "walkable_cells": 1127,
+  "reachable_cells": 1127,
+  "elevation_counts": {
+    "0": 237,
+    "1": 478,
+    "2": 8,
+    "3": 282,
+    "4": 122
+  },
+  "bridges_cells": 28,
+  "prototype_objects": 226,
+  "props": {
+    "mushrooms": 46,
+    "crystals": 28,
+    "rocks": 48,
+    "ruin_pillars": 4
+  },
+  "images": {
+    "underdark-isometric.png": {
+      "bytes": 1426776,
+      "sha256": "dcd10d224d390c8df302d5e326ef054f9eec9d00ba58a35435c1fe721576ce21"
+    },
+    "underdark-topdown.png": {
+      "bytes": 1687312,
+      "sha256": "f1cc6498253719eaeb3d6d21b0ec0c43cfe65b7fc0c9cce95c271ff7534043cd"
+    }
+  },
+  "glb": {
+    "version": 2,
+    "bytes": 3141036,
+    "sha256": "8553348b99af003f74f86f816227e8239d0717af2d6ad55ddd1bea3df4042578"
+  },
+  "blend_bytes": 4043112
+}

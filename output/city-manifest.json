@@ -1,0 +1,94 @@
+{
+  "status": "generated",
+  "schema_version": "prototype-city-1.0",
+  "seed": 20260806,
+  "source_sha256": "45889c2e35ac244a771928db512fcbcbefcbe20b3a163a6e216066a9433b704e",
+  "validation": {
+    "status": "passed",
+    "width": 32,
+    "height": 28,
+    "physical_size_ft": [
+      160,
+      140
+    ],
+    "buildings": [
+      {
+        "id": "guildhall",
+        "floors": 2,
+        "rooms": 5
+      },
+      {
+        "id": "market_hall",
+        "floors": 1,
+        "rooms": 1
+      },
+      {
+        "id": "apothecary",
+        "floors": 1,
+        "rooms": 2
+      },
+      {
+        "id": "shrine",
+        "floors": 1,
+        "rooms": 1
+      },
+      {
+        "id": "copper_inn",
+        "floors": 2,
+        "rooms": 6
+      },
+      {
+        "id": "smithy",
+        "floors": 1,
+        "rooms": 1
+      },
+      {
+        "id": "watchhouse",
+        "floors": 1,
+        "rooms": 2
+      }
+    ],
+    "building_count": 7,
+    "multi_level_buildings": 2,
+    "outdoor_walkable_cells": 644,
+    "outdoor_reachable_cells": 644,
+    "indoor_walkable_cells": 357,
+    "outdoor_zone_counts": {
+      "alley": 71,
+      "main_street": 44,
+      "market_plaza": 77,
+      "side_street": 452
+    },
+    "anchors": {
+      "party_start": [
+        14,
+        15
+      ],
+      "market_plaza": [
+        13,
+        16
+      ],
+      "inn_entry": [
+        18,
+        10
+      ],
+      "guild_entry": [
+        3,
+        5
+      ]
+    }
+  },
+  "prototype_objects": 378,
+  "props": {
+    "street_lanterns": 6,
+    "plaza_well": 1,
+    "building_props": 3
+  },
+  "outputs": [
+    "city-isometric.png",
+    "city-topdown.png",
+    "city-dm.glb",
+    "city-prototype.blend",
+    "city-grid.json"
+  ]
+}

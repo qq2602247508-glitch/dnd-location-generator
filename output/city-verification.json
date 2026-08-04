@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "physical_size_ft": [
+    160,
+    140
+  ],
+  "building_count": 7,
+  "prototype_objects": 378,
+  "images": {
+    "city-isometric.png": {
+      "bytes": 1442198,
+      "sha256": "abfe5579fff5d0d93ac28141c8f92a870617aa11dc41240232197cb6e7e1d0b5"
+    },
+    "city-topdown.png": {
+      "bytes": 1472436,
+      "sha256": "880a2a989268ec62bb8f15505c6b664e452340af498c85efa9adf7b5660423ba"
+    }
+  },
+  "glb_bytes": 2796248,
+  "blend_bytes": 4429988
+}

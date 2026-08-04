@@ -1,0 +1,30 @@
+{
+  "status": "generated",
+  "schema_version": "prototype-1.0",
+  "seed": 20260804,
+  "source_sha256": "c98c270054f4a532f44a8ffab18ec5c8510c2b42c800f3b421204c0304637a7d",
+  "levels": 3,
+  "rooms": 14,
+  "secret_rooms": 3,
+  "prototype_objects": 505,
+  "secret_door_objects": 3,
+  "outputs": [
+    "church-dm-exploded.png",
+    "church-dm-floor1.png",
+    "church-dm-floor2.png",
+    "church-dm-floor3.png",
+    "church-dm.glb",
+    "church-player-floor1.png",
+    "church-player.glb",
+    "church-prototype.blend",
+    "church-prototype.blend1",
+    "manifest.json",
+    "underdark-dm.glb",
+    "underdark-isometric.png",
+    "underdark-manifest.json",
+    "underdark-prototype.blend",
+    "underdark-topdown.png",
+    "underdark-verification.json",
+    "verification.json"
+  ]
+}

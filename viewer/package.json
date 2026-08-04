@@ -1,0 +1,22 @@
+{
+  "name": "dnd-scene-prototype-viewer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "sync-assets": "node scripts/sync-assets.mjs",
+    "predev": "npm run sync-assets",
+    "dev": "vite --host 127.0.0.1 --port 5192",
+    "prebuild": "npm run sync-assets",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5192"
+  },
+  "dependencies": {
+    "three": "0.179.1"
+  },
+  "devDependencies": {
+    "@types/three": "0.179.0",
+    "typescript": "5.8.3",
+    "vite": "7.0.6"
+  }
+}

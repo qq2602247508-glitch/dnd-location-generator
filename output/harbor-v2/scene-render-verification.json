@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "scene_id": "harbor_vertical_underground_v2",
+  "blender_version": "4.5.10 LTS",
+  "levels": 17,
+  "runtime_cells": 4076,
+  "prototype_objects": 200,
+  "batched_boxes": 16664,
+  "mesh_vertices": 133312,
+  "connector_pick_nodes": 34,
+  "distinct_material_colors": 39,
+  "connector_visual_batches": 33,
+  "mesh_count": 200,
+  "estimated_draw_calls": 200,
+  "images": {
+    "scene-isometric.png": {
+      "bytes": 1562266,
+      "sha256": "bb62d37ebf9e9c479647089744db2f605cd98af8d2b20722ecbcee88d6314fe3"
+    },
+    "scene-topdown.png": {
+      "bytes": 1467874,
+      "sha256": "304f33855d7ba0554b39c0693129d6cb12bec0282795c1bc2a499ce0b329f71c"
+    }
+  },
+  "glb": {
+    "version": 2,
+    "bytes": 11129076,
+    "sha256": "021d408aa56e56ae489ced8b9c593e576de5bb3689a1b21ebc2d9e79df0ee8ba"
+  },
+  "blend_bytes": 10101223
+}

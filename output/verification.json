@@ -1,0 +1,53 @@
+{
+  "status": "passed",
+  "source_sha256": "c98c270054f4a532f44a8ffab18ec5c8510c2b42c800f3b421204c0304637a7d",
+  "structure": {
+    "levels": 3,
+    "rooms": 14,
+    "secret_rooms": 3,
+    "prototype_objects": 505,
+    "secret_door_objects": 3
+  },
+  "images": {
+    "church-dm-exploded.png": {
+      "width": 1200,
+      "height": 850,
+      "sha256": "d2d96c8b203175107e3d08d1813a806b7fc51da7ef2784981ec04cbc39b5c1c4"
+    },
+    "church-dm-floor1.png": {
+      "width": 1200,
+      "height": 850,
+      "sha256": "585ed48d478a4a89e196b3c0c4b707fd6e4cbbc0367d539fe17db1cb2ad779a5"
+    },
+    "church-dm-floor2.png": {
+      "width": 1200,
+      "height": 850,
+      "sha256": "42eba3580c353518b3a334b66f15212331813b31dd43cd993c689f12bbb227ca"
+    },
+    "church-dm-floor3.png": {
+      "width": 1200,
+      "height": 850,
+      "sha256": "d17791284e1329b6733039ca69e2f0ab665d178e0ecd91c2fc4365b336eefa47"
+    },
+    "church-player-floor1.png": {
+      "width": 1200,
+      "height": 850,
+      "sha256": "1bc3b8b36ff4dd00dad49ce545c1f59177cfa6d6e17fa44c18e3a61b7b69c059"
+    }
+  },
+  "glb": {
+    "dm": {
+      "version": 2,
+      "bytes": 1644408
+    },
+    "player": {
+      "version": 2,
+      "bytes": 1387072
+    }
+  },
+  "blend_bytes": 3935855,
+  "visibility_evidence": {
+    "dm_player_renders_differ": true,
+    "player_glb_smaller_by_bytes": 257336
+  }
+}

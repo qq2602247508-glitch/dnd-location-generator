@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>D&D 场景实验台</title>
+  </head>
+  <body>
+    <main id="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">PROCEDURAL TACTICAL SCENE LAB</p>
+          <h1>D&D 场景实验台</h1>
+        </div>
+        <div class="scene-switch" role="group" aria-label="选择场景">
+          <button class="scene-button active" data-scene="church">三层教堂</button>
+          <button class="scene-button" data-scene="underdark">幽暗地域</button>
+          <button class="scene-button" data-scene="city">城市街区</button>
+          <button class="scene-button" data-scene="harbor">潮钟港区 V2</button>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <section class="panel intro-panel">
+            <span class="status-dot"></span>
+            <div>
+              <p class="panel-kicker">当前场景</p>
+              <h2 id="scene-title">圣烛教堂</h2>
+              <p id="scene-description">三层建筑、房间、楼梯与 DM 隐藏密室。</p>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading"><span>视图权限</span><small id="mode-note">独立模型</small></div>
+            <div class="segmented" id="mode-controls">
+              <button class="active" data-mode="dm">DM 完整</button>
+              <button data-mode="player">玩家可见</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading"><span id="layer-title">楼层</span><small>实时过滤</small></div>
+            <div class="chip-grid" id="layer-controls"></div>
+          </section>
+
+          <section class="panel city-scope-panel" id="city-scope-panel" hidden>
+            <div class="panel-heading"><span>战术范围</span><small id="city-scope-note">街区外景</small></div>
+            <button id="city-return" class="secondary-button city-return" type="button">查看街区</button>
+            <div id="city-building-controls" class="building-list" aria-label="进入建筑内部"></div>
+          </section>
+
+          <section class="panel city-scope-panel" id="harbor-focus-panel" hidden>
+            <div class="panel-heading"><span>战术焦点</span><small id="harbor-focus-note">港区地表</small></div>
+            <div id="harbor-focus-controls" class="building-list" aria-label="选择港区焦点范围"></div>
+          </section>
+
+          <section class="panel inspector">
+            <div class="panel-heading"><span>格子检查</span><small>点击地图</small></div>
+            <dl id="cell-inspector">
+              <div><dt>坐标</dt><dd>尚未选择</dd></div>
+              <div><dt>层级</dt><dd>—</dd></div>
+              <div><dt>区域</dt><dd>—</dd></div>
+              <div><dt>移动</dt><dd>—</dd></div>
+            </dl>
+          </section>
+
+          <section class="panel token-panel">
+            <div class="panel-heading"><span>测试 Token</span><small>选择后点格移动</small></div>
+            <div id="token-list" class="token-list"></div>
+          </section>
+
+          <div class="sidebar-actions">
+            <button id="fit-view" class="secondary-button">适应场景</button>
+            <button id="reset-view" class="secondary-button">重置镜头</button>
+          </div>
+        </aside>
+
+        <section class="viewport-shell">
+          <div id="loading" class="loading-card"><span class="spinner"></span><strong>正在加载场景</strong><small>全部资产来自本机</small></div>
+          <canvas id="scene-canvas" aria-label="三维战术场景"></canvas>
+          <div class="viewport-hud top-left"><span id="hud-scene">教堂 · DM</span><span id="hud-filter">全部楼层</span></div>
+          <div class="viewport-hud bottom-left">拖动旋转 · 滚轮缩放 · 右键平移 · 点击格子检查</div>
+          <div class="viewport-hud bottom-right" id="render-stats">—</div>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
