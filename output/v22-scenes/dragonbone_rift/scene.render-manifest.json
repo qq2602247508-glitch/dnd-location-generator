@@ -1,0 +1,61 @@
+{
+  "status": "generated",
+  "schema_version": "dnd-v22-render-manifest-1.0",
+  "scene_id": "dragonbone_rift_program",
+  "archetype": "special_site",
+  "grid_file_sha256": "450eb04a0ca8d5c074573c70a3e181d665927dbcab0e838350c6d085353da47f",
+  "grid_semantic_sha256": "b2421dcf624d5788d45e915ab10b7e329ec5d134e0396d71ad5aeefb1bcb8295",
+  "input_manifest_sha256": "a57a8c0faa7954076c07b2c3608bd8f1976e12ec971a1f6fc3954d5355d87ee2",
+  "blender_version": "4.5.10 LTS",
+  "grid": {
+    "cell_size_ft": 5,
+    "connectivity": "orthogonal_4_plus_declared_links",
+    "coordinate_contract": "cell(row,col,level_id)->world_ft(col*5,-row*5,elevation)",
+    "height": 61,
+    "width": 61
+  },
+  "elevation_range_ft": [
+    0.0,
+    50.0
+  ],
+  "walkable_cells": 2495,
+  "prototype_objects": 106,
+  "estimated_draw_calls": 106,
+  "batched_boxes": 8518,
+  "mesh_vertices": 68144,
+  "object_kinds": {
+    "anchor": 2,
+    "bone": 42,
+    "expedition_trace": 15,
+    "feature": 7,
+    "grid": 7,
+    "hazard": 7,
+    "landmark": 1,
+    "landmark_detail": 4,
+    "route": 5,
+    "surface": 15,
+    "terrain_cliff": 1
+  },
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 5915624,
+      "sha256": "f65f6ed871dc92ebcfb3aef48db947d864c4bc79749083fc2ec6173bf55d362a"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 5298290,
+      "sha256": "5792ffbc9b0b6d77136bcd9891dc2556d2cde73766073333bc7b569211d38d19"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 2034560,
+      "sha256": "12c4d0b3fe39da53396fda91b29ad28f50e7dc504998dde549201700a0965031"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1834885,
+      "sha256": "e60baf12042845ed21a28efb715a23313fb86d9e2aeb7c464f675b49e4176fc5"
+    }
+  ]
+}
