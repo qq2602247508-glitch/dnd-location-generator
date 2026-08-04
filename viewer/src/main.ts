@@ -6,8 +6,62 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 type SceneKey = "church" | "underdark" | "city" | "harbor";
 type ViewMode = "dm" | "player";
+type ExperienceMode = "theatre" | "exploration" | "tactical";
+type QualityPreset = "quality" | "balanced" | "performance";
 type LayerFilter = "all" | number;
 type CityScope = "outdoor" | string;
+
+/**
+ * V2.2 keeps player/DM access separate from how a scene is experienced.  The
+ * legacy per-scene variables remain below so existing navigation code can be
+ * migrated gradually; this is the single public state snapshot for new UI and
+ * rendering behaviour.
+ */
+interface ViewerState {
+  sceneKey: SceneKey;
+  accessMode: ViewMode;
+  experienceMode: ExperienceMode;
+  focusId: string;
+  layer: LayerFilter | string;
+  selectedToken: number | null;
+}
+
+interface DmTuning {
+  cutawayEnabled: boolean;
+  cutawayOpacity: number;
+  gridOpacity: number;
+  fogDensity: number;
+  exposure: number;
+  tokenScale: number;
+  showDmOnly: boolean;
+  showHotspots: boolean;
+  qualityPreset: QualityPreset;
+}
+
+interface MaterialSnapshot {
+  material: THREE.Material;
+  opacity: number;
+  transparent: boolean;
+  depthWrite: boolean;
+}
+
+interface SemanticMesh {
+  mesh: THREE.Mesh;
+  levelIds: string[];
+  volumeIds: string[];
+  prototypeKind: string;
+  pickRole: string;
+  visibility: string;
+  worldBounds: THREE.Box3;
+}
+
+interface SemanticCatalog {
+  root: THREE.Group | null;
+  objects: SemanticMesh[];
+  walls: SemanticMesh[];
+  grids: SemanticMesh[];
+  tactical: SemanticMesh[];
+}
 
 interface Bounds {
   row: number;
@@ -247,6 +301,61 @@ const fitButton = required<HTMLButtonElement>("#fit-view");
 const resetButton = required<HTMLButtonElement>("#reset-view");
 const modeButtons = [...document.querySelectorAll<HTMLButtonElement>("#mode-controls button")];
 const sceneButtons = [...document.querySelectorAll<HTMLButtonElement>(".scene-button")];
+const sidebar = required<HTMLElement>(".sidebar");
+const layerPanel = layerControls.closest<HTMLElement>(".panel");
+const tokenPanel = tokenList.closest<HTMLElement>(".token-panel");
+
+// Kept in TypeScript rather than index.html so the prototype can be dropped into
+// an older viewer shell without changing its document contract.
+const experiencePanel = document.createElement("section");
+experiencePanel.className = "panel experience-panel";
+experiencePanel.innerHTML = `
+  <div class="panel-heading"><span>体验模式</span><small>与权限独立</small></div>
+  <div class="segmented experience-controls" id="experience-controls">
+    <button type="button" data-experience="theatre">剧场</button>
+    <button type="button" data-experience="exploration" class="active">探索</button>
+    <button type="button" data-experience="tactical">战术</button>
+  </div>`;
+if (layerPanel) sidebar.insertBefore(experiencePanel, layerPanel);
+else sidebar.append(experiencePanel);
+
+const dmSettingsPanel = document.createElement("section");
+dmSettingsPanel.className = "panel dm-settings-panel";
+dmSettingsPanel.innerHTML = `
+  <details open>
+    <summary><span>DM 参数</span><small>会话内</small></summary>
+    <div class="dm-settings-grid">
+      <label class="setting-toggle"><input id="dm-cutaway-enabled" type="checkbox" checked> <span>动态近侧墙剖切</span></label>
+      <label class="setting-range"><span>墙透明度 <output id="dm-cutaway-value">18%</output></span><input id="dm-cutaway-opacity" type="range" min="3" max="40" value="18"></label>
+      <label class="setting-range"><span>格子透明度 <output id="dm-grid-value">52%</output></span><input id="dm-grid-opacity" type="range" min="0" max="90" value="52"></label>
+      <label class="setting-range"><span>雾密度 <output id="dm-fog-value">0.008</output></span><input id="dm-fog-density" type="range" min="0" max="24" value="8"></label>
+      <label class="setting-range"><span>曝光 <output id="dm-exposure-value">1.08</output></span><input id="dm-exposure" type="range" min="60" max="160" value="108"></label>
+      <label class="setting-range"><span>Token 大小 <output id="dm-token-scale-value">100%</output></span><input id="dm-token-scale" type="range" min="55" max="160" value="100"></label>
+      <label class="setting-toggle"><input id="dm-show-dm-only" type="checkbox" checked> <span>显示 DM 专属</span></label>
+      <label class="setting-toggle"><input id="dm-show-hotspots" type="checkbox" checked> <span>显示连接点</span></label>
+      <label class="setting-select"><span>质量预设</span><select id="dm-quality"><option value="quality">质量</option><option value="balanced" selected>平衡</option><option value="performance">性能</option></select></label>
+    </div>
+    <p class="debug-readout" id="dm-debug-readout">等待场景加载…</p>
+  </details>`;
+if (tokenPanel) sidebar.insertBefore(dmSettingsPanel, tokenPanel);
+else sidebar.append(dmSettingsPanel);
+
+const experienceButtons = [...experiencePanel.querySelectorAll<HTMLButtonElement>("button[data-experience]")];
+const dmCutawayEnabled = required<HTMLInputElement>("#dm-cutaway-enabled");
+const dmCutawayOpacity = required<HTMLInputElement>("#dm-cutaway-opacity");
+const dmGridOpacity = required<HTMLInputElement>("#dm-grid-opacity");
+const dmFogDensity = required<HTMLInputElement>("#dm-fog-density");
+const dmExposure = required<HTMLInputElement>("#dm-exposure");
+const dmTokenScale = required<HTMLInputElement>("#dm-token-scale");
+const dmShowDmOnly = required<HTMLInputElement>("#dm-show-dm-only");
+const dmShowHotspots = required<HTMLInputElement>("#dm-show-hotspots");
+const dmQuality = required<HTMLSelectElement>("#dm-quality");
+const dmCutawayValue = required<HTMLOutputElement>("#dm-cutaway-value");
+const dmGridValue = required<HTMLOutputElement>("#dm-grid-value");
+const dmFogValue = required<HTMLOutputElement>("#dm-fog-value");
+const dmExposureValue = required<HTMLOutputElement>("#dm-exposure-value");
+const dmTokenScaleValue = required<HTMLOutputElement>("#dm-token-scale-value");
+const dmDebugReadout = required<HTMLElement>("#dm-debug-readout");
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -311,6 +420,10 @@ const harborConnectors = new Map<string, GenericRuntimeConnector>();
 const harborRooms = new Map<string, GenericRuntimeRoom>();
 const tacticalSurfaces: THREE.Mesh[] = [];
 const transitionSurfaces: THREE.Mesh[] = [];
+const semanticInfo = new WeakMap<THREE.Mesh, SemanticMesh>();
+const wallMaterialSnapshots = new WeakMap<THREE.Mesh, MaterialSnapshot[]>();
+const gridMaterialSnapshots = new WeakMap<THREE.Mesh, MaterialSnapshot[]>();
+const semanticCatalog: SemanticCatalog = { root: null, objects: [], walls: [], grids: [], tactical: [] };
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
@@ -331,6 +444,40 @@ let currentRoot: THREE.Group | null = null;
 let selectedToken: number | null = null;
 let loadSequence = 0;
 let pointerDown: { x: number; y: number } | null = null;
+let lastFrameFps = 0;
+let cutawayDirty = true;
+let lastCutawayUpdate = 0;
+let lastCutawayCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN);
+let lastCutawayCameraTarget = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN);
+
+const viewerState: ViewerState = {
+  sceneKey: currentScene,
+  accessMode: currentMode,
+  experienceMode: "exploration",
+  focusId: "surface",
+  layer: currentLayer,
+  selectedToken,
+};
+
+const dmTuning: DmTuning = {
+  cutawayEnabled: true,
+  cutawayOpacity: 0.18,
+  gridOpacity: 0.52,
+  fogDensity: 0.008,
+  exposure: 1.08,
+  tokenScale: 1,
+  showDmOnly: true,
+  showHotspots: true,
+  qualityPreset: "balanced",
+};
+
+function syncViewerState(): void {
+  viewerState.sceneKey = currentScene;
+  viewerState.accessMode = currentMode;
+  viewerState.focusId = currentScene === "city" ? currentCityScope : currentScene === "harbor" ? currentHarborFocus : `${currentScene}:${currentLayer}`;
+  viewerState.layer = currentScene === "harbor" ? currentHarborLevelId : currentLayer;
+  viewerState.selectedToken = selectedToken;
+}
 
 const assetUrl = (name: string): string => new URL(`assets/${name}`, document.baseURI).href;
 const cellKey = (row: number, col: number): string => `${row}:${col}`;
@@ -520,7 +667,9 @@ function objectHarborLevelId(object: THREE.Object3D): string {
 }
 
 function objectMetadataList(object: THREE.Object3D, key: string): string[] {
-  const encoded = objectMetadata(object, key);
+  const raw = object.userData[key];
+  if (Array.isArray(raw)) return raw.filter((value): value is string => typeof value === "string");
+  const encoded = typeof raw === "string" ? raw : "";
   if (!encoded) return [];
   try {
     const values = JSON.parse(encoded) as unknown;
@@ -544,6 +693,83 @@ function objectHarborVolumeIds(object: THREE.Object3D): string[] {
 
 function objectHarborVolumeId(object: THREE.Object3D): string {
   return objectHarborVolumeIds(object)[0] ?? "";
+}
+
+function meshMaterials(mesh: THREE.Mesh): THREE.Material[] {
+  return Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+}
+
+function cloneMeshMaterialsOnce(mesh: THREE.Mesh, snapshots: WeakMap<THREE.Mesh, MaterialSnapshot[]>): MaterialSnapshot[] {
+  const existing = snapshots.get(mesh);
+  if (existing) return existing;
+  const cloned = meshMaterials(mesh).map((material) => material.clone());
+  mesh.material = Array.isArray(mesh.material) ? cloned : cloned[0]!;
+  const state = cloned.map((material) => ({
+    material,
+    opacity: material.opacity,
+    transparent: material.transparent,
+    depthWrite: material.depthWrite,
+  }));
+  snapshots.set(mesh, state);
+  return state;
+}
+
+function restoreMaterialSnapshots(snapshots: WeakMap<THREE.Mesh, MaterialSnapshot[]>, meshes: SemanticMesh[]): void {
+  for (const entry of meshes) {
+    for (const state of snapshots.get(entry.mesh) ?? []) {
+      state.material.opacity = state.opacity;
+      state.material.transparent = state.transparent;
+      state.material.depthWrite = state.depthWrite;
+      state.material.needsUpdate = true;
+    }
+  }
+}
+
+function semanticBounds(mesh: THREE.Mesh): THREE.Box3 {
+  mesh.updateWorldMatrix(true, false);
+  mesh.geometry.computeBoundingBox();
+  return mesh.geometry.boundingBox
+    ? mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld)
+    : new THREE.Box3().setFromObject(mesh);
+}
+
+function buildSemanticCatalog(root: THREE.Group): void {
+  restoreMaterialSnapshots(wallMaterialSnapshots, semanticCatalog.walls);
+  restoreMaterialSnapshots(gridMaterialSnapshots, semanticCatalog.grids);
+  semanticCatalog.root = root;
+  semanticCatalog.objects.length = 0;
+  semanticCatalog.walls.length = 0;
+  semanticCatalog.grids.length = 0;
+  semanticCatalog.tactical.length = 0;
+  root.updateWorldMatrix(true, true);
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const prototypeKind = objectMetadata(object, "prototype_kind");
+    const pickRole = objectMetadata(object, "pick_role");
+    const entry: SemanticMesh = {
+      mesh: object,
+      levelIds: currentScene === "harbor" ? objectHarborLevelIds(object) : [],
+      volumeIds: currentScene === "harbor" ? objectHarborVolumeIds(object) : [],
+      prototypeKind,
+      pickRole,
+      visibility: objectMetadata(object, "prototype_visibility") || objectMetadata(object, "visibility"),
+      worldBounds: semanticBounds(object),
+    };
+    semanticInfo.set(object, entry);
+    semanticCatalog.objects.push(entry);
+    // Cutaway deliberately uses only export semantics, never names: false positives
+    // on decorative meshes make a tactical map flicker and can break picking.
+    if (prototypeKind === "wall" || pickRole === "occluder") {
+      semanticCatalog.walls.push(entry);
+      cloneMeshMaterialsOnce(object, wallMaterialSnapshots);
+    }
+    if (prototypeKind === "grid" || pickRole === "grid" || /(?:^|_)Grid(?:_|$)|Tactical_Grid/i.test(object.name)) {
+      semanticCatalog.grids.push(entry);
+      cloneMeshMaterialsOnce(object, gridMaterialSnapshots);
+    }
+    if (pickRole === "tactical_floor" || prototypeKind === "floor") semanticCatalog.tactical.push(entry);
+  });
+  markCutawayDirty();
 }
 
 function harborLevel(levelId: string): GenericRuntimeLevel | undefined {
@@ -587,39 +813,156 @@ function cityObjectVisible(object: THREE.Mesh): boolean {
   return currentLayer === "all" || level === currentLayer;
 }
 
+function objectAllowedByAccess(object: THREE.Object3D): boolean {
+  const visibility = objectMetadata(object, "prototype_visibility") || objectMetadata(object, "visibility");
+  if (visibility !== "dm_only") return true;
+  return currentMode === "dm" && dmTuning.showDmOnly;
+}
+
+function hotspotAllowed(visibility = "public"): boolean {
+  return viewerState.experienceMode !== "theatre"
+    && dmTuning.showHotspots
+    && (visibility !== "dm_only" || (currentMode === "dm" && dmTuning.showDmOnly));
+}
+
+function setObjectFilteredVisible(object: THREE.Mesh, visible: boolean): void {
+  object.visible = visible && objectAllowedByAccess(object);
+}
+
+function markCutawayDirty(): void {
+  cutawayDirty = true;
+}
+
+function visibleFocusBounds(): THREE.Box3 | null {
+  const bounds = new THREE.Box3();
+  const candidates = semanticCatalog.tactical.length
+    ? semanticCatalog.tactical
+    : tacticalSurfaces
+      .map((mesh) => semanticInfo.get(mesh))
+      .filter((entry): entry is SemanticMesh => Boolean(entry));
+  for (const entry of candidates) {
+    if (entry.mesh.visible) bounds.union(entry.worldBounds);
+  }
+  // V1 assets have few prototype annotations.  Their existing tactical surfaces
+  // remain a safe fallback, while V2 uses metadata-only semantic entries above.
+  if (bounds.isEmpty()) {
+    for (const mesh of tacticalSurfaces) {
+      if (mesh.visible) bounds.union(semanticInfo.get(mesh)?.worldBounds ?? semanticBounds(mesh));
+    }
+  }
+  return bounds.isEmpty() ? null : bounds;
+}
+
+function applyGridVisuals(): void {
+  const visible = viewerState.experienceMode !== "theatre";
+  const multiplier = viewerState.experienceMode === "exploration" ? 0.48 : 1;
+  for (const entry of semanticCatalog.grids) {
+    const states = gridMaterialSnapshots.get(entry.mesh) ?? [];
+    entry.mesh.visible = entry.mesh.visible && visible;
+    for (const state of states) {
+      state.material.opacity = visible ? Math.min(0.92, dmTuning.gridOpacity * multiplier) : 0;
+      state.material.transparent = true;
+      state.material.depthWrite = false;
+      state.material.needsUpdate = true;
+    }
+  }
+}
+
+function restoreCutaway(): void {
+  restoreMaterialSnapshots(wallMaterialSnapshots, semanticCatalog.walls);
+}
+
+function updateCutaway(now: number, force = false): void {
+  const cameraMoved = camera.position.distanceToSquared(lastCutawayCameraPosition) > 0.025
+    || controls.target.distanceToSquared(lastCutawayCameraTarget) > 0.025;
+  if (cameraMoved) cutawayDirty = true;
+  if (!force && (!cutawayDirty || now - lastCutawayUpdate < 100)) return;
+  lastCutawayUpdate = now;
+  lastCutawayCameraPosition.copy(camera.position);
+  lastCutawayCameraTarget.copy(controls.target);
+  cutawayDirty = false;
+
+  if (viewerState.experienceMode === "theatre" || !dmTuning.cutawayEnabled || !semanticCatalog.walls.length) {
+    restoreCutaway();
+    return;
+  }
+  const focusBounds = visibleFocusBounds();
+  if (!focusBounds) {
+    restoreCutaway();
+    return;
+  }
+  const focusCenter = focusBounds.getCenter(new THREE.Vector3());
+  const towardCamera = camera.position.clone().sub(focusCenter);
+  towardCamera.y = 0;
+  if (towardCamera.lengthSq() < 0.0001) return;
+  towardCamera.normalize();
+  const tactical = viewerState.experienceMode === "tactical";
+  const opacity = tactical ? Math.min(0.08, dmTuning.cutawayOpacity * 0.36) : dmTuning.cutawayOpacity;
+  for (const entry of semanticCatalog.walls) {
+    const wallBounds = entry.worldBounds;
+    const overlapsFocusXZ = wallBounds.min.x <= focusBounds.max.x && wallBounds.max.x >= focusBounds.min.x
+      && wallBounds.min.z <= focusBounds.max.z && wallBounds.max.z >= focusBounds.min.z;
+    const wallCenter = wallBounds.getCenter(new THREE.Vector3());
+    const wallOffset = wallCenter.sub(focusCenter);
+    wallOffset.y = 0;
+    const nearSide = overlapsFocusXZ && wallOffset.dot(towardCamera) > 0.08;
+    for (const state of wallMaterialSnapshots.get(entry.mesh) ?? []) {
+      state.material.opacity = nearSide ? opacity : state.opacity;
+      state.material.transparent = nearSide || state.transparent;
+      state.material.depthWrite = nearSide ? false : state.depthWrite;
+      state.material.needsUpdate = true;
+    }
+  }
+}
+
+function applyRenderTuning(): void {
+  renderer.toneMappingExposure = dmTuning.exposure;
+  if (world.fog instanceof THREE.FogExp2) world.fog.density = dmTuning.fogDensity;
+  tokenHolder.scale.setScalar(dmTuning.tokenScale);
+  resize();
+  markCutawayDirty();
+}
+
+function pixelRatioForPreset(): number {
+  const cap = dmTuning.qualityPreset === "quality" ? 1.75 : dmTuning.qualityPreset === "performance" ? 1 : 1.5;
+  return Math.min(window.devicePixelRatio, cap);
+}
+
 function applyLayerFilter(): void {
   clearCellSelection();
   if (!currentRoot) return;
   currentRoot.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
     if (currentScene === "city") {
-      object.visible = cityObjectVisible(object);
+      setObjectFilteredVisible(object, cityObjectVisible(object));
       return;
     }
     if (currentScene === "harbor") {
-      object.visible = harborObjectVisible(object);
+      setObjectFilteredVisible(object, harborObjectVisible(object));
       return;
     }
     if (currentLayer === "all") {
-      object.visible = true;
+      setObjectFilteredVisible(object, true);
       return;
     }
     if (currentScene === "church") {
       const level = objectLevel(object);
-      object.visible = level === null || level === currentLayer;
+      setObjectFilteredVisible(object, level === null || level === currentLayer);
       return;
     }
     if (object.name.startsWith("Tactical_Grid")) {
       // The current grid is one merged mesh spanning every elevation.
-      object.visible = false;
+      setObjectFilteredVisible(object, false);
       return;
     }
     const elevation = objectElevation(object);
-    object.visible = elevation === null || elevation === currentLayer;
+    setObjectFilteredVisible(object, elevation === null || elevation === currentLayer);
   });
   if (currentScene === "city") updateTransitionHotspotVisibility();
   if (currentScene === "harbor") updateHarborTransitionHotspots();
   updateTokenVisibility();
+  applyGridVisuals();
+  markCutawayDirty();
   updateHud();
 }
 
@@ -698,7 +1041,10 @@ function updateTransitionHotspotVisibility(): void {
     const inScope = currentCityScope === "outdoor"
       ? space === "outdoor"
       : space === "interior" && building === currentCityScope;
-    object.visible = currentScene === "city" && inScope && (currentLayer === "all" || level === currentLayer);
+    object.visible = currentScene === "city"
+      && hotspotAllowed()
+      && inScope
+      && (currentLayer === "all" || level === currentLayer);
   });
 }
 
@@ -730,6 +1076,7 @@ function rebuildHarborTransitionHotspots(): void {
       hotspot.userData.connector_id = connector.id;
       hotspot.userData.level_id = cell.level_id;
       hotspot.userData.volume_id = cell.volume_id;
+      hotspot.userData.visibility = connector.visibility;
       harborTransitionHotspotHolder.add(hotspot);
       transitionSurfaces.push(hotspot);
     }
@@ -743,7 +1090,10 @@ function updateHarborTransitionHotspots(): void {
     const levelId = objectHarborLevelId(object);
     const volumeId = objectHarborVolumeId(object);
     const visibleFocus = currentHarborFocus === "surface" ? levelId === "surface" : volumeId === currentHarborFocus;
-    object.visible = currentScene === "harbor" && visibleFocus && (currentHarborLevelId === "all" || levelId === currentHarborLevelId);
+    object.visible = currentScene === "harbor"
+      && hotspotAllowed(objectMetadata(object, "visibility"))
+      && visibleFocus
+      && (currentHarborLevelId === "all" || levelId === currentHarborLevelId);
   });
 }
 
@@ -900,7 +1250,7 @@ function cellFromHit(hit: THREE.Intersection): CellSelection | null {
     const levelId = objectHarborLevelId(hit.object) || (currentHarborFocus === "surface" ? "surface" : currentHarborLevelId === "all" ? "" : currentHarborLevelId);
     if (!levelId) return null;
     const cell = harborCellAt(levelId, row, col);
-    if (!cell?.walkable || !harborFocusAllows(cell)) return null;
+    if (!cell?.walkable || !harborFocusAllows(cell) || (cell.visibility === "dm_only" && (currentMode !== "dm" || !dmTuning.showDmOnly))) return null;
     return {
       row, col, layer: 0, levelId: cell.level_id, zBaseFt: cell.z_base_ft, volumeId: cell.volume_id,
       area: harborRooms.get(cell.room_id)?.name || cell.room_id || cell.surface, spaceKind: cell.volume_id ? "建筑内部" : "港区地表",
@@ -1071,6 +1421,8 @@ function tokenIsVisible(state: TokenState): boolean {
 
 function updateTokenVisibility(): void {
   const states = ensureTokenStates(currentScene);
+  tokenHolder.visible = viewerState.experienceMode !== "theatre";
+  tokenHolder.scale.setScalar(dmTuning.tokenScale);
   tokenHolder.children.forEach((token, index) => {
     const state = states[index];
     token.visible = state ? tokenIsVisible(state) : false;
@@ -1094,7 +1446,7 @@ function renderTokenList(): void {
 }
 
 function moveSelectedToken(cell: CellSelection): void {
-  if (selectedToken === null || !cell.walkable) return;
+  if (viewerState.experienceMode === "theatre" || selectedToken === null || !cell.walkable) return;
   if (currentLayer !== "all" && cell.layer !== currentLayer) return;
   const states = ensureTokenStates(currentScene);
   const state = states[selectedToken];
@@ -1267,6 +1619,7 @@ function pickCityTransition(): boolean {
 }
 
 function pick(event: PointerEvent): void {
+  if (viewerState.experienceMode === "theatre") return;
   const rect = canvas.getBoundingClientRect();
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1283,6 +1636,89 @@ function pick(event: PointerEvent): void {
   }
 }
 
+function normalizeExperienceFocus(): void {
+  if (viewerState.experienceMode === "theatre") {
+    if (currentScene === "harbor") currentHarborLevelId = "all";
+    else currentLayer = "all";
+    return;
+  }
+  if (viewerState.experienceMode !== "tactical") return;
+  if (currentScene === "church" && currentLayer === "all") currentLayer = 1;
+  if (currentScene === "underdark" && currentLayer === "all") currentLayer = 0;
+  if (currentScene === "city" && currentCityScope !== "outdoor" && currentLayer === "all") {
+    currentLayer = cityBuildingById(currentCityScope)?.floors[0]?.floor_index ?? 1;
+  }
+  if (currentScene === "harbor" && currentHarborLevelId === "all") {
+    const first = (harborRuntime?.scene.levels ?? []).find((level) => currentHarborFocus === "surface" ? level.id === "surface" : level.volume_id === currentHarborFocus);
+    currentHarborLevelId = first?.id ?? "surface";
+  }
+}
+
+function renderExperienceUi(): void {
+  const theatre = viewerState.experienceMode === "theatre";
+  experienceButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.experience === viewerState.experienceMode);
+  });
+  dmSettingsPanel.hidden = currentMode !== "dm";
+  if (layerPanel) layerPanel.hidden = theatre;
+  if (tokenPanel) tokenPanel.hidden = theatre;
+  dmCutawayEnabled.checked = dmTuning.cutawayEnabled;
+  dmCutawayOpacity.value = String(Math.round(dmTuning.cutawayOpacity * 100));
+  dmGridOpacity.value = String(Math.round(dmTuning.gridOpacity * 100));
+  dmFogDensity.value = String(Math.round(dmTuning.fogDensity * 1000));
+  dmExposure.value = String(Math.round(dmTuning.exposure * 100));
+  dmTokenScale.value = String(Math.round(dmTuning.tokenScale * 100));
+  dmShowDmOnly.checked = dmTuning.showDmOnly;
+  dmShowHotspots.checked = dmTuning.showHotspots;
+  dmQuality.value = dmTuning.qualityPreset;
+  dmCutawayValue.textContent = `${Math.round(dmTuning.cutawayOpacity * 100)}%`;
+  dmGridValue.textContent = `${Math.round(dmTuning.gridOpacity * 100)}%`;
+  dmFogValue.textContent = dmTuning.fogDensity.toFixed(3);
+  dmExposureValue.textContent = dmTuning.exposure.toFixed(2);
+  dmTokenScaleValue.textContent = `${Math.round(dmTuning.tokenScale * 100)}%`;
+  updateDebugReadout();
+}
+
+function updateDebugReadout(): void {
+  const visibleMeshes = semanticCatalog.objects.filter((entry) => entry.mesh.visible).length;
+  const visibleTactical = tacticalSurfaces.filter((surface) => surface.visible).length;
+  const visibleTransitions = transitionSurfaces.filter((surface) => surface.visible).length;
+  const navEdges = currentScene === "harbor" ? harborRuntime?.nav.edges.length ?? 0 : currentScene === "city" ? cityGrid?.transitions.length ?? 0 : 0;
+  dmDebugReadout.textContent = `${lastFrameFps || "—"} FPS · ${renderer.info.render.calls} calls · ${renderer.info.render.triangles.toLocaleString()} tris\n可见 ${visibleMeshes} meshes · 战术面 ${visibleTactical} · 连接 ${visibleTransitions} · 导航边 ${navEdges}`;
+}
+
+function setExperienceMode(next: ExperienceMode): void {
+  if (next === viewerState.experienceMode) return;
+  viewerState.experienceMode = next;
+  selectedToken = null;
+  normalizeExperienceFocus();
+  syncViewerState();
+  renderLayerControls();
+  renderCityScopeControls();
+  renderHarborFocusControls();
+  applyLayerFilter();
+  renderExperienceUi();
+  if (next === "theatre") resetView();
+  else if (next === "tactical") fitView();
+  updateCutaway(performance.now(), true);
+}
+
+function updateDmTuningFromControls(): void {
+  dmTuning.cutawayEnabled = dmCutawayEnabled.checked;
+  dmTuning.cutawayOpacity = Number(dmCutawayOpacity.value) / 100;
+  dmTuning.gridOpacity = Number(dmGridOpacity.value) / 100;
+  dmTuning.fogDensity = Number(dmFogDensity.value) / 1000;
+  dmTuning.exposure = Number(dmExposure.value) / 100;
+  dmTuning.tokenScale = Number(dmTokenScale.value) / 100;
+  dmTuning.showDmOnly = dmShowDmOnly.checked;
+  dmTuning.showHotspots = dmShowHotspots.checked;
+  dmTuning.qualityPreset = dmQuality.value as QualityPreset;
+  applyRenderTuning();
+  applyLayerFilter();
+  renderExperienceUi();
+  updateCutaway(performance.now(), true);
+}
+
 function renderLayerControls(): void {
   if (currentScene === "harbor") {
     const levels = (harborRuntime?.scene.levels ?? []).filter((level) => currentHarborFocus === "surface" ? level.id === "surface" : level.volume_id === currentHarborFocus);
@@ -1292,6 +1728,7 @@ function renderLayerControls(): void {
       const level = value === "all" ? undefined : harborLevel(value);
       const button = document.createElement("button");
       button.type = "button";
+      button.disabled = viewerState.experienceMode === "theatre";
       button.className = currentHarborLevelId === value ? "active" : "";
       button.textContent = value === "all" ? "全层" : level?.label ?? value;
       button.title = value === "all" ? "显示焦点范围内全部层级" : `${value} · ${level?.z_base_ft ?? 0} ft`;
@@ -1315,6 +1752,7 @@ function renderLayerControls(): void {
   values.forEach((value) => {
     const button = document.createElement("button");
     button.type = "button";
+    button.disabled = viewerState.experienceMode === "theatre";
     button.className = currentLayer === value ? "active" : "";
     button.textContent = value === "all" ? (currentScene === "city" && currentCityScope === "outdoor" ? "街区" : "全部") : currentScene === "underdark" ? `E${value}` : `L${value}`;
     button.addEventListener("click", () => {
@@ -1327,7 +1765,7 @@ function renderLayerControls(): void {
 }
 
 function renderHarborFocusControls(): void {
-  const active = currentScene === "harbor";
+  const active = currentScene === "harbor" && viewerState.experienceMode !== "theatre";
   harborFocusPanel.hidden = !active;
   if (!active) return;
   const levels = harborRuntime?.scene.levels ?? [];
@@ -1358,7 +1796,7 @@ function setHarborFocus(focus: string): void {
 }
 
 function renderCityScopeControls(): void {
-  const isCity = currentScene === "city";
+  const isCity = currentScene === "city" && viewerState.experienceMode !== "theatre";
   cityScopePanel.hidden = !isCity;
   if (!isCity) return;
   const building = cityBuildingById(currentCityScope);
@@ -1395,8 +1833,10 @@ function setCityScope(nextScope: CityScope): void {
 }
 
 function updateHud(): void {
+  syncViewerState();
   const name = currentScene === "church" ? "教堂" : currentScene === "city" ? "城市街区" : currentScene === "harbor" ? "潮钟港区 V2" : "幽暗地域";
-  hudScene.textContent = `${name} · ${currentMode === "dm" ? "DM" : "玩家"}`;
+  const experience = viewerState.experienceMode === "theatre" ? "剧场" : viewerState.experienceMode === "exploration" ? "探索" : "战术";
+  hudScene.textContent = `${name} · ${currentMode === "dm" ? "DM" : "玩家"} · ${experience}`;
   if ((currentScene === "city" || currentScene === "harbor") && cityNotice) {
     hudFilter.textContent = cityNotice;
     return;
@@ -1415,6 +1855,7 @@ function updateHud(): void {
 }
 
 function updateUi(): void {
+  syncViewerState();
   const church = currentScene === "church";
   const city = currentScene === "city";
   const harbor = currentScene === "harbor";
@@ -1422,7 +1863,7 @@ function updateUi(): void {
   sceneDescription.textContent = church
     ? churchSpec?.site.brief ?? "三层建筑、房间、楼梯与 DM 隐藏密室。"
     : city ? "街道、广场与 7 栋可进入建筑；切换内部战术范围。" : harbor ? "地表、塔楼、暗渠与密室；移动严格读取 runtime 导航图。" : "48×36 格的裂谷、桥梁、高地、遗迹与菌林。";
-  modeNote.textContent = church ? "独立模型" : "仅 DM 资产";
+  modeNote.textContent = church ? "独立模型 · 权限" : "当前仅 DM 资产";
   layerTitle.textContent = currentScene === "underdark" ? "高度" : harbor ? "层级" : "楼层";
   sceneButtons.forEach((button) => button.classList.toggle("active", button.dataset.scene === currentScene));
   modeButtons.forEach((button) => {
@@ -1434,6 +1875,7 @@ function updateUi(): void {
   renderLayerControls();
   renderCityScopeControls();
   renderHarborFocusControls();
+  renderExperienceUi();
   updateHud();
 }
 
@@ -1450,6 +1892,7 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
       currentHarborLevelId = "surface";
     }
   }
+  normalizeExperienceFocus();
   selectedToken = null;
   clearCityNotice();
   clearCellSelection();
@@ -1459,11 +1902,14 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
     await ensureData();
     const root = await loadModel(sceneAsset(currentScene, currentMode));
     if (request !== loadSequence) return;
+    restoreCutaway();
     modelHolder.clear();
     currentRoot = root;
     modelHolder.add(root);
+    buildSemanticCatalog(root);
     rebuildTacticalSurfaces();
     rebuildTokens();
+    applyRenderTuning();
     applyLayerFilter();
     if (sceneChanged) {
       const saved = cameraStates.get(currentScene);
@@ -1501,6 +1947,16 @@ modeButtons.forEach((button) => {
   });
 });
 
+experienceButtons.forEach((button) => {
+  button.addEventListener("click", () => setExperienceMode(button.dataset.experience as ExperienceMode));
+});
+
+[dmCutawayEnabled, dmCutawayOpacity, dmGridOpacity, dmFogDensity, dmExposure, dmTokenScale, dmShowDmOnly, dmShowHotspots].forEach((control) => {
+  control.addEventListener("input", updateDmTuningFromControls);
+  control.addEventListener("change", updateDmTuningFromControls);
+});
+dmQuality.addEventListener("change", updateDmTuningFromControls);
+
 fitButton.addEventListener("click", fitView);
 resetButton.addEventListener("click", resetView);
 cityReturn.addEventListener("click", () => setCityScope("outdoor"));
@@ -1518,7 +1974,7 @@ canvas.addEventListener("pointercancel", () => { pointerDown = null; });
 function resize(): void {
   const width = Math.max(1, viewport.clientWidth);
   const height = Math.max(1, viewport.clientHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setPixelRatio(pixelRatioForPreset());
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
@@ -1534,13 +1990,16 @@ let statStarted = performance.now();
 let statFrames = 0;
 renderer.setAnimationLoop((time) => {
   controls.update();
+  updateCutaway(time);
   renderer.render(world, camera);
   statFrames += 1;
   const elapsed = time - statStarted;
   if (elapsed >= 750) {
     const fps = Math.round((statFrames * 1000) / elapsed);
     const info = renderer.info.render;
+    lastFrameFps = fps;
     renderStats.textContent = `${fps} FPS · ${info.calls} calls · ${info.triangles.toLocaleString()} tris`;
+    updateDebugReadout();
     statFrames = 0;
     statStarted = time;
   }

@@ -57,6 +57,21 @@ h2 { margin: 2px 0 4px; font-size: 17px; }
 .segmented button { padding: 8px 7px; border-radius: 6px; font-size: 11px; font-weight: 750; }
 .segmented button.active { color: white; border-color: rgba(187,140,255,.38); background: rgba(128,76,204,.29); }
 .segmented button:disabled { opacity: .28; cursor: not-allowed; }
+.experience-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.experience-controls button { padding-inline: 4px; }
+.dm-settings-panel details { margin: -1px; }
+.dm-settings-panel summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none; font-size: 12px; font-weight: 800; }
+.dm-settings-panel summary::-webkit-details-marker { display: none; }
+.dm-settings-panel summary small { color: #627188; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.dm-settings-grid { display: grid; gap: 9px; margin-top: 11px; }
+.setting-toggle, .setting-range, .setting-select { display: grid; gap: 5px; color: #aebed2; font-size: 10px; }
+.setting-toggle { grid-template-columns: 14px minmax(0, 1fr); align-items: center; gap: 7px; }
+.setting-toggle input { accent-color: var(--cyan); }
+.setting-range > span, .setting-select { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
+.setting-range output { color: var(--cyan); font-variant-numeric: tabular-nums; }
+.setting-range input { width: 100%; accent-color: var(--violet); }
+.setting-select select { min-width: 72px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 5px; color: #dcecff; background: rgba(4, 8, 15, .84); font: inherit; }
+.debug-readout { margin: 11px 0 0; padding-top: 9px; border-top: 1px dashed rgba(130,156,190,.16); color: #74879f; font-size: 9px; line-height: 1.55; white-space: pre-line; font-variant-numeric: tabular-nums; }
 .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-grid button { min-width: 39px; padding: 7px 9px; border-color: var(--line); border-radius: 8px; font-size: 10px; font-weight: 750; }
 .chip-grid button.active { color: #081219; border-color: transparent; background: var(--cyan); }
