@@ -48,3 +48,20 @@ program spec
 
 当前四个 fixture 的质量分为 97–100。质量分是进入下一阶段的门槛，不代替后续的
 几何连通、D&D 规则、Blender 预算和真实浏览器视觉验收。
+
+## AdventureDirector 与 DND 接口边界
+
+`AdventureDirector` 消费冻结后的 program 和 DM profile，生成六阶段节奏、路线选项、
+环境互动以及四类未解析内容槽位：
+
+- `population`：NPC/阵营身份、活动区域与线索角色；
+- `encounters`：位置、难度、CR 意图范围、波次和增援角色；
+- `rewards`：风险引用、奖励等级、公开或 DM-only 可见性；
+- `hooks`：调查、控制、营救等任务目标接口。
+
+DM profile 当前包含队伍等级/人数、遭遇难度/密度/首领比例，以及奖励等级/隐藏比例。
+修改 profile 只重建 adventure/content section，不允许改变 SceneProgram 空间 hash。
+
+`DndContentAdapter` 是未来正式接入点。原型默认使用 `NullDndContentAdapter`：它原样
+保留槽位，明确声明不生成 statblock、不写外部项目，并支持未来在不重建几何的情况下
+重新解析 NPC、怪物和奖励。

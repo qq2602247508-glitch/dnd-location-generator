@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "scene_id": "dragonbone_rift_program",
+  "beats": 6,
+  "route_options": 4,
+  "interactions": 4,
+  "population_slots": 2,
+  "encounter_slots": 5,
+  "reward_slots": 5,
+  "hook_slots": 2,
+  "adventure_sha256": "9fcfbcf44df7a2669ddcd51825c1e5e0e5ccdad9fbf9e42ce4f5f1fcf5de7192"
+}

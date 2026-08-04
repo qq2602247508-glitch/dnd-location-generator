@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "scene_id": "sewer_dungeon_program",
+  "beats": 6,
+  "route_options": 4,
+  "interactions": 3,
+  "population_slots": 3,
+  "encounter_slots": 5,
+  "reward_slots": 5,
+  "hook_slots": 2,
+  "adventure_sha256": "51034e67635559960f3816a68475f69bed165d84f502127471d1f80cd1c9c457"
+}

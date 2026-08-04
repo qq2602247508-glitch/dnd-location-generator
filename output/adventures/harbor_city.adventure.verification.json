@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "scene_id": "harbor_city_program",
+  "beats": 6,
+  "route_options": 4,
+  "interactions": 3,
+  "population_slots": 3,
+  "encounter_slots": 5,
+  "reward_slots": 5,
+  "hook_slots": 2,
+  "adventure_sha256": "200c7c9c86beb4a8249c6edc59632b792305ba7dcd79d16da69fbfe245a528f3"
+}
