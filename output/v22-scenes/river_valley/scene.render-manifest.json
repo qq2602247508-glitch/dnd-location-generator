@@ -1,0 +1,60 @@
+{
+  "status": "generated",
+  "schema_version": "dnd-v22-render-manifest-1.0",
+  "scene_id": "river_valley_program",
+  "archetype": "wilderness",
+  "grid_file_sha256": "1d1b27bd7e33125a4541d3abb23a72c474211ec1838d0a6c967772a0519ea59a",
+  "grid_semantic_sha256": "81a43e2408e5f40f8c7ef2bd1d7a0d58207213b5ccc4185bbfea1ea86173fee0",
+  "input_manifest_sha256": "f595f8081fdeb43565bf61514749f6a996bc92d978a8790456b9ea3643d0e7f9",
+  "blender_version": "4.5.10 LTS",
+  "grid": {
+    "cell_size_ft": 5,
+    "connectivity": "orthogonal_4_plus_declared_links",
+    "coordinate_contract": "cell(row,col,level_id)->world_ft(col*5,-row*5,elevation)",
+    "height": 56,
+    "width": 64
+  },
+  "elevation_range_ft": [
+    0.0,
+    60.0
+  ],
+  "walkable_cells": 3292,
+  "prototype_objects": 186,
+  "estimated_draw_calls": 186,
+  "batched_boxes": 11619,
+  "mesh_vertices": 92952,
+  "object_kinds": {
+    "anchor": 2,
+    "feature": 5,
+    "grid": 17,
+    "landmark": 2,
+    "life_trace": 1,
+    "rock": 28,
+    "route": 4,
+    "surface": 57,
+    "terrain_cliff": 2,
+    "vegetation": 68
+  },
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 8087320,
+      "sha256": "f7f36f7853f55382971ce8e4b77ea4699a728f87ac4a324e14142554bf9f78a0"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 7377275,
+      "sha256": "6cbc16fe2b11c7b23a7e5de62ae5232a25cb68f6b754c7e22d3a1946f9212f0d"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 2167184,
+      "sha256": "64054bec2933a25827e45ff7edb1059b433ddeaeace9ba21db9e3601d7c33ab7"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1957359,
+      "sha256": "459f6c4f8dfe748602ac6b21f2937e8bb045515febe6abd61672457317b00b6e"
+    }
+  ]
+}
