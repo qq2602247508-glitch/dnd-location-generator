@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "scene_id": "sewer_dungeon_program",
+  "archetype": "infrastructure_dungeon",
+  "history_layers": 3,
+  "zones": 6,
+  "nodes": 6,
+  "routes": 5,
+  "flows": 3,
+  "landmarks": 2,
+  "tactical_directives": 3,
+  "quality_score": 97,
+  "program_sha256": "90d10b519e2e974a57af4140c9985b3d1715115f637ac952fbc8655b8bfebafc"
+}

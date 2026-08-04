@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "scene_id": "dragonbone_rift_program",
+  "archetype": "special_site",
+  "history_layers": 3,
+  "zones": 5,
+  "nodes": 6,
+  "routes": 5,
+  "flows": 2,
+  "landmarks": 2,
+  "tactical_directives": 4,
+  "quality_score": 100,
+  "program_sha256": "3cad6403e8a3dd835c0b6df55822b6a1130fe345082295f537cbb193490198a3"
+}

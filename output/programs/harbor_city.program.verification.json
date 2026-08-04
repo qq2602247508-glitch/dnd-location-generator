@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "scene_id": "harbor_city_program",
+  "archetype": "city_district",
+  "history_layers": 3,
+  "zones": 5,
+  "nodes": 5,
+  "routes": 5,
+  "flows": 4,
+  "landmarks": 2,
+  "tactical_directives": 3,
+  "quality_score": 97,
+  "program_sha256": "1f614d658cc2a8be4a29b2840973a9c226e9d5d0fbd549068a75920642ae8e09"
+}

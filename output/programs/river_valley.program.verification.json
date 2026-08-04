@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "scene_id": "river_valley_program",
+  "archetype": "wilderness",
+  "history_layers": 3,
+  "zones": 5,
+  "nodes": 5,
+  "routes": 4,
+  "flows": 3,
+  "landmarks": 2,
+  "tactical_directives": 3,
+  "quality_score": 97,
+  "program_sha256": "05225b83e2aeeb717247d49ea3ef7723c608350b7576963046727725538cca2b"
+}

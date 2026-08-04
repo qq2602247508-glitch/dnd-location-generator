@@ -112,6 +112,23 @@ python3 tests/verify_scene_v2_outputs.py
 正确显示家具和上下层楼梯，同时避免内部门泄漏到地表视图。架构与扩展规范见
 `docs/generator-v2-architecture.md`。
 
+### V2.2 场景规划层
+
+V2.2 在格子几何上游增加 `SceneProgram`。规划器先生成历史叠层、功能区、地标、
+人流/货流/水流、基础设施、主路/环路/秘密路线、阵营和战术意图，再由后续 realizer
+落到 plan/runtime。首批注册四类 planner：城镇、野外、基础设施地下城和不依赖房间的
+奇观战术场景。
+
+```bash
+python3 tests/verify_scene_programs.py
+python3 -m generator.v2.program_cli \
+  specs/programs/dragonbone_rift.json \
+  --out output/programs/dragonbone_rift.program.json
+```
+
+四个固定 seed fixture 均执行引用、路线选择、入口到目标、历史/地标/冒险节拍、
+特殊场景零房间依赖及字节级确定性验证。完整合同见 `docs/scene-program-v2.2.md`。
+
 ## 尚未接入
 
 - 现有数据库和 API；
