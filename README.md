@@ -303,6 +303,17 @@ python3 -m generator.v2.outdoor_composer_cli \
 可视化。`room_policy=optional_only` 保持与建筑/地下入口的兼容，不把户外强行做成
 房间列表。
 
+共享视觉层（第五阶段）：
+
+```bash
+python3 tests/verify_visual_packs.py
+```
+
+`generator/v2/visual_packs.py` 将 15 个 Visual Pack 统一解析为 `dnd-visual-plan-1.0`，
+为 Blender/Viewer 提供可复用的材质、陈设、语义对象、预算和 `far/mid/near/tactical`
+四视角证据。它按类别和 seed 组合视觉角色，不把港区、泵房、裂谷固化为三个专用
+生成器；视觉门禁仍独立于结构验证，默认最低证据分为 3/5。
+
 ### V2.3 一键地点编译器
 
 V2.3 新增 `LocationBrief -> pack resolver -> LocationProgram` 层。用户可以给出结构化

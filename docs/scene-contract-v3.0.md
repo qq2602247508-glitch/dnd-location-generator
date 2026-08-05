@@ -137,6 +137,27 @@ python3 -m generator.v2.outdoor_composer_cli \
 它可以复用同一合同生成河谷、龙骨裂谷或幽暗地域式开阔战场；旧样本仅是回归样本，
 不是视觉黄金标准。
 
+## Shared Visual Packs（共享视觉层）
+
+三大类 profile 都可以送入 `generator/v2/visual_packs.py`。解析器把注册的 15 个
+Visual Pack 组合成同一个 `dnd-visual-plan-1.0`，提供材质角色、陈设角色、语义对象、
+预算和四个镜头证据。它按类别、kind 和 seed 选择调色倾向，但不会复制出
+“港区专用/泵房专用/裂谷专用”三套封闭生成器。
+
+视觉计划固定要求：
+
+- `far`：构图、整体轮廓、街区/地形关系；
+- `mid`：道路、地块、路线和建筑界面；
+- `near`：材质、功能陈设和建筑/地形细节；
+- `tactical`：格子、掩体、高低差、楼梯/桥/洞口的可读性。
+
+结构 profile 通过不代表视觉合格；后续 Blender 门禁应把这四类证据分别评分，默认
+最低分为 3/5，并保留 seed 以便复现和对比迭代。
+
+```bash
+python3 tests/verify_visual_packs.py
+```
+
 ## 验证
 
 ```bash
