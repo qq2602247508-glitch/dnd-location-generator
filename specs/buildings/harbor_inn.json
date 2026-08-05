@@ -1,0 +1,9 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {"id": "harbor_inn", "name": "盐风旅店", "type": "inn", "seed": 20301002},
+  "scale": "medium",
+  "traits": ["domestic", "interior_rooms", "secret_route"],
+  "packs": ["lived_in_detail", "secret_detail"],
+  "floors": {"mode": "derived"},
+  "room_mix": ["taproom", "kitchen", "stable", "guest_room", "cellar", "back_room"]
+}

@@ -254,8 +254,24 @@ python3 -m generator.v2.scene_contract_cli \
 ```
 
 实现见 `generator/v2/scene_contract.py` 和 `docs/scene-contract-v3.0.md`。本阶段只冻结
-三类输入、Trait/Pack 注册和质量证据要求；建筑工厂、街区编排器和户外 realizer 将在
-后续阶段接入，避免把当前尚未达标的塔楼、庄园、下水道图误当成视觉黄金标准。
+三类输入、Trait/Pack 注册和质量证据要求；建筑工厂已作为第二阶段接入，街区编排器
+和户外 realizer 仍在后续阶段接入，避免把当前尚未达标的塔楼、庄园、下水道图误当成
+视觉黄金标准。
+
+建筑独立生成入口（第二阶段）：
+
+```bash
+python3 tests/verify_building_factory.py
+python3 -m generator.v2.building_factory_cli \
+  specs/buildings/darkflow_pump_house.json --resolve \
+  --out output/buildings/darkflow_pump_house.profile.json
+```
+
+`generator/v2/building_factory.py` 将塔楼、庄园、教堂、旅店、工坊、仓库、暗流泵房、
+矿井和神殿解析为可复用的建筑配方。建筑数量、房间语法、楼层和立体连接独立于街区
+编排；`DistrictComposer` 后续只消费建筑实例，不复制建筑生成逻辑。泵房配方保留
+渠道、检修猫道和泵机平台的 split-level 语法。当前阶段的通过标准是合同、确定性和
+规划层结构，视觉质量仍需 Blender 四视角门禁。
 
 ### V2.3 一键地点编译器
 

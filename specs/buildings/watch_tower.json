@@ -1,0 +1,9 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {"id": "watch_tower", "name": "旧海关瞭望塔", "type": "tower", "seed": 20301001},
+  "scale": "small",
+  "traits": ["multi_level", "vertical_landmark", "interior_rooms", "secret_route"],
+  "packs": ["masonry_defense", "landmark_detail"],
+  "floors": {"mode": "target", "value": 4},
+  "room_mix": ["entry", "guard", "landing", "archive", "quarters", "bell_chamber", "secret"]
+}
