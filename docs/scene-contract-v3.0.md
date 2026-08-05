@@ -87,6 +87,31 @@ python3 -m generator.v2.building_factory_cli \
 本阶段验证的是规划合同、可复现性和立体语法，不宣称 Blender 几何已经达到视觉
 黄金标准；建筑几何会在后续 Visual Packs / Blender 阶段通过四视角视觉门禁验收。
 
+## DistrictComposer（街区/城市编排入口）
+
+`DistrictComposer` 位于建筑工厂之上，负责“如何把建筑组成一个有城市感的地方”，
+而不是重新生成建筑本体。它从 district `SceneBrief` 推导：
+
+- 规模与密度驱动的建筑数量，不用固定七栋或固定模板；
+- 带弯折的主街、交叉街、货运水岸路和支巷，路网先于地块生成；
+- 不规则地块、建筑朝向和 frontage，让街区不再是整齐棋盘；
+- 地标宿主、远中近三层天际线和入口/人流/货流锚点；
+- 每栋建筑对应一个独立 `BuildingProfile`，可被后续 Blender 层替换或复用。
+
+输出是 `dnd-district-profile-1.0`。当前仍是规划层，不直接改写旧的
+`scene.plan.json` / `scene.runtime.json`，因此不会破坏已有 DND 场景。验证会检查路网
+连通、建筑与道路不重叠、地标在边界内、地块一一对应以及立面朝向存在变化。
+
+```bash
+python3 tests/verify_district_composer.py
+python3 -m generator.v2.district_composer_cli \
+  specs/districts/harbor_district_composer.json \
+  --out output/districts/harbor_district.profile.json
+```
+
+街区的视觉验收仍需远景（整体布局/天际线）、中景（街道和地块）、建筑近景以及
+战术视角四类证据；结构验证通过不等于视觉完成。
+
 ## 验证
 
 ```bash

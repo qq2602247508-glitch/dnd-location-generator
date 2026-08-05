@@ -273,6 +273,21 @@ python3 -m generator.v2.building_factory_cli \
 渠道、检修猫道和泵机平台的 split-level 语法。当前阶段的通过标准是合同、确定性和
 规划层结构，视觉质量仍需 Blender 四视角门禁。
 
+街区编排入口（第三阶段）：
+
+```bash
+python3 tests/verify_district_composer.py
+python3 -m generator.v2.district_composer_cli \
+  specs/districts/harbor_district_composer.json \
+  --out output/districts/harbor_district.profile.json
+```
+
+`generator/v2/district_composer.py` 负责规模/密度推导建筑数量、弯折路网、不规则地块、
+建筑朝向、地标宿主、天际线和人流/货流入口；建筑本体仍由 `BuildingFactory` 独立提供。
+这一步解决的是“建筑拼成街区后的整体感”，不会把固定样本数量或三种场景硬编码成
+黄金标准。当前阶段只输出确定性的规划 profile，Blender 视觉层和多视角门禁在后续阶段
+接入。
+
 ### V2.3 一键地点编译器
 
 V2.3 新增 `LocationBrief -> pack resolver -> LocationProgram` 层。用户可以给出结构化

@@ -1,0 +1,23 @@
+{
+  "schema_version": "dnd-scene-brief-1.0",
+  "scene": {"id": "harbor_district_composer", "name": "潮钟港区·街区编排", "seed": 20260805},
+  "category": "district",
+  "kind": "city_district",
+  "scale": "district",
+  "traits": ["urban_density", "waterfront", "landmark", "mixed_buildings", "street_network", "secret_route"],
+  "planning": {
+    "building_count": {"mode": "derived", "density": "varied"},
+    "landmarks": [
+      {"id": "beacon_tower", "name": "潮钟信号塔", "role": "orientation", "building_type": "tower"},
+      {"id": "tide_square", "name": "潮汐广场", "role": "junction"}
+    ],
+    "building_mix": [
+      {"id": "inn", "name": "盐风旅店", "weight": 3},
+      {"id": "warehouse", "name": "潮仓", "weight": 4},
+      {"id": "workshop", "name": "船匠工坊", "weight": 2},
+      {"id": "pump_house", "name": "暗流泵房", "weight": 1}
+    ],
+    "flows": ["people", "cargo", "water", "waste"]
+  },
+  "gameplay": {"focus": "district_routes", "encounter_density": "medium", "entry_points": ["landward_gate", "dock"]}
+}
