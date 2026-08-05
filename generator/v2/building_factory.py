@@ -94,6 +94,16 @@ BUILDING_CATALOG: dict[str, dict[str, Any]] = {
         "default_packs": ["hydrology", "utility_detail", "vertical_connections", "secret_detail"],
         "floor_policy": {"mode": "derived", "minimum": 2, "maximum": 4},
     },
+    "sewer": {
+        "family": "undercity_drainage",
+        "footprint": "tunnel_chambers_and_shaft",
+        "frontage": "maintenance_hatch",
+        "vertical_grammar": "culvert_loop_and_hatches",
+        "room_grammar": ["maintenance_loop", "sewage_channel", "junction", "pump_controls", "sealed_cistern", "smuggler_cache"],
+        "default_traits": ["infrastructure", "water_flow", "maintenance_loop", "secret_route", "multi_level"],
+        "default_packs": ["hydrology", "utility_detail", "vertical_connections", "secret_detail"],
+        "floor_policy": {"mode": "derived", "minimum": 1, "maximum": 3},
+    },
     "mine": {
         "family": "subterranean_extraction",
         "footprint": "tunnel_chambers_and_shaft",
@@ -113,6 +123,81 @@ BUILDING_CATALOG: dict[str, dict[str, Any]] = {
         "default_traits": ["interior_rooms", "multi_level", "secret_route", "vertical_landmark"],
         "default_packs": ["room_dressing", "vertical_connections", "secret_detail", "landmark_detail"],
         "floor_policy": {"mode": "derived", "minimum": 2, "maximum": 4},
+    },
+    # The catalog is deliberately broad: these recipes share the same
+    # renderer-neutral room/connector contract and are not scene-name
+    # branches.  A new brief can therefore ask for a lighthouse, library or
+    # fortress immediately; the Blender bridge composes its silhouette and
+    # dressing from the declared family/grammar.
+    "lighthouse": {
+        "family": "coastal_vertical_landmark",
+        "footprint": "compact_tapered",
+        "frontage": "sea_gate_and_service_door",
+        "vertical_grammar": "spiral_stair_to_lantern_room",
+        "room_grammar": ["entry", "keeper_quarters", "store", "landing", "lantern_room", "secret"],
+        "default_traits": ["multi_level", "vertical_landmark", "interior_rooms", "water_flow"],
+        "default_packs": ["vertical_connections", "landmark_detail", "room_dressing"],
+        "floor_policy": {"mode": "derived", "minimum": 3, "maximum": 6},
+    },
+    "fortress": {
+        "family": "defensive_compound",
+        "footprint": "courtyard_or_l",
+        "frontage": "gatehouse_and_battlement",
+        "vertical_grammar": "wall_walk_and_towers",
+        "room_grammar": ["gatehouse", "guard", "armory", "courtyard", "command", "quarters", "secret"],
+        "default_traits": ["multi_level", "fortification", "interior_rooms", "secret_route"],
+        "default_packs": ["masonry_defense", "vertical_connections", "room_dressing", "secret_detail"],
+        "floor_policy": {"mode": "derived", "minimum": 2, "maximum": 4},
+    },
+    "library": {
+        "family": "scholarly_civic",
+        "footprint": "courtyard_or_l",
+        "frontage": "formal_steps",
+        "vertical_grammar": "gallery_stair_and_archive_lift",
+        "room_grammar": ["entry", "reading_hall", "gallery", "archive", "scriptorium", "vault", "secret"],
+        "default_traits": ["multi_level", "interior_rooms", "secret_route"],
+        "default_packs": ["room_dressing", "vertical_connections", "secret_detail", "landmark_detail"],
+        "floor_policy": {"mode": "derived", "minimum": 2, "maximum": 4},
+    },
+    "barracks": {
+        "family": "military_quarters",
+        "footprint": "street_front_courtyard",
+        "frontage": "training_yard",
+        "vertical_grammar": "stair_to_bunks_and_watch",
+        "room_grammar": ["entry", "barracks", "armory", "mess", "yard", "command", "cache"],
+        "default_traits": ["multi_level", "interior_rooms", "fortification"],
+        "default_packs": ["room_dressing", "masonry_defense", "vertical_connections"],
+        "floor_policy": {"mode": "derived", "minimum": 1, "maximum": 3},
+    },
+    "tavern": {
+        "family": "street_front_commerce",
+        "footprint": "street_front_courtyard",
+        "frontage": "main_street_and_sign",
+        "vertical_grammar": "public_stair_to_guest_rooms",
+        "room_grammar": ["taproom", "kitchen", "stage", "guest_room", "cellar", "back_room", "secret"],
+        "default_traits": ["domestic", "interior_rooms", "secret_route"],
+        "default_packs": ["room_dressing", "lived_in_detail", "secret_detail"],
+        "floor_policy": {"mode": "derived", "minimum": 1, "maximum": 3},
+    },
+    "ruin": {
+        "family": "weathered_remnant",
+        "footprint": "courtyard_or_l",
+        "frontage": "collapsed_entry",
+        "vertical_grammar": "broken_levels_and_ladders",
+        "room_grammar": ["entry", "collapsed_hall", "cache", "vault", "crypt", "secret"],
+        "default_traits": ["interior_rooms", "multi_level", "ruin", "secret_route"],
+        "default_packs": ["ruin_detail", "vertical_connections", "secret_detail", "room_dressing"],
+        "floor_policy": {"mode": "derived", "minimum": 1, "maximum": 3},
+    },
+    "cavern": {
+        "family": "subterranean_natural_chamber",
+        "footprint": "tunnel_chambers_and_shaft",
+        "frontage": "cave_mouth",
+        "vertical_grammar": "ledges_and_rope_bridges",
+        "room_grammar": ["cave_mouth", "ledge", "fungal_grotto", "underground_lake", "shrine", "secret"],
+        "default_traits": ["cave", "multi_level", "interior_rooms", "secret_route"],
+        "default_packs": ["rock_formation", "terrain_detail", "vertical_connections", "secret_detail"],
+        "floor_policy": {"mode": "derived", "minimum": 1, "maximum": 4},
     },
 }
 
@@ -214,4 +299,3 @@ def resolve_building_profile(brief: Mapping[str, Any]) -> dict[str, Any]:
         },
         "source_brief_sha256": building_brief_sha256(brief),
     }
-

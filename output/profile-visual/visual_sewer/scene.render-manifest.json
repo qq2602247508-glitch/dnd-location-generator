@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_undertide_sewer",
+    "name": "潮下排水网·视觉验证",
+    "type": "sewer",
+    "seed": 20260813
+  },
+  "category": "building",
+  "profile_hash": "3be0490d8a8b231e41c082ce85f8b77a211264a2506b0e3c75c9d61fef02c07d",
+  "visual_plan_hash": "43366d77d7a34a6c519256512d4a17243991d73cdb4ea5eaf96aa1beac4e8260",
+  "prototype_objects": 169,
+  "mesh_vertices": 2120,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 345644,
+      "sha256": "46a8d1a155ec550bb54b63a984c4baf8165f82fdce43a30985df9a9e6d80c6de"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 144197,
+      "sha256": "524eb53e7c8697553f21a201ada8f2a8d980e376798d4725c29ef89e55f6c6b0"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1212480,
+      "sha256": "9e5dc948c65f986fc323da035074c697f6ea27f00be11d3770b9042ddd7ca202"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1048581,
+      "sha256": "537c2ab3b003e57375bffdf60640e192f32faac96948110afd28614af808b9d7"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

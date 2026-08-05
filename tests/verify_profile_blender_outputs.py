@@ -14,6 +14,9 @@ FIXTURES = {
     "harbor_district": "district",
     "silverfall_outdoor": "outdoor",
     "darkflow_pump_house": "building",
+    "visual_tower": "building",
+    "visual_manor": "building",
+    "visual_sewer": "building",
 }
 
 

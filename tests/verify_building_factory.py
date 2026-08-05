@@ -46,7 +46,7 @@ def main() -> None:
         source = json.loads(path.read_text(encoding="utf-8"))
         validate_building_brief(source)
         fixture_profiles.append(resolve_building_profile(source))
-    if {profile["building"]["type"] for profile in fixture_profiles} != {"tower", "inn", "pump_house"}:
+    if {profile["building"]["type"] for profile in fixture_profiles} != {"tower", "inn", "pump_house", "manor", "sewer"}:
         raise AssertionError("standalone building fixture cohort is incomplete")
     if next(profile for profile in fixture_profiles if profile["building"]["type"] == "pump_house")["floor_policy"] != {"mode": "target", "value": 3}:
         raise AssertionError("pump house floor target was not preserved")

@@ -4,10 +4,10 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "tower" | "manor" | "sewer" | "river_valley" | "sewer_dungeon" | "dragonbone_rift" | "profile_harbor" | "profile_outdoor" | "profile_pump_house";
+type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "tower" | "manor" | "sewer" | "river_valley" | "sewer_dungeon" | "dragonbone_rift" | "profile_harbor" | "profile_outdoor" | "profile_pump_house" | "profile_visual_tower" | "profile_visual_manor" | "profile_visual_sewer";
 type V22SceneKey = "river_valley" | "sewer_dungeon" | "dragonbone_rift";
 type RuntimeSceneKey = "harbor" | "old_clock" | "tower" | "manor" | "sewer";
-type ProfileSceneKey = "profile_harbor" | "profile_outdoor" | "profile_pump_house";
+type ProfileSceneKey = "profile_harbor" | "profile_outdoor" | "profile_pump_house" | "profile_visual_tower" | "profile_visual_manor" | "profile_visual_sewer";
 type ViewMode = "dm" | "player";
 type ExperienceMode = "theatre" | "exploration" | "tactical";
 type QualityPreset = "quality" | "balanced" | "performance";
@@ -497,6 +497,33 @@ const PROFILE_SCENES: Record<ProfileSceneKey, ProfileSceneDescriptor> = {
     inputAsset: "profile-darkflow-pump-house.input.json",
     manifestAsset: "profile-darkflow-pump-house.render-manifest.json",
     camera: { position: new THREE.Vector3(7, 7, 8), target: new THREE.Vector3(1.3, 1.6, -1.3) },
+  },
+  profile_visual_tower: {
+    name: "通用塔楼·独立验证",
+    description: "共享建筑语法的塔楼样本：四层、中央竖向连接、值守/档案/钟室与密室，不依赖具体场景特判。",
+    category: "building",
+    asset: "profile-visual-tower.glb",
+    inputAsset: "profile-visual-tower.input.json",
+    manifestAsset: "profile-visual-tower.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.4, 9.2, 8.6), target: new THREE.Vector3(1.4, 2.0, -1.4) },
+  },
+  profile_visual_manor: {
+    name: "通用庄园·独立验证",
+    description: "共享建筑语法的庄园样本：三层公共/家族/服务空间、楼梯、庭院、壁炉与密室。",
+    category: "building",
+    asset: "profile-visual-manor.glb",
+    inputAsset: "profile-visual-manor.input.json",
+    manifestAsset: "profile-visual-manor.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.8, 8.0, 9.0), target: new THREE.Vector3(1.45, 1.7, -1.5) },
+  },
+  profile_visual_sewer: {
+    name: "通用下水道·独立验证",
+    description: "共享建筑语法的下水道样本：环形渠、检修道、泵控节点、竖向检修与走私暗室。",
+    category: "building",
+    asset: "profile-visual-sewer.glb",
+    inputAsset: "profile-visual-sewer.input.json",
+    manifestAsset: "profile-visual-sewer.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.8, 7.0, 9.0), target: new THREE.Vector3(1.45, 0.65, -1.5) },
   },
 };
 

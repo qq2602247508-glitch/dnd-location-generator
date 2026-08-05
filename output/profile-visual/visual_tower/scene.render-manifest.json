@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_watch_tower",
+    "name": "旧海关瞭望塔·视觉验证",
+    "type": "tower",
+    "seed": 20260811
+  },
+  "category": "building",
+  "profile_hash": "3364ca306f894eebb232a8126bd348357300fb82e74bd85682e2b8803aa63f4a",
+  "visual_plan_hash": "b10d31d4a103a684a5d328d23a136d022b9e2b8250e35f8f43a74b5bc0e7b81a",
+  "prototype_objects": 257,
+  "mesh_vertices": 3064,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 511628,
+      "sha256": "5f31fe52e9679a3cbeaad05f8df1ca93d78b6d1e2f642bc78a2e410aaaa4c060"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 174261,
+      "sha256": "d55abc22e7af5a989dca368cad8b4680295a8865bcc5eed161bfd09536433d12"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1223431,
+      "sha256": "64adc7b801d020a8724f847733205ae08c79dfd94cc4822be91f3838fd1b91be"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1041400,
+      "sha256": "416b86fdd9b8f26f702e91fc07f7169b790063f982cc32470e2062edf628b095"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

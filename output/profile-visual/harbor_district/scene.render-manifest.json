@@ -14,22 +14,22 @@
     {
       "path": "scene.glb",
       "bytes": 7926804,
-      "sha256": "3ed571063f9f88a7b0431ed7d38b71946a82491f47fe9cb2288a8c7bf5cda6d9"
+      "sha256": "1ff89a869af5dcb41ba80f4d6931d134063806a706985ff3a45dc7c86f7c5ff2"
     },
     {
       "path": "scene-prototype.blend",
-      "bytes": 1688411,
-      "sha256": "5cdb9e4a45758789970934857d533876483be25ebac7fb5014a0f5ffa031d002"
+      "bytes": 1686759,
+      "sha256": "caebf8b94726934294b57d45215048e5c525336f1f50a6565726fec8c393b770"
     },
     {
       "path": "scene-isometric.png",
       "bytes": 1465439,
-      "sha256": "570a1d524eafdfc7421f9893e8c9e17bbd01391d78f504cae8fd1e1c9d75a459"
+      "sha256": "1cafaf78044c49ef4e686db76c707100968fb4bd6707d9474f07531822cebb0c"
     },
     {
       "path": "scene-topdown.png",
       "bytes": 1197085,
-      "sha256": "091fe85e6fa4f1df575620c1b390d18687c9c747e1bfb29a42826ab7ed3df626"
+      "sha256": "3221333ed0e4ff1796b8e9a32fecd117b50c44dab71c5858a722de6efb27d073"
     }
   ],
   "visual_evidence_views": [

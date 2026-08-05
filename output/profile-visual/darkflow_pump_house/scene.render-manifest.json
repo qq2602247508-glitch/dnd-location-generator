@@ -9,28 +9,28 @@
   "category": "building",
   "profile_hash": "1c1af4e5fa93c2740c18558a0a66e201bc2196f9d4c9e3fa26891bfb02a2c208",
   "visual_plan_hash": "50f6c7443b7cb51390ac141009330d8d6ab63d57da005e05dfe6c6cc5c3c0888",
-  "prototype_objects": 97,
-  "mesh_vertices": 1432,
+  "prototype_objects": 203,
+  "mesh_vertices": 2376,
   "outputs": [
     {
       "path": "scene.glb",
-      "bytes": 208924,
-      "sha256": "065c36d1fa1ae48c774ce4f440e05bb95af5880df0ffdb182a3592606be41e44"
+      "bytes": 402760,
+      "sha256": "762499278530aad3e131ef0637384def0915cb0f8cddefd3a3ebcf3e7db7c720"
     },
     {
       "path": "scene-prototype.blend",
-      "bytes": 118840,
-      "sha256": "c1a7a310de34d65aabbde086f9bd51e07e9f5804dff9dcacc0545801b8a51f0e"
+      "bytes": 154732,
+      "sha256": "59b80e382b4ada15d3c43353ccdb87b17886d0904fccb93bf3e87682f57af7ed"
     },
     {
       "path": "scene-isometric.png",
-      "bytes": 1206901,
-      "sha256": "6bffe67cd844d950a3e7dac7af9cbfa05244299b6ef2afa5c30a0ea4bb1bd269"
+      "bytes": 1240036,
+      "sha256": "cb45a6972834d82fafd63861b44057a89db70abad42f6d6964d1cb37c3f16b14"
     },
     {
       "path": "scene-topdown.png",
-      "bytes": 1037026,
-      "sha256": "d7ac8220bc0fb8f4ee08c29b55d710b6d51df8136f22686a2ec11dcb9dd59945"
+      "bytes": 1043111,
+      "sha256": "fb927486648d98b90a92eb7df88d6d519212031dde084e5e590ff799997318f4"
     }
   ],
   "visual_evidence_views": [

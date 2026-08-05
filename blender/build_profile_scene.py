@@ -163,6 +163,45 @@ def curve(name: str, points: list[tuple[float, float, float]], material_id: str,
     return tag(obj, kind, material_id, **extras)
 
 
+def ribbon_mesh(name: str, points: list[tuple[float, float, float]], widths: list[float] | float, material_id: str, kind: str, **extras: Any) -> bpy.types.Object | None:
+    """Create a low, walkable strip that follows a route or watercourse.
+
+    Curves are useful for markers and pipes, but a river rendered as a thick
+    tube reads like a cable.  A ribbon keeps the same renderer-neutral input
+    while exposing width, banks and a continuous tactical surface.
+    """
+    if len(points) < 2:
+        return None
+    if isinstance(widths, (int, float)):
+        width_values = [float(widths)] * len(points)
+    else:
+        width_values = [float(value) for value in widths]
+        if len(width_values) != len(points):
+            width_values = [width_values[min(index, len(width_values) - 1)] for index in range(len(points))]
+    left: list[tuple[float, float, float]] = []
+    right: list[tuple[float, float, float]] = []
+    for index, (x, y, z) in enumerate(points):
+        before = points[max(0, index - 1)]
+        after = points[min(len(points) - 1, index + 1)]
+        dx, dy = after[0] - before[0], after[1] - before[1]
+        length = math.hypot(dx, dy) or 1.0
+        nx, ny = -dy / length, dx / length
+        half = max(.025, width_values[index] / 2)
+        left.append((x + nx * half, y + ny * half, z))
+        right.append((x - nx * half, y - ny * half, z))
+    vertices = left + right
+    faces: list[tuple[int, int, int, int]] = []
+    for index in range(len(points) - 1):
+        faces.append((index, index + 1, len(points) + index + 1, len(points) + index))
+    mesh = bpy.data.meshes.new(f"{name}_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    mesh.materials.append(MATERIALS[material_id])
+    return tag(obj, kind, material_id, **extras)
+
+
 def prism_polygon(name: str, polygon: list[list[int]], top_z: float, bottom_z: float, material_id: str, kind: str, **extras: Any) -> None:
     """Create a solid extruded polygon so terrain and lots have readable sides."""
     if len(polygon) < 3:
@@ -370,6 +409,49 @@ def add_battlements(prefix: str, center: tuple[float, float, float], width: floa
         cylinder(f"{prefix}_Merlon_{index}", (center[0] + dx * width, center[1] + dy * depth, z), .07, .28, material_id, "roof_detail", **extras)
 
 
+def add_room_shell(prefix: str, center: tuple[float, float], width: float, depth: float, z: float, material_id: str = "wall", **extras: Any) -> None:
+    """Add a readable room boundary without blocking the cutaway view.
+
+    Full-height interior walls made the first generic buildings look like
+    empty boxes from the isometric camera.  Waist-high split walls retain the
+    room plan, doorway gap and cover information while keeping furniture and
+    vertical connectors visible across every floor.
+    """
+    cx, cy = center
+    wall_h, wall_t = .22, .055
+    box(f"{prefix}_North", (cx, cy + depth * .46, z + wall_h / 2), (width, wall_t, wall_h), material_id, "room_partition", **extras)
+    box(f"{prefix}_West", (cx - width * .46, cy, z + wall_h / 2), (wall_t, depth * .46, wall_h), material_id, "room_partition", **extras)
+    box(f"{prefix}_East", (cx + width * .46, cy, z + wall_h / 2), (wall_t, depth * .46, wall_h), material_id, "room_partition", **extras)
+    # A short return on the south side implies the doorway rather than sealing
+    # the room with a fourth wall.
+    box(f"{prefix}_SouthL", (cx - width * .31, cy - depth * .46, z + wall_h / 2), (width * .30, wall_t, wall_h), material_id, "room_partition", **extras)
+    box(f"{prefix}_SouthR", (cx + width * .31, cy - depth * .46, z + wall_h / 2), (width * .30, wall_t, wall_h), material_id, "room_partition", **extras)
+
+
+def add_window_lights(prefix: str, center: tuple[float, float], width: float, depth: float, z: float, count: int, *, material_id: str = "window", **extras: Any) -> None:
+    """Place paired facade lights on two sides of a generic building floor."""
+    count = max(1, int(count))
+    for index in range(count):
+        ratio = (index + 1) / (count + 1)
+        x = center[0] - width * .42 + width * .84 * ratio
+        box(f"{prefix}_Front_{index}", (x, center[1] - depth * .485, z), (width * .065, .025, .11), material_id, "window_light", **extras)
+        box(f"{prefix}_Back_{index}", (x, center[1] + depth * .485, z), (width * .065, .025, .11), material_id, "window_light", **extras)
+    for side in (-1, 1):
+        for index in range(max(1, count // 2)):
+            ratio = (index + 1) / (max(1, count // 2) + 1)
+            y = center[1] - depth * .38 + depth * .76 * ratio
+            box(f"{prefix}_Side_{side}_{index}", (center[0] + side * width * .485, y, z), (.025, depth * .065, .11), material_id, "window_light", **extras)
+
+
+def add_arch_ribs(prefix: str, center: tuple[float, float], width: float, depth: float, z: float, count: int, *, material_id: str = "stone_light", **extras: Any) -> None:
+    """Cross-ribs and hanging lamps give tunnels a volume, not a flat stripe."""
+    for index in range(max(2, int(count))):
+        ratio = index / max(1, count - 1)
+        y = center[1] - depth * .38 + depth * .76 * ratio
+        cylinder_between(f"{prefix}_Rib_{index}", (center[0] - width * .43, y, z), (center[0] + width * .43, y, z), .035, material_id, "arch_rib", **extras)
+        add_lamp_post(f"{prefix}_Lamp_{index}", (center[0], y, z - .20), .22, **extras)
+
+
 def add_road_surfaces() -> None:
     boxes: list[tuple[tuple[float, float, float], tuple[float, float, float]]] = []
     for road in PROFILE.get("roads", []):
@@ -409,9 +491,12 @@ def add_district_building(building: dict[str, Any]) -> None:
     landmark = bool(building.get("is_landmark"))
     style = {
         "tower": {"wall": "stone_light", "roof": "roof", "roof_kind": "battlement", "accent": "accent"},
+        "lighthouse": {"wall": "stone_light", "roof": "roof", "roof_kind": "battlement", "accent": "window"},
+        "fortress": {"wall": "stone_light", "roof": "roof", "roof_kind": "battlement", "accent": "accent"},
         "warehouse": {"wall": "wall", "roof": "roof", "roof_kind": "gable", "accent": "wood"},
         "workshop": {"wall": "stone_light", "roof": "roof", "roof_kind": "gable", "accent": "wood"},
         "inn": {"wall": "stone_light", "roof": "roof", "roof_kind": "gable", "accent": "wood"},
+        "tavern": {"wall": "stone_light", "roof": "roof", "roof_kind": "gable", "accent": "wood"},
         "pump_house": {"wall": "wall", "roof": "roof", "roof_kind": "flat", "accent": "metal"},
     }.get(building_type, {"wall": "wall", "roof": "roof", "roof_kind": "gable", "accent": "wood"})
     # A low plinth and four perimeter wall runs create a building volume while
@@ -419,7 +504,7 @@ def add_district_building(building: dict[str, Any]) -> None:
     box(f"Plinth_{building_id}", (center[0], center[1], .10), (width * 1.04, depth * 1.04, .20), "road", "building_plinth", building_id=building_id, building_type=building_type)
     for floor in range(floors):
         z = .18 + floor * .68
-        wall_h = .52
+        wall_h = .42 if building_type in {"tower", "lighthouse", "fortress", "manor", "church", "temple"} else .52
         wall_t = .10
         box(f"FrontWall_{building_id}_{floor}", (center[0], center[1] - depth / 2 + wall_t / 2, z + wall_h / 2), (width, wall_t, wall_h), style["wall"], "facade", building_id=building_id, building_type=building_type, floor=floor + 1)
         box(f"BackWall_{building_id}_{floor}", (center[0], center[1] + depth / 2 - wall_t / 2, z + wall_h / 2), (width, wall_t, wall_h), style["wall"], "facade", building_id=building_id, building_type=building_type, floor=floor + 1)
@@ -427,6 +512,7 @@ def add_district_building(building: dict[str, Any]) -> None:
         box(f"SideWallR_{building_id}_{floor}", (center[0] + width / 2 - wall_t / 2, center[1], z + wall_h / 2), (wall_t, depth * .76, wall_h), style["wall"], "facade", building_id=building_id, building_type=building_type, floor=floor + 1)
         box(f"FloorBand_{building_id}_{floor}", (center[0], center[1], z), (width * .92, depth * .92, .08), style["accent"], "floor_band", building_id=building_id, floor=floor + 1)
         add_window_row(f"Windows_{building_id}_{floor}", (center[0], center[1] - depth / 2 - .012, z + .26), width * .70, .16, max(2, int(fw // 2)), building_id=building_id, floor=floor + 1)
+        add_window_lights(f"WindowLights_{building_id}_{floor}", center[:2], width, depth, z + .28, max(2, int(fw // 2)), building_id=building_id, floor=floor + 1)
     # Entrance, loading frontage and type-neutral dressing packs.
     box(f"Door_{building_id}", (center[0], center[1] - depth / 2 - .025, .30), (max(.20, width * .18), .08, .42), "wood", "door", building_id=building_id, building_type=building_type)
     if building_type in {"warehouse", "workshop", "pump_house"}:
@@ -439,7 +525,7 @@ def add_district_building(building: dict[str, Any]) -> None:
         add_battlements(f"Roof_{building_id}", center, width, depth, height + .34, style["accent"], building_id=building_id)
     else:
         box(f"Roof_{building_id}", (center[0], center[1], height + .12), (width * 1.06, depth * 1.06, .16), style["roof"], "roof", building_id=building_id, building_type=building_type)
-    if landmark or building_type == "tower":
+    if landmark or building_type in {"tower", "lighthouse", "fortress"}:
         cylinder(f"LandmarkCap_{building_id}", (center[0], center[1], height + .56), max(.13, min(width, depth) * .18), .60, "accent", "landmark", building_id=building_id, role="orientation")
         add_lamp_post(f"LandmarkLamp_{building_id}", (center[0], center[1] - depth * .58, .55), .92, building_id=building_id)
 
@@ -511,11 +597,21 @@ def add_outdoor() -> None:
     cells_by_band: dict[str, list[tuple[int, int, float]]] = {str(band["id"]): [] for band in bands}
     TERRAIN_HEIGHTS.clear()
     TERRAIN_COVERS.clear()
+    seed = int(SCENE.get("seed", 0))
+    # Domain-warp the planner's polygons before sampling them.  A straight
+    # elevation polygon is a planning intent, not a literal contour line;
+    # cross-axis terms make the same grammar work for valleys, tundra, karst
+    # and volcanic shelves without hard-coded scene names.
     for row in range(HEIGHT):
         for col in range(WIDTH):
-            seed = int(SCENE.get("seed", 0))
-            warp_row = row + .5 + math.sin((col + seed % 101) * .12) * 1.35
-            warp_col = col + .5 + math.cos((row + seed % 79) * .11) * 1.35
+            warp_row = row + .5
+            warp_row += math.sin((col + seed % 101) * .085 + row * .035) * 8.2
+            warp_row += math.sin((row + col + seed % 37) * .17) * 2.15
+            warp_row += math.cos((row - col + seed % 53) * .075) * 1.65
+            warp_col = col + .5
+            warp_col += math.cos((row + seed % 79) * .080 + col * .028) * 7.0
+            warp_col += math.cos((row - col + seed % 43) * .16) * 1.85
+            warp_col += math.sin((row + col + seed % 67) * .065) * 1.55
             selected = next((band for band in ranked_bands if point_in_polygon(warp_row, warp_col, band.get("polygon", []))), None)
             if selected is None:
                 selected = next((band for band in ranked_bands if point_in_polygon(row + .5, col + .5, band.get("polygon", []))), None)
@@ -525,11 +621,32 @@ def add_outdoor() -> None:
             # Low-frequency deterministic relief breaks the unnaturally straight
             # planner bands without changing their intended elevation tiers.
             cover = str(selected.get("cover", ""))
-            relief = 0.0 if cover == "shallow_water" else (math.sin((col + int(SCENE.get("seed", 0)) % 97) * .12) + math.cos((row + int(SCENE.get("seed", 0)) % 83) * .09)) * .018
+            relief = 0.0 if cover == "shallow_water" else (
+                math.sin((col + seed % 97) * .105 + row * .023)
+                + math.cos((row + seed % 83) * .082 - col * .019)
+                + math.sin((row + col + seed % 31) * .19) * .45
+            ) * .032
+            # Rock shelves and talus catch more light and should not look like
+            # perfectly level coloured carpets from the far camera.
+            if cover in {"exposed_rock", "broken_boulder"}:
+                relief += math.sin((row - col + seed % 47) * .14) * .025
             top_z = base_z + relief
             cells_by_band[str(selected["id"])].append((row, col, top_z))
             TERRAIN_HEIGHTS[(row, col)] = top_z
             TERRAIN_COVERS[(row, col)] = cover
+    # Ease only the cells adjacent to a tier boundary.  This turns a hard
+    # stack of rectangular shelves into a readable tactical slope while
+    # retaining clear height differences in the far view.
+    raw_heights = dict(TERRAIN_HEIGHTS)
+    for (row, col), top_z in raw_heights.items():
+        neighbours = [raw_heights.get((row + dr, col + dc)) for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1))]
+        neighbours = [value for value in neighbours if value is not None]
+        if not neighbours:
+            continue
+        average = sum(neighbours) / len(neighbours)
+        delta = average - top_z
+        if abs(delta) > .12:
+            TERRAIN_HEIGHTS[(row, col)] = top_z + delta * .34
     cover_material = {
         "exposed_rock": "stone_light", "sparse_pine": "ground", "broken_boulder": "wall",
         "wet_grass": "green", "shallow_water": "water", "pine_forest": "green",
@@ -559,7 +676,10 @@ def add_outdoor() -> None:
     for material_id, walls in cliff_groups.items():
         terrain_cliff_mesh(f"TerrainCliffs_{material_id}", walls, material_id, wall_count=len(walls), pick_role="height_boundary")
     grid_cells = [(row, col, z) for (row, col), z in TERRAIN_HEIGHTS.items() if TERRAIN_COVERS.get((row, col)) != "shallow_water"]
-    add_tactical_grid(grid_cells, "OutdoorTacticalGrid", opacity_scale=.55)
+    # Keep the square grid available for tactical play, but let the far view
+    # read rock, vegetation and water first.  Buildings retain their stronger
+    # deck grid because it is part of the architectural grammar.
+    add_tactical_grid(grid_cells, "OutdoorTacticalGrid", opacity_scale=.32)
     for water in PROFILE.get("terrain", {}).get("watercourses", []):
         points = []
         point_count = max(1, len(water.get("points", [])) - 1)
@@ -568,10 +688,39 @@ def add_outdoor() -> None:
         for index, (row, col) in enumerate(water.get("points", [])):
             z = (source + (mouth - source) * index / point_count) * Z_SCALE + .08
             points.append(point(row, col, z))
-        curve(f"Water_{water['id']}", points, "water", "watercourse", bevel=max(.09, int(water.get("width_cells", 3)) * CELL * .18), source_elevation_ft=source, mouth_elevation_ft=mouth)
-        curve(f"WaterEdge_{water['id']}", [(x, y + .09, z + .02) for x, y, z in points], "water_edge", "bank", bevel=.035, water_id=water["id"])
+        width = max(CELL * 1.25, int(water.get("width_cells", 3)) * CELL * .72)
+        # The ribbon is the playable river surface.  Keep a fine centreline
+        # only as flow evidence; the old all-tube representation looked like a
+        # string of pipes at overview scale.
+        ribbon_mesh(f"Water_{water['id']}", points, width, "water", "watercourse", width_cells=water.get("width_cells", 3), source_elevation_ft=source, mouth_elevation_ft=mouth)
+        bank_left: list[tuple[float, float, float]] = []
+        bank_right: list[tuple[float, float, float]] = []
+        for index, (x, y, z) in enumerate(points):
+            before = points[max(0, index - 1)]
+            after = points[min(len(points) - 1, index + 1)]
+            dx, dy = after[0] - before[0], after[1] - before[1]
+            length = math.hypot(dx, dy) or 1.0
+            nx, ny = -dy / length, dx / length
+            bank_left.append((x + nx * width * .48, y + ny * width * .48, z + .028))
+            bank_right.append((x - nx * width * .48, y - ny * width * .48, z + .032))
+        curve(f"WaterBankL_{water['id']}", bank_left, "water_edge", "bank", bevel=.028, side="left", water_id=water["id"])
+        curve(f"WaterBankR_{water['id']}", bank_right, "water_edge", "bank", bevel=.028, side="right", water_id=water["id"])
+        curve(f"WaterFlow_{water['id']}", points, "foam", "flow_detail", bevel=.018, water_id=water["id"])
         for index, (x, y, z) in enumerate(points[::max(1, len(points) // 8)]):
-            cylinder(f"Foam_{water['id']}_{index}", (x, y, z + .035), .055, .025, "foam", "flow_detail", water_id=water["id"])
+            cylinder(f"Foam_{water['id']}_{index}", (x, y, z + .045), .045, .022, "foam", "flow_detail", water_id=water["id"])
+        # A large elevation drop should read as a waterfall, even when the
+        # planner gives a long interpolated profile rather than explicit drop
+        # points.  The curtain is placed on the first steep third so it becomes
+        # a landmark instead of a generic blue line.
+        if abs(source - mouth) >= 18 and len(points) >= 4:
+            drop_index = max(1, min(len(points) - 2, len(points) // 3))
+            wx, wy, wz = points[drop_index]
+            before, after = points[drop_index - 1], points[drop_index + 1]
+            angle = math.atan2(after[1] - before[1], after[0] - before[0])
+            curtain_height = max(.55, abs(source - mouth) * Z_SCALE * .22)
+            curtain = box(f"WaterfallCurtain_{water['id']}", (wx, wy, wz + curtain_height * .42), (width * 1.15, .10, curtain_height), "water", "waterfall", water_id=water["id"], drop_ft=abs(source - mouth) / 3)
+            curtain.rotation_euler[2] = angle
+            cylinder(f"WaterfallPool_{water['id']}", (wx, wy, wz + .035), width * .36, .06, "foam", "flow_detail", water_id=water["id"], role="fall_pool")
         for index, (before, after) in enumerate(zip(points, points[1:])):
             if abs(before[2] - after[2]) > .16:
                 cylinder_between(f"Waterfall_{water['id']}_{index}", before, after, .10, "water", "waterfall", water_id=water["id"])
@@ -600,6 +749,16 @@ def add_outdoor() -> None:
                 mix = position - left
                 elevations.append(profile[left] * (1 - mix) + profile[right] * mix)
         points = [point(row, col, elevation * Z_SCALE + .14) for (row, col), elevation in zip(route_points, elevations)]
+        if route.get("role") == "primary":
+            # A route needs a physical surface for tactical play, not only an
+            # emissive line.  Width is derived from traversal and remains
+            # reusable for a ridge trail, cavern ledge or forest track.
+            ribbon_mesh(f"TrailSurface_{route['id']}", [(x, y, z - .045) for x, y, z in points], CELL * .52, "sand", "trail_surface", route_role=route.get("role"), traversal=route.get("traversal"))
+            for index, (before, after) in enumerate(zip(points, points[1:])):
+                if abs(before[2] - after[2]) > .07 and index % 3 == 0:
+                    midpoint = tuple((before[axis] + after[axis]) / 2 for axis in range(3))
+                    step = box(f"TrailStep_{route['id']}_{index}", (midpoint[0], midpoint[1], midpoint[2]), (CELL * .48, CELL * .30, .045), "stone_light", "stair", route_id=route["id"], step_index=index)
+                    step.rotation_euler[2] = math.atan2(after[1] - before[1], after[0] - before[0])
         curve(f"Route_{route['id']}", points, "secret" if route.get("role") == "secret" else "accent", "route", bevel=.028, route_role=route.get("role"), risk=route.get("risk"), visibility=route.get("visibility", "public"))
         if route.get("role") == "primary" and len(points) > 4:
             for index, (x, y, z) in enumerate(points[::max(1, len(points) // 6)]):
@@ -615,6 +774,29 @@ def add_outdoor() -> None:
             for side in (-1, 1):
                 cylinder(f"CaveMouthPillar_{platform['id']}_{side}", (px + side * CELL * 1.0, py, z + .48), .16, .95, "wall", "cave", platform_id=platform["id"])
             add_gable_roof(f"CaveMouthArch_{platform['id']}", (px, py, z + .80), CELL * 2.5, CELL * 1.4, .55, "wall", ridge_axis="x", platform_id=platform["id"])
+    # Feature packs provide a generic visual realization for planners that
+    # describe a cave, overlook or crossing without an explicit platform.
+    platform_ids = {str(item.get("id")) for item in PROFILE.get("tactical_platforms", [])}
+    for feature in PROFILE.get("terrain", {}).get("features", []):
+        feature_id = str(feature.get("id", "feature"))
+        if feature_id in platform_ids:
+            continue
+        row, col = feature.get("position", [0, 0])
+        elevation = float(feature.get("elevation_ft", TERRAIN_HEIGHTS.get((int(row), int(col)), 0) / Z_SCALE))
+        z = elevation * Z_SCALE + .12
+        px, py, _ = point(row, col, z)
+        kind = str(feature.get("kind", "feature"))
+        if kind == "cave_mouth":
+            box(f"FeatureCaveFloor_{feature_id}", (px, py, z), (CELL * 3.4, CELL * 2.0, .16), "dark", "cave", feature_id=feature_id, tactical_role=feature.get("tactical_role"))
+            for side in (-1, 1):
+                cylinder(f"FeatureCavePillar_{feature_id}_{side}", (px + side * CELL * 1.2, py, z + .48), .16, .92, "stone_light", "cave", feature_id=feature_id)
+            add_gable_roof(f"FeatureCaveArch_{feature_id}", (px, py, z + .84), CELL * 3.0, CELL * 1.5, .68, "stone_light", ridge_axis="x", feature_id=feature_id)
+        elif kind in {"elevated_platform", "overlook"}:
+            box(f"FeatureOverlook_{feature_id}", (px, py, z), (CELL * 3.2, CELL * 2.6, .18), "feature", "tactical_platform", feature_id=feature_id, tactical_role=feature.get("tactical_role"))
+            cylinder_between(f"FeatureOverlookRail_{feature_id}", (px - CELL * 1.2, py - CELL * 1.0, z + .16), (px + CELL * 1.2, py - CELL * 1.0, z + .16), .025, "metal", "railing", feature_id=feature_id)
+        elif kind in {"crossing", "ford"}:
+            for step in range(-2, 3):
+                box(f"FeatureFordStone_{feature_id}_{step}", (px + step * CELL * .55, py, z + .06), (CELL * .42, CELL * .70, .12), "stone_light", "crossing", feature_id=feature_id)
     for landmark in PROFILE.get("landmarks", []):
         row, col = landmark["position"]
         z = float(landmark.get("elevation_ft", 18)) * Z_SCALE + .25
@@ -625,7 +807,7 @@ def add_outdoor() -> None:
     # random world Z (which previously produced floating trees and rocks).
     candidates = list(TERRAIN_HEIGHTS)
     RNG.shuffle(candidates)
-    dressing_count = max(24, int(VISUAL.get("dressing", {}).get("budget", 0)) * 5)
+    dressing_count = max(120, int(VISUAL.get("dressing", {}).get("budget", 0)) * 16)
     for index, (row, col) in enumerate(candidates[:dressing_count]):
         cover = TERRAIN_COVERS.get((row, col), "")
         if cover == "shallow_water":
@@ -647,6 +829,101 @@ def add_outdoor() -> None:
             cylinder(f"Shrub_{index}", (x, y, z), RNG.uniform(.07, .14), RNG.uniform(.18, .38), "green", "vegetation", dressing_role="shrubs")
 
 
+def add_building_detail_pack(building_type: str, center: tuple[float, float], width: float, depth: float, floors: int, spacing: float, top_z: float, building_id: str) -> None:
+    """Resolve reusable architectural packs from the building recipe.
+
+    The factory can name new building families without forcing the renderer to
+    know a scene id.  These modules make a tower, manor, civic hall, sewer or
+    mine read as its own structure while preserving the same floor/room/grid
+    contract used by the pump house.
+    """
+    cx, cy = center
+    if building_type in {"tower", "lighthouse", "fortress"}:
+        for floor in range(floors):
+            z = .25 + floor * spacing
+            cylinder(f"TowerCore_{floor}", (cx, cy, z + .22), .16, .42, "stone_light", "support", building_id=building_id, floor=floor + 1, role="central_shaft")
+            for side in (-1, 1):
+                cylinder_between(f"TowerLandingRail_{floor}_{side}", (cx - width * .28, cy + side * depth * .18, z + .20), (cx + width * .28, cy + side * depth * .18, z + .20), .022, "metal", "railing", building_id=building_id, floor=floor + 1)
+            # A visible landing slab and a pair of vertical windows make the
+            # staircase legible even when the camera is not aligned to the
+            # stair run.
+            box(f"TowerLanding_{building_id}_{floor}", (cx, cy - depth * .24, z + .17), (width * .54, depth * .22, .08), "wood", "platform", building_id=building_id, floor=floor + 1)
+            add_lamp_post(f"TowerLamp_{building_id}_{floor}", (cx, cy - depth * .34, z + .18), .30, building_id=building_id, floor=floor + 1)
+        cylinder(f"TowerBell_{building_id}", (cx, cy, top_z + .34), .20, .30, "accent", "landmark", building_id=building_id, role="lantern_room" if building_type == "lighthouse" else "bell_chamber")
+        for side in (-1, 1):
+            box(f"TowerButtress_{building_id}_{side}", (cx + side * width * .44, cy, top_z * .50), (.16, depth * .44, top_z), "stone_light", "buttress", building_id=building_id)
+        if building_type == "lighthouse":
+            cylinder(f"LighthouseBeacon_{building_id}", (cx, cy, top_z + .60), .08, .12, "window", "landmark_detail", building_id=building_id, role="beacon")
+            add_battlements(f"LighthouseLantern_{building_id}", (cx, cy, top_z + .66), width * .62, depth * .62, top_z + .80, "metal", building_id=building_id)
+        if building_type == "fortress":
+            for side in (-1, 1):
+                box(f"FortressWallWalk_{building_id}_{side}", (cx + side * width * .35, cy, top_z + .10), (width * .20, depth * .86, .12), "stone_light", "wall_walk", building_id=building_id)
+    elif building_type in {"church", "temple"}:
+        # Processional axis + side aisles remain legible from above and give
+        # the same grammar enough identity for chapels, crypts and sanctums.
+        box(f"Nave_{building_id}", (cx, cy, .27), (width * .42, depth * .72, .10), "road", "nave", building_id=building_id)
+        for side in (-1, 1):
+            for index in range(max(2, floors + 1)):
+                py = cy - depth * .32 + index * depth * .22
+                cylinder(f"AisleColumn_{building_id}_{side}_{index}", (cx + side * width * .28, py, .52), .075, 1.0, "stone_light", "support", building_id=building_id, role="aisle")
+        box(f"Altar_{building_id}", (cx, cy + depth * .28, .38), (width * .30, depth * .16, .24), "stone_light", "altar", building_id=building_id)
+        box(f"CryptHatch_{building_id}", (cx, cy - depth * .28, .20), (width * .22, depth * .15, .06), "dark", "secret_detail", building_id=building_id, role="crypt")
+    elif building_type == "manor":
+        for floor in range(floors):
+            z = .25 + floor * spacing
+            box(f"ManorHall_{building_id}_{floor}", (cx, cy, z + .10), (width * .18, depth * .66, .08), "wood", "room_function", building_id=building_id, floor=floor + 1, role="gallery")
+            box(f"ManorWing_{building_id}_{floor}", (cx - width * .28, cy + depth * .08, z + .10), (width * .26, depth * .18, .08), "feature", "room_function", building_id=building_id, floor=floor + 1, role="salon")
+            cylinder(f"ManorFireplace_{building_id}_{floor}", (cx + width * .28, cy + depth * .16, z + .28), .13, .30, "accent", "equipment", building_id=building_id, floor=floor + 1, role="fireplace")
+        box(f"ManorCourtyard_{building_id}", (cx, cy - depth * .30, .20), (width * .42, depth * .25, .06), "green", "courtyard", building_id=building_id)
+        for side in (-1, 1):
+            cylinder(f"ManorGatePost_{building_id}_{side}", (cx + side * width * .34, cy - depth * .45, .42), .09, .78, "stone_light", "support", building_id=building_id, role="formal_entry")
+        # An L-shaped service wing prevents the manor from reading as a plain
+        # rectangular stack and creates a courtyard route for encounters.
+        box(f"ManorServiceWing_{building_id}", (cx - width * .34, cy + depth * .18, .34), (width * .28, depth * .62, .16), "wall", "wing", building_id=building_id, role="service")
+        box(f"ManorCourtyardGate_{building_id}", (cx + width * .30, cy - depth * .30, .44), (.10, depth * .24, .72), "stone_light", "gate", building_id=building_id, role="courtyard")
+        add_lamp_post(f"ManorCourtyardLamp_{building_id}", (cx, cy - depth * .30, .16), .42, building_id=building_id)
+    elif building_type in {"library", "barracks", "tavern", "inn"}:
+        for floor in range(floors):
+            z = .25 + floor * spacing
+            add_room_shell(f"CivicRoom_{building_id}_{floor}", (cx, cy), width * .62, depth * .70, z, "wall", building_id=building_id, floor=floor + 1, role=building_type)
+            if building_type == "library":
+                for shelf in range(3):
+                    box(f"LibraryShelf_{building_id}_{floor}_{shelf}", (cx - width * .24 + shelf * width * .24, cy + depth * .20, z + .24), (width * .16, .07, .42), "wood", "furniture", building_id=building_id, floor=floor + 1, role="archive")
+            elif building_type == "barracks":
+                for bunk in range(2):
+                    box(f"Bunk_{building_id}_{floor}_{bunk}", (cx - width * .18 + bunk * width * .36, cy - depth * .18, z + .14), (width * .22, depth * .14, .11), "wood", "furniture", building_id=building_id, floor=floor + 1, role="quarters")
+            else:
+                box(f"CivicTable_{building_id}_{floor}", (cx, cy, z + .22), (width * .34, depth * .16, .12), "wood", "furniture", building_id=building_id, floor=floor + 1, role="public")
+                add_lamp_post(f"CivicLamp_{building_id}_{floor}", (cx, cy - depth * .22, z + .20), .36, building_id=building_id, floor=floor + 1)
+    elif building_type in {"sewer", "sewer_main", "drainage"}:
+        channel_x = cx - width * .10
+        box(f"SewerChannel_{building_id}", (channel_x, cy, .18), (width * .30, depth * .80, .10), "water", "water_channel", building_id=building_id, role="waste_flow")
+        for side in (-1, 1):
+            box(f"SewerWalkway_{building_id}_{side}", (cx + side * width * .28, cy, .22), (width * .22, depth * .78, .08), "stone_light", "walkway", building_id=building_id)
+        for index in range(max(2, floors + 1)):
+            py = cy - depth * .32 + index * depth * .24
+            cylinder_between(f"SewerPipe_{building_id}_{index}", (cx + width * .25, py, .48), (cx + width * .25, py + depth * .18, .48), .055, "metal", "pipe", building_id=building_id)
+            box(f"SewerGrate_{building_id}_{index}", (cx - width * .10, py, .25), (width * .22, .12, .03), "metal", "grate", building_id=building_id)
+        add_arch_ribs(f"SewerArch_{building_id}", (cx, cy), width, depth, .78, max(3, floors + 2), material_id="stone_light", building_id=building_id, role="culvert")
+        for side in (-1, 1):
+            box(f"SewerBranch_{building_id}_{side}", (cx + side * width * .34, cy + depth * .12, .32), (width * .20, depth * .28, .14), "dark", "culvert_branch", building_id=building_id, role="side_route")
+            cylinder(f"SewerLadder_{building_id}_{side}", (cx + side * width * .34, cy - depth * .14, .62), .06, .78, "metal", "ladder", building_id=building_id, role="inspection")
+    elif building_type == "cavern":
+        # The same cutaway building contract can host a natural chamber: dark
+        # ledges, a pool and a rope bridge stand in for straight room walls.
+        box(f"CavernPool_{building_id}", (cx + width * .20, cy, .20), (width * .34, depth * .40, .06), "water", "water", building_id=building_id, role="underground_lake")
+        for side in (-1, 1):
+            cylinder(f"CavernStalagmite_{building_id}_{side}", (cx + side * width * .30, cy + depth * .12, .44), .16, .70, "stone_light", "rock_formation", building_id=building_id)
+        cylinder_between(f"CavernBridge_{building_id}", (cx - width * .34, cy - depth * .10, .55), (cx + width * .20, cy - depth * .10, .55), .045, "wood", "bridge", building_id=building_id)
+    elif building_type == "mine":
+        box(f"MineShaft_{building_id}", (cx, cy, .18), (width * .30, depth * .30, .08), "dark", "shaft", building_id=building_id)
+        for side in (-1, 1):
+            cylinder(f"MineSupport_{building_id}_{side}", (cx + side * width * .32, cy, .60), .08, 1.2, "wood", "support", building_id=building_id)
+        add_gable_roof(f"MineTimber_{building_id}", (cx, cy - depth * .40, .78), width * .78, depth * .26, .30, "wood", ridge_axis="x", building_id=building_id, role="adit")
+        for index in range(5):
+            cylinder(f"OrePile_{building_id}_{index}", (cx + (index - 2) * width * .13, cy + depth * .20, .27), .12, .20, "stone_light", "rock", building_id=building_id, role="ore")
+
+
 def add_building() -> None:
     add_ground()
     building = PROFILE.get("building", {})
@@ -656,9 +933,13 @@ def add_building() -> None:
     floors = int(policy.get("value", policy.get("minimum", 2)))
     floors = max(1, min(6, floors))
     building_id = str(building.get("id", "building"))
+    building_type = str(building.get("type", PROFILE.get("kind", "building")))
     center = (WIDTH * CELL / 2, -HEIGHT * CELL / 2)
     width, depth = fw * CELL, fh * CELL
-    spacing = .92
+    # Slightly taller, separated decks make vertical play readable from both
+    # the far isometric view and a close tactical view.  The value is shared by
+    # every building recipe; only the requested floor count changes.
+    spacing = 1.04
     top_z = .18 + floors * spacing
     # Open floor plates and corner columns preserve line-of-sight between
     # levels, unlike stacked opaque boxes.  The same deck grammar works for a
@@ -678,60 +959,136 @@ def add_building() -> None:
         for side_x in (-1, 1):
             for side_y in (-1, 1):
                 cylinder(f"Column_{floor + 1}_{side_x}_{side_y}", (center[0] + side_x * width * .46, center[1] + side_y * depth * .46, z + spacing / 2), .085, spacing, "stone_light", "support", floor=floor + 1, building_id=building_id)
-        # Broken perimeter walls are more readable than a solid facade and
-        # leave the machinery and rooms visible in an isometric render.
-        box(f"BackWall_{floor + 1}", (center[0], center[1] + depth * .47, z + .32), (width * .92, .10, .62), "wall", "wall", floor=floor + 1, building_id=building_id)
-        box(f"SideWall_{floor + 1}", (center[0] - width * .47, center[1], z + .32), (.10, depth * .58, .62), "wall", "wall", floor=floor + 1, building_id=building_id)
+        # Split, waist-high facade runs preserve silhouette and cover while
+        # leaving a central sightline into the rooms.  A single tall slab was
+        # the main reason the first universal tower/manor reads as a box.
+        wall_h = .38 if building_type in {"pump_house", "sewer", "sewer_main", "drainage", "mine"} else .30
+        wall_z = z + .17 + wall_h / 2
+        for wall_side in (-1, 1):
+            box(f"BackWall_{floor + 1}_{wall_side}", (center[0] + wall_side * width * .25, center[1] + depth * .47, wall_z), (width * .42, .10, wall_h), "wall", "wall", floor=floor + 1, building_id=building_id)
+        box(f"SideWall_{floor + 1}", (center[0] - width * .47, center[1] + depth * .10, wall_z), (.10, depth * .46, wall_h), "wall", "wall", floor=floor + 1, building_id=building_id)
+        # Shared low partitions give every new room grammar a spatial shape.
+        add_room_shell(f"FloorRooms_{building_id}_{floor}", (center[0], center[1]), width * .72, depth * .72, z + .10, "wall", floor=floor + 1, building_id=building_id)
+        add_window_lights(f"FloorWindows_{building_id}_{floor}", center, width, depth, z + .44, max(2, int(fw // 2)), floor=floor + 1, building_id=building_id)
     # The functional room grammar controls what is placed on each level;
     # every room type is implemented by the same reusable visual modules.
     rooms = [str(room) for room in PROFILE.get("room_grammar", [])]
+    room_slots = [(-.26, -.28), (.26, -.28), (-.26, .28), (.26, .28), (0.0, -.05), (0.0, .34)]
     for index, room in enumerate(rooms):
         floor = min(floors - 1, index % floors)
         z = .25 + floor * spacing
-        side = -1 if index % 2 == 0 else 1
-        x = center[0] + side * width * .24
-        y = center[1] + ((index // 2) % 2 - .5) * depth * .42
-        box(f"Room_{room}_{index}", (x, y, z + .16), (width * .34, depth * .30, .08), "feature", "room_function", room=room, floor=floor + 1, building_id=building_id)
-        if room in {"intake", "collector", "channel"}:
+        slot_x, slot_y = room_slots[index % len(room_slots)]
+        x = center[0] + slot_x * width
+        y = center[1] + slot_y * depth
+        room_width, room_depth = width * (.28 if len(rooms) > 5 else .34), depth * (.24 if len(rooms) > 5 else .30)
+        add_room_shell(f"RoomShell_{room}_{index}", (x, y), room_width, room_depth, z + .10, "wall", room=room, floor=floor + 1, building_id=building_id)
+        box(f"Room_{room}_{index}", (x, y, z + .16), (room_width * .78, room_depth * .76, .08), "feature", "room_function", room=room, floor=floor + 1, building_id=building_id)
+        if room in {"intake", "collector", "channel", "sewage_channel", "underground_lake"}:
             box(f"WaterBasin_{index}", (x, y + depth * .10, z + .12), (width * .24, depth * .22, .05), "water", "water_channel", room=room, floor=floor + 1, building_id=building_id)
             cylinder(f"ValveWheel_{index}", (x, y - depth * .10, z + .35), .12, .06, "metal", "equipment", equipment="valve", room=room, building_id=building_id)
             cylinder_between(f"IntakePipe_{index}", (x, y + depth * .22, z + .18), (x, y + depth * .10, z + .18), .045, "metal", "pipe", room=room, building_id=building_id)
-        elif room in {"pump_hall", "machine", "control"}:
+        elif room in {"pump_hall", "machine", "control", "pump_controls", "command"}:
             cylinder(f"PumpCore_{index}", (x, y, z + .34), .20, .42, "metal", "equipment", equipment="pump", room=room, building_id=building_id)
             cylinder(f"PumpWheel_{index}", (x, y, z + .57), .16, .035, "accent", "equipment", equipment="flywheel", room=room, building_id=building_id)
             for gauge in range(2):
                 cylinder(f"Gauge_{index}_{gauge}", (x + (gauge - .5) * .18, y - .13, z + .42), .045, .025, "feature", "equipment", equipment="gauge", room=room, building_id=building_id)
             cylinder_between(f"PumpDischarge_{index}", (x, y + .16, z + .40), (x + width * .20, y + .16, z + .40), .035, "metal", "pipe", room=room, building_id=building_id)
-        elif room in {"maintenance_loop", "landing", "archive"}:
+        elif room in {"maintenance_loop", "landing", "archive", "gallery", "reading_hall", "collapsed_hall"}:
             for rail_side in (-1, 1):
                 cylinder_between(f"Rail_{index}_{rail_side}", (x - width * .14, y + rail_side * depth * .12, z + .30), (x + width * .14, y + rail_side * depth * .12, z + .30), .025, "metal", "railing", room=room, building_id=building_id)
-        elif "shrine" in room or room in {"secret", "buried_shrine"}:
+            if room in {"archive", "reading_hall"}:
+                for shelf in range(2):
+                    box(f"Shelf_{room}_{index}_{shelf}", (x - room_width * .22 + shelf * room_width * .44, y + room_depth * .28, z + .28), (room_width * .22, .06, .42), "wood", "furniture", room=room, building_id=building_id)
+        elif "shrine" in room or room in {"secret", "buried_shrine", "vault", "crypt"}:
             box(f"ShrineAltar_{index}", (x, y, z + .24), (.34, .24, .22), "stone_light", "secret_detail", room=room, building_id=building_id)
             cylinder(f"ShrineGlow_{index}", (x, y, z + .48), .08, .12, "secret", "secret_detail", room=room, building_id=building_id)
+        elif room in {"entry", "guard", "taproom", "salon", "gallery", "nave", "forecourt", "gatehouse", "mess", "stage", "courtyard"}:
+            box(f"Table_{room}_{index}", (x, y, z + .22), (width * .18, depth * .12, .12), "wood", "furniture", room=room, building_id=building_id)
+            cylinder(f"Lantern_{room}_{index}", (x, y, z + .46), .06, .10, "feature", "room_dressing", room=room, building_id=building_id)
+        elif room in {"archive", "library", "quarters", "bedchamber", "guest_room", "service", "keeper_quarters", "barracks", "armory", "scriptorium"}:
+            box(f"Shelf_{room}_{index}", (x, y + depth * .12, z + .28), (width * .24, .08, .42), "wood", "furniture", room=room, building_id=building_id)
+            box(f"Bed_{room}_{index}", (x - width * .08, y - depth * .06, z + .16), (width * .20, depth * .18, .12), "feature", "furniture", room=room, building_id=building_id)
+        elif room in {"junction", "pump_controls", "sewage_channel", "channel"}:
+            box(f"ControlPanel_{room}_{index}", (x, y, z + .24), (width * .22, .12, .22), "metal", "equipment", room=room, building_id=building_id)
+            cylinder(f"Valve_{room}_{index}", (x, y - depth * .12, z + .44), .08, .05, "accent", "equipment", room=room, building_id=building_id)
+        else:
+            # Unknown room roles still receive a small readable footprint;
+            # adding a new recipe never silently produces an empty floor.
+            box(f"RoomMarker_{index}", (x, y, z + .16), (width * .18, depth * .14, .10), "feature", "room_dressing", room=room, building_id=building_id)
+    # A small deterministic dressing pass keeps a newly registered room
+    # recipe from becoming a row of empty floors.  The same pack vocabulary is
+    # shared by towers, estates, utilities and future building types.
+    for floor in range(floors):
+        z = .25 + floor * spacing
+        if building_type in {"tower", "lighthouse", "fortress"}:
+            for side in (-1, 1):
+                box(f"Banner_{building_id}_{floor}_{side}", (center[0] + side * width * .38, center[1] + depth * .18, z + .44), (.05, .16, .30), "accent", "wall_dressing", floor=floor + 1, building_id=building_id)
+            add_crate_stack(f"TowerCrates_{building_id}_{floor}", (center[0] - width * .28, center[1] + depth * .23, z + .10), 2 + (floor % 2), building_id=building_id, floor=floor + 1, dressing_role="storage")
+            # Alternating exterior landings break the repeated square stack
+            # and give the tower a route that can be read from outside.
+            balcony_side = -1 if floor % 2 == 0 else 1
+            balcony_x = center[0] + balcony_side * width * .44
+            box(f"TowerBalcony_{building_id}_{floor}", (balcony_x, center[1] - depth * .08, z + .14), (width * .28, depth * .34, .07), "wood", "platform", floor=floor + 1, building_id=building_id, role="external_landing")
+            for post_side in (-1, 1):
+                post_x = balcony_x + post_side * width * .10
+                cylinder(f"TowerBalconyPost_{building_id}_{floor}_{post_side}", (post_x, center[1] - depth * .08, z + .32), .025, .36, "metal", "railing", floor=floor + 1, building_id=building_id)
+            cylinder_between(f"TowerBalconyRail_{building_id}_{floor}", (balcony_x - width * .11, center[1] - depth * .22, z + .34), (balcony_x + width * .11, center[1] - depth * .22, z + .34), .022, "metal", "railing", floor=floor + 1, building_id=building_id)
+        elif building_type == "manor" or building_type in {"library", "tavern", "inn", "barracks"}:
+            box(f"Rug_{building_id}_{floor}", (center[0] + width * .08, center[1] - depth * .02, z + .11), (width * .34, depth * .22, .025), "accent", "floor_dressing", floor=floor + 1, building_id=building_id)
+            add_lamp_post(f"HangingLamp_{building_id}_{floor}", (center[0], center[1] + depth * .08, z + .48), .34, floor=floor + 1, building_id=building_id)
+        elif building_type in {"sewer", "sewer_main", "drainage", "pump_house", "mine"}:
+            for side in (-1, 1):
+                cylinder(f"GaugeCluster_{building_id}_{floor}_{side}", (center[0] + side * width * .33, center[1] - depth * .16, z + .38), .055, .06, "feature", "equipment", floor=floor + 1, building_id=building_id)
+            add_crate_stack(f"UtilityCrates_{building_id}_{floor}", (center[0] + width * .27, center[1] - depth * .24, z + .10), 2, building_id=building_id, floor=floor + 1, dressing_role="maintenance")
+        else:
+            add_lamp_post(f"GenericLamp_{building_id}_{floor}", (center[0], center[1] - depth * .22, z + .20), .30, floor=floor + 1, building_id=building_id)
     # A continuous stair zig-zag links all decks.
     for floor in range(floors - 1):
         start_z = .25 + floor * spacing
-        for step in range(7):
-            t = step / 6
-            box(f"Stair_{floor}_{step}", (center[0] - width * .34 + t * width * .42, center[1] - depth * .34, start_z + t * spacing), (.24, .44, .07), "wood", "stair", floor=floor + 1, building_id=building_id)
+        for step in range(9):
+            t = step / 8
+            side = -1 if floor % 2 == 0 else 1
+            box(f"Stair_{floor}_{step}", (center[0] + side * (-width * .34 + t * width * .42), center[1] - depth * .34, start_z + t * spacing), (.24, .44, .07), "wood", "stair", floor=floor + 1, building_id=building_id)
         cylinder_between(f"StairRail_{floor}", (center[0] - width * .40, center[1] - depth * .56, start_z + .20), (center[0] + width * .10, center[1] - depth * .56, start_z + spacing + .20), .028, "metal", "railing", building_id=building_id)
-    # Shared industrial service layer: shaft, water channel and pipes.
-    channel_x = center[0] - width * .28
-    box("MainWaterChannel", (channel_x, center[1], .10), (.36, depth * .78, .06), "water", "water_channel", building_id=building_id)
-    for pipe_index, pipe_x in enumerate((center[0] + width * .28, center[0] + width * .36)):
-        cylinder_between(f"VerticalPipe_{pipe_index}", (pipe_x, center[1] + depth * .20, .20), (pipe_x, center[1] + depth * .20, top_z + .25), .045, "metal", "pipe", building_id=building_id)
-        for floor in range(floors):
-            z = .30 + floor * spacing
-            cylinder_between(f"HorizontalPipe_{pipe_index}_{floor}", (pipe_x, center[1] + depth * .20, z), (channel_x + .12, center[1] + depth * .20, z), .035, "metal", "pipe", floor=floor + 1, building_id=building_id)
-    # Open service roof: thin parapets leave the machinery visible while the
-    # exhaust/shaft gives the building a recognisable industrial silhouette.
-    roof_z = top_z + .16
-    box("RoofNorth", (center[0], center[1] + depth * .46, roof_z), (width * 1.05, .10, .16), "roof", "roof", building_id=building_id, building_type=building.get("type", "building"))
-    box("RoofSouth", (center[0], center[1] - depth * .46, roof_z), (width * 1.05, .10, .16), "roof", "roof", building_id=building_id, building_type=building.get("type", "building"))
-    box("RoofWest", (center[0] - width * .46, center[1], roof_z), (.10, depth * .90, .16), "roof", "roof", building_id=building_id, building_type=building.get("type", "building"))
-    box("RoofEast", (center[0] + width * .46, center[1], roof_z), (.10, depth * .90, .16), "roof", "roof", building_id=building_id, building_type=building.get("type", "building"))
-    cylinder("BuildingVerticalLandmark", (center[0], center[1], top_z + .54), .20, .72, "metal", "landmark", building_id=building_id)
-    cylinder("RoofVentCap", (center[0] + width * .22, center[1] - depth * .18, top_z + .42), .11, .20, "accent", "equipment", equipment="vent", building_id=building_id)
+    add_building_detail_pack(building_type, center, width, depth, floors, spacing, top_z, building_id)
+    utility_types = {"pump_house", "sewer", "sewer_main", "drainage", "mine", "workshop", "warehouse"}
+    if building_type in utility_types:
+        # Service layer is shared, but only infrastructure recipes receive a
+        # visible channel and pipe manifold; it must not turn every manor or
+        # church into a pump station.
+        channel_x = center[0] - width * .28
+        box("MainWaterChannel", (channel_x, center[1], .10), (.36, depth * .78, .06), "water", "water_channel", building_id=building_id)
+        for pipe_index, pipe_x in enumerate((center[0] + width * .28, center[0] + width * .36)):
+            cylinder_between(f"VerticalPipe_{pipe_index}", (pipe_x, center[1] + depth * .20, .20), (pipe_x, center[1] + depth * .20, top_z + .25), .045, "metal", "pipe", building_id=building_id)
+            for floor in range(floors):
+                z = .30 + floor * spacing
+                cylinder_between(f"HorizontalPipe_{pipe_index}_{floor}", (pipe_x, center[1] + depth * .20, z), (channel_x + .12, center[1] + depth * .20, z), .035, "metal", "pipe", floor=floor + 1, building_id=building_id)
+        roof_z = top_z + .16
+        box("RoofNorth", (center[0], center[1] + depth * .46, roof_z), (width * 1.05, .10, .16), "roof", "roof", building_id=building_id, building_type=building_type)
+        box("RoofSouth", (center[0], center[1] - depth * .46, roof_z), (width * 1.05, .10, .16), "roof", "roof", building_id=building_id, building_type=building_type)
+        box("RoofWest", (center[0] - width * .46, center[1], roof_z), (.10, depth * .90, .16), "roof", "roof", building_id=building_id, building_type=building_type)
+        box("RoofEast", (center[0] + width * .46, center[1], roof_z), (.10, depth * .90, .16), "roof", "roof", building_id=building_id, building_type=building_type)
+        cylinder("BuildingVerticalLandmark", (center[0], center[1], top_z + .54), .20, .72, "metal", "landmark", building_id=building_id)
+        cylinder("RoofVentCap", (center[0] + width * .22, center[1] - depth * .18, top_z + .42), .11, .20, "accent", "equipment", equipment="vent", building_id=building_id)
+    else:
+        roof_z = top_z + .16
+        # Profile renders are cutaway tactical views: a solid roof would hide
+        # the very rooms and connectors the player needs to read.  Use a
+        # silhouette frame instead, with a shallow ridge only where it helps
+        # identify a civic/manor roofline.
+        if building_type in {"tower", "lighthouse", "fortress"}:
+            box(f"TowerEaveNorth_{building_id}", (center[0], center[1] + depth * .47, roof_z), (width * 1.05, .10, .14), "roof", "roof", building_id=building_id, building_type=building_type)
+            box(f"TowerEaveSouth_{building_id}", (center[0], center[1] - depth * .47, roof_z), (width * 1.05, .10, .14), "roof", "roof", building_id=building_id, building_type=building_type)
+            box(f"TowerEaveWest_{building_id}", (center[0] - width * .47, center[1], roof_z), (.10, depth * .90, .14), "roof", "roof", building_id=building_id, building_type=building_type)
+            box(f"TowerEaveEast_{building_id}", (center[0] + width * .47, center[1], roof_z), (.10, depth * .90, .14), "roof", "roof", building_id=building_id, building_type=building_type)
+            add_battlements(f"TowerRoof_{building_id}", center, width, depth, top_z + .38, "stone_light", building_id=building_id, building_type=building_type)
+        else:
+            box(f"RoofEaveNorth_{building_id}", (center[0], center[1] + depth * .47, roof_z), (width * 1.05, .10, .14), "roof", "roof", building_id=building_id, building_type=building_type)
+            box(f"RoofEaveSouth_{building_id}", (center[0], center[1] - depth * .47, roof_z), (width * 1.05, .10, .14), "roof", "roof", building_id=building_id, building_type=building_type)
+            box(f"RoofEaveWest_{building_id}", (center[0] - width * .47, center[1], roof_z), (.10, depth * .90, .14), "roof", "roof", building_id=building_id, building_type=building_type)
+            box(f"RoofEaveEast_{building_id}", (center[0] + width * .47, center[1], roof_z), (.10, depth * .90, .14), "roof", "roof", building_id=building_id, building_type=building_type)
+            if building_type in {"church", "temple", "manor", "library", "tavern", "inn"}:
+                box(f"RoofRidge_{building_id}", (center[0], center[1], roof_z + .18), (.10, depth * .84, .20), "roof", "roof_detail", building_id=building_id, building_type=building_type)
 
 
 def configure_scene() -> bpy.types.Object:
@@ -817,7 +1174,7 @@ def build() -> None:
     if CATEGORY == "building":
         policy = PROFILE.get("floor_policy", {})
         floors = int(policy.get("value", policy.get("minimum", 2)))
-        vertical_span = .18 + max(1, min(6, floors)) * .92 + .95
+        vertical_span = .18 + max(1, min(6, floors)) * 1.04 + .95
     frame_span = max(frame_width, frame_height, vertical_span)
     target = (width / 2, -height / 2, 1.65 if CATEGORY == "building" else 1.0)
     scale = frame_span * (1.15 if CATEGORY == "building" else 1.12)

@@ -18,6 +18,9 @@ def main() -> None:
     fixtures = [
         ROOT / "specs" / "districts" / "harbor_district_composer.json",
         ROOT / "specs" / "buildings" / "darkflow_pump_house.json",
+        ROOT / "specs" / "buildings" / "visual_tower.json",
+        ROOT / "specs" / "buildings" / "visual_manor.json",
+        ROOT / "specs" / "buildings" / "visual_sewer.json",
         ROOT / "specs" / "outdoor" / "silverfall_outdoor_composer.json",
     ]
     reports = []
@@ -38,4 +41,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

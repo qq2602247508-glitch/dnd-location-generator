@@ -1,0 +1,199 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_undertide_sewer",
+    "name": "潮下排水网·视觉验证",
+    "type": "sewer",
+    "seed": 20260813
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_undertide_sewer",
+      "name": "潮下排水网·视觉验证",
+      "type": "sewer",
+      "seed": 20260813
+    },
+    "scale": "large",
+    "family": "undercity_drainage",
+    "footprint": "tunnel_chambers_and_shaft",
+    "frontage": "maintenance_hatch",
+    "vertical_grammar": "culvert_loop_and_hatches",
+    "floor_policy": {
+      "mode": "target",
+      "value": 2
+    },
+    "room_grammar": [
+      "maintenance_loop",
+      "sewage_channel",
+      "junction",
+      "pump_controls",
+      "sealed_cistern",
+      "smuggler_cache"
+    ],
+    "traits": [
+      "infrastructure",
+      "maintenance_loop",
+      "multi_level",
+      "secret_route",
+      "water_flow"
+    ],
+    "packs": [
+      "hydrology",
+      "secret_detail",
+      "utility_detail",
+      "vertical_connections"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "1052e30ee62899f299790aec5049e8709e38c1b76fd9118288905ad21dcfc2f6",
+    "category": "building",
+    "scene": {
+      "id": "visual_undertide_sewer",
+      "name": "潮下排水网·视觉验证",
+      "type": "sewer",
+      "seed": 20260813
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_undertide_sewer",
+      "name": "潮下排水网·视觉验证",
+      "type": "sewer",
+      "seed": 20260813
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "hydrology",
+      "secret_detail",
+      "utility_detail",
+      "vertical_connections"
+    ],
+    "palette": {
+      "id": "highland",
+      "base": "slate",
+      "accent": "silver_moss",
+      "light": "overcast"
+    },
+    "materials": [
+      "blackened_bronze",
+      "concealed_stone",
+      "dark_water",
+      "dark_wood",
+      "iron_grate",
+      "lime_scale",
+      "oxidized_iron",
+      "rope_rail",
+      "slick_stone",
+      "step_stone",
+      "wax_seal",
+      "wet_brick"
+    ],
+    "dressing": {
+      "roles": [
+        "coded_marks",
+        "drips",
+        "fall_edges",
+        "false_panels",
+        "foam",
+        "gauges",
+        "handrails",
+        "scratches",
+        "service_ladders",
+        "valves",
+        "water_marks",
+        "wear_marks"
+      ],
+      "budget": 14,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "bridge",
+      "cache",
+      "channel",
+      "clue",
+      "flow",
+      "hidden_door",
+      "ladder",
+      "machine",
+      "pipe",
+      "platform",
+      "sluice",
+      "stairs",
+      "water"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "bridge",
+        "cache",
+        "channel",
+        "clue",
+        "flow",
+        "hidden_door",
+        "ladder",
+        "machine",
+        "pipe",
+        "platform",
+        "sluice",
+        "stairs",
+        "water"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "3be0490d8a8b231e41c082ce85f8b77a211264a2506b0e3c75c9d61fef02c07d"
+  },
+  "source_brief_sha256": "1052e30ee62899f299790aec5049e8709e38c1b76fd9118288905ad21dcfc2f6"
+}

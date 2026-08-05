@@ -1,0 +1,9 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {"id": "visual_lantern_manor", "name": "蓝灯宅邸·视觉验证", "type": "manor", "seed": 20260812},
+  "scale": "large",
+  "traits": ["multi_level", "interior_rooms", "domestic", "secret_route"],
+  "packs": ["room_dressing", "lived_in_detail", "vertical_connections"],
+  "floors": {"mode": "target", "value": 3},
+  "room_mix": ["entry", "salon", "gallery", "bedchamber", "library", "service", "secret"]
+}

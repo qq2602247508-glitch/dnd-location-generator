@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_lantern_manor",
+    "name": "蓝灯宅邸·视觉验证",
+    "type": "manor",
+    "seed": 20260812
+  },
+  "category": "building",
+  "profile_hash": "ba0955942232ddc9ab877c9b3f73cbe49e69cec252e8cc0f0df93ad991dcd493",
+  "visual_plan_hash": "c6e7c284e14e92f0eba5403295bee8eb558b977c237578bb7a231f232646fe84",
+  "prototype_objects": 197,
+  "mesh_vertices": 2088,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 379740,
+      "sha256": "77e600ae27247d07dfb01533b435e50259772edf111ea14e80469939ef1a30c0"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 152919,
+      "sha256": "432c2f50f5609dd413c37849ee53192eec0c985720793b2fe63d818ee6bc547f"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1241610,
+      "sha256": "5024035d5aee151aa1e328dcf04ab70ba826d6dfc9eefafb706dd1339a6a2024"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1029020,
+      "sha256": "1fde77fa8eccdbe74da0a1558ccba130396a97be2c1755a3859b794ea21330f9"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}
