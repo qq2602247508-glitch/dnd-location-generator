@@ -160,6 +160,24 @@ python3 -m generator.v2.archetype_cli \
 房间/5 连接/2 个拓扑回环。房间重叠、面积、门相邻性、楼梯跨层、密门 DM-only 和布局
 哈希均有门禁。
 
+布局编译完成后，可用同一个 Blender V2 生成器输出 plan、runtime、GLB、BLEND 和
+等距/俯视认证图；`layout_runtime.py` 会把房间格子、门、楼梯、密门、锚点、基础道具
+和显式导航边写入通用 `dnd-scene-runtime-2.0`，不改旧场景合同：
+
+```bash
+python3 tests/verify_layout_runtime.py
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python blender/build_room_layout_scene.py -- \
+  --layout output/archetypes/tower.layout.json \
+  --manifest specs/archetypes/tower.json \
+  --out-dir output/archetypes/tower
+npm --prefix viewer run build
+```
+
+Viewer 的“塔楼 V2.5”“庄园 V2.5”“下水道 V2.5”直接读取这些 GLB/runtime 资源，支持
+楼层过滤、DM-only 权限、连接点、格子拾取和 Token 移动。下水道是单层负高程场景，
+首次切换会在 runtime 加载后自动选中 B1，不需要手动补点楼层按钮。
+
 AdventureDirector 使用独立 DM profile 生成 NPC、怪物遭遇、奖励和任务槽位；这些槽位
 只保存位置、阵营、难度与风险意图，不含具体怪物 statblock。默认 Null adapter 不访问
 或写入现有 DND 项目，未来正式 adapter 可以只重投内容而不重建场景几何。

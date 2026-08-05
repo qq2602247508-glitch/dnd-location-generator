@@ -4,9 +4,9 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "river_valley" | "sewer_dungeon" | "dragonbone_rift";
+type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "tower" | "manor" | "sewer" | "river_valley" | "sewer_dungeon" | "dragonbone_rift";
 type V22SceneKey = "river_valley" | "sewer_dungeon" | "dragonbone_rift";
-type RuntimeSceneKey = "harbor" | "old_clock";
+type RuntimeSceneKey = "harbor" | "old_clock" | "tower" | "manor" | "sewer";
 type ViewMode = "dm" | "player";
 type ExperienceMode = "theatre" | "exploration" | "tactical";
 type QualityPreset = "quality" | "balanced" | "performance";
@@ -426,6 +426,38 @@ const RUNTIME_SCENES: Record<RuntimeSceneKey, RuntimeSceneDescriptor> = {
       { id: "underworks_pursuit", label: "地下追踪", focus: "old_clock_underworks", levelId: "old_clock_sewer_b1", experience: "tactical" },
     ],
   },
+  tower: {
+    name: "塔楼 · 旋梯与钟室", shortName: "塔楼 V2.5",
+    description: "三层塔楼、旋梯厅、钟室与 DM 隐藏地窖；房间由声明式布局生成。",
+    asset: "tower-archetype.glb", runtimeAsset: "tower-archetype.runtime.json", supportsPlayer: true,
+    visibleFocusIds: ["tower"],
+    presets: [
+      { id: "tower_all", label: "塔楼总览", focus: "tower", levelId: "all", experience: "exploration" },
+      { id: "tower_ground", label: "一层值守", focus: "tower", levelId: "tower_l1", experience: "tactical" },
+      { id: "tower_bell", label: "三层钟室", focus: "tower", levelId: "tower_l3", experience: "tactical" },
+    ],
+  },
+  manor: {
+    name: "庄园宅邸 · 家族秘室", shortName: "庄园 V2.5",
+    description: "门厅、会客厅、家族长廊与阁楼秘室；密门和 DM-only 酒窖保留。",
+    asset: "manor-archetype.glb", runtimeAsset: "manor-archetype.runtime.json", supportsPlayer: true,
+    visibleFocusIds: ["manor"],
+    presets: [
+      { id: "manor_all", label: "庄园总览", focus: "manor", levelId: "all", experience: "exploration" },
+      { id: "manor_ground", label: "一层公共区", focus: "manor", levelId: "manor_ground", experience: "tactical" },
+      { id: "manor_upper", label: "二层家族区", focus: "manor", levelId: "manor_upper", experience: "tactical" },
+    ],
+  },
+  sewer: {
+    name: "下水道 · 潮下检修网", shortName: "下水道 V2.5",
+    description: "环形汇流渠、排污泵房与被埋旧祠；密门和暗室只对 DM 可见。",
+    asset: "sewer-archetype.glb", runtimeAsset: "sewer-archetype.runtime.json", supportsPlayer: true,
+    visibleFocusIds: ["sewer"],
+    presets: [
+      { id: "sewer_all", label: "检修网总览", focus: "sewer", levelId: "all", experience: "exploration" },
+      { id: "sewer_tactical", label: "泵房战术", focus: "sewer", levelId: "sewer_b1", experience: "tactical" },
+    ],
+  },
 };
 
 function isV22Scene(sceneKey: SceneKey): sceneKey is V22SceneKey {
@@ -597,6 +629,11 @@ const oldClockCells = new Map<string, GenericRuntimeCell>();
 const oldClockNav = new Map<string, GenericRuntimeNavEdge[]>();
 const oldClockConnectors = new Map<string, GenericRuntimeConnector>();
 const oldClockRooms = new Map<string, GenericRuntimeRoom>();
+const archetypeRuntimes = new Map<RuntimeSceneKey, GenericSceneRuntime>();
+const archetypeCells = new Map<RuntimeSceneKey, Map<string, GenericRuntimeCell>>();
+const archetypeNav = new Map<RuntimeSceneKey, Map<string, GenericRuntimeNavEdge[]>>();
+const archetypeConnectors = new Map<RuntimeSceneKey, Map<string, GenericRuntimeConnector>>();
+const archetypeRooms = new Map<RuntimeSceneKey, Map<string, GenericRuntimeRoom>>();
 const v22Grids = new Map<V22SceneKey, TacticalGrid>();
 const v22Cells = new Map<V22SceneKey, Map<string, TacticalGridCell>>();
 const v22RouteNeighbors = new Map<V22SceneKey, Map<string, Set<string>>>();
@@ -706,23 +743,49 @@ async function fetchJson<T>(name: string): Promise<T> {
 }
 
 function runtimeFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): GenericSceneRuntime | null {
-  return sceneKey === "old_clock" ? oldClockRuntime : harborRuntime;
+  if (sceneKey === "old_clock") return oldClockRuntime;
+  if (sceneKey === "harbor") return harborRuntime;
+  return archetypeRuntimes.get(sceneKey) ?? null;
 }
 
 function runtimeCellsFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): Map<string, GenericRuntimeCell> {
-  return sceneKey === "old_clock" ? oldClockCells : harborCells;
+  if (sceneKey === "old_clock") return oldClockCells;
+  if (sceneKey === "harbor") return harborCells;
+  const existing = archetypeCells.get(sceneKey);
+  if (existing) return existing;
+  const created = new Map<string, GenericRuntimeCell>();
+  archetypeCells.set(sceneKey, created);
+  return created;
 }
 
 function runtimeNavFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): Map<string, GenericRuntimeNavEdge[]> {
-  return sceneKey === "old_clock" ? oldClockNav : harborNav;
+  if (sceneKey === "old_clock") return oldClockNav;
+  if (sceneKey === "harbor") return harborNav;
+  const existing = archetypeNav.get(sceneKey);
+  if (existing) return existing;
+  const created = new Map<string, GenericRuntimeNavEdge[]>();
+  archetypeNav.set(sceneKey, created);
+  return created;
 }
 
 function runtimeConnectorsFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): Map<string, GenericRuntimeConnector> {
-  return sceneKey === "old_clock" ? oldClockConnectors : harborConnectors;
+  if (sceneKey === "old_clock") return oldClockConnectors;
+  if (sceneKey === "harbor") return harborConnectors;
+  const existing = archetypeConnectors.get(sceneKey);
+  if (existing) return existing;
+  const created = new Map<string, GenericRuntimeConnector>();
+  archetypeConnectors.set(sceneKey, created);
+  return created;
 }
 
 function runtimeRoomsFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): Map<string, GenericRuntimeRoom> {
-  return sceneKey === "old_clock" ? oldClockRooms : harborRooms;
+  if (sceneKey === "old_clock") return oldClockRooms;
+  if (sceneKey === "harbor") return harborRooms;
+  const existing = archetypeRooms.get(sceneKey);
+  if (existing) return existing;
+  const created = new Map<string, GenericRuntimeRoom>();
+  archetypeRooms.set(sceneKey, created);
+  return created;
 }
 
 function indexRuntimeScene(sceneKey: RuntimeSceneKey, runtime: GenericSceneRuntime): void {
@@ -745,7 +808,8 @@ async function ensureRuntimeScene(sceneKey: RuntimeSceneKey): Promise<GenericSce
   if (cached) return cached;
   const runtime = await fetchJson<GenericSceneRuntime>(RUNTIME_SCENES[sceneKey].runtimeAsset);
   if (sceneKey === "old_clock") oldClockRuntime = runtime;
-  else harborRuntime = runtime;
+  else if (sceneKey === "harbor") harborRuntime = runtime;
+  else archetypeRuntimes.set(sceneKey, runtime);
   indexRuntimeScene(sceneKey, runtime);
   return runtime;
 }
@@ -878,6 +942,9 @@ function scenePreset(sceneKey: SceneKey): CameraState {
   if (sceneKey === "city") return { position: new THREE.Vector3(47, 38, 32), target: new THREE.Vector3(16, 1.8, -14) };
   if (sceneKey === "harbor") return { position: new THREE.Vector3(82, 70, 66), target: new THREE.Vector3(32, 4, -26) };
   if (sceneKey === "old_clock") return { position: new THREE.Vector3(78, 62, 62), target: new THREE.Vector3(35, 4, -31) };
+  if (sceneKey === "tower") return { position: new THREE.Vector3(34, 30, 34), target: new THREE.Vector3(12, 12, -9) };
+  if (sceneKey === "manor") return { position: new THREE.Vector3(34, 26, 34), target: new THREE.Vector3(12, 6, -9) };
+  if (sceneKey === "sewer") return { position: new THREE.Vector3(34, 20, 34), target: new THREE.Vector3(12, -3, -9) };
   if (isV22Scene(sceneKey)) {
     const grid = v22Grid(sceneKey);
     if (grid) {
@@ -2319,10 +2386,11 @@ function renderHarborFocusControls(): void {
   const allowed = descriptor.visibleFocusIds;
   const volumeIds = allowed ? allVolumeIds.filter((id) => allowed.includes(id)) : allVolumeIds;
   const volumeNames = new Map((runtime?.volumes ?? []).map((volume) => [volume.id, volume.name]));
-  const surfaceName = currentScene === "old_clock" ? "旧钟区地表" : "港区地表";
+  const hasSurface = levels.some((level) => level.id === "surface");
+  const surfaceName = currentScene === "old_clock" ? "旧钟区地表" : currentScene === "harbor" ? "港区地表" : "地表";
   harborFocusNote.textContent = currentHarborFocus === "surface" ? `${surfaceName} · 查看模式` : `${volumeNames.get(currentHarborFocus) ?? currentHarborFocus} · 查看模式`;
   harborFocusControls.innerHTML = "";
-  for (const focus of ["surface", ...volumeIds]) {
+  for (const focus of [...(hasSurface ? ["surface"] : []), ...volumeIds]) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `building-button${currentHarborFocus === focus ? " active" : ""}`;
@@ -2346,11 +2414,11 @@ function setHarborFocus(focus: string): void {
 }
 
 function renderRuntimePresets(): void {
-  const active = currentScene === "old_clock";
+  const active = isRuntimeScene(currentScene) && (RUNTIME_SCENES[currentScene].presets?.length ?? 0) > 0;
   runtimePresetPanel.hidden = !active;
   runtimePresetControls.innerHTML = "";
   if (!active) return;
-  for (const preset of RUNTIME_SCENES.old_clock.presets) {
+  for (const preset of RUNTIME_SCENES[currentScene as RuntimeSceneKey].presets) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `building-button${currentHarborFocus === preset.focus && currentHarborLevelId === preset.levelId && viewerState.experienceMode === preset.experience ? " active" : ""}`;
@@ -2495,13 +2563,14 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
   const request = ++loadSequence;
   if (sceneChanged) saveCameraState();
   currentScene = sceneKey;
-  currentMode = sceneKey === "underdark" || sceneKey === "city" || sceneKey === "harbor" ? "dm" : mode;
+  currentMode = sceneKey === "underdark" || sceneKey === "city" || (sceneKey === "harbor" && !RUNTIME_SCENES.harbor.supportsPlayer) ? "dm" : mode;
   if (sceneChanged) {
     currentLayer = "all";
     if (sceneKey === "city") currentCityScope = "outdoor";
     if (isRuntimeScene(sceneKey)) {
-      currentHarborFocus = "surface";
-      currentHarborLevelId = "surface";
+      const descriptor = RUNTIME_SCENES[sceneKey];
+      currentHarborFocus = descriptor.visibleFocusIds?.find((id) => id !== "surface") ?? "surface";
+      currentHarborLevelId = currentHarborFocus === "surface" ? "surface" : "all";
     }
     if (isV22Scene(sceneKey)) {
       currentV22LevelId = "all";
@@ -2516,7 +2585,21 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
   showLoading("正在加载场景");
   try {
     await ensureData();
-    if (isRuntimeScene(currentScene)) await ensureRuntimeScene(currentScene);
+    if (isRuntimeScene(currentScene)) {
+      const runtime = await ensureRuntimeScene(currentScene);
+      // A newly selected archetype may have no `surface` level.  Normalize
+      // the level after its runtime has loaded so a one-level scene (such as
+      // the sewer) cannot start with the stale global `surface` selection and
+      // hide every generated mesh until the user clicks the floor filter.
+      if (currentHarborFocus !== "surface") {
+        const scopedLevels = runtime.scene.levels.filter((level) => level.volume_id === currentHarborFocus);
+        if (!scopedLevels.some((level) => level.id === currentHarborLevelId)) {
+          currentHarborLevelId = scopedLevels.length > 1 ? "all" : scopedLevels[0]?.id ?? "surface";
+        }
+      } else if (!runtime.scene.levels.some((level) => level.id === currentHarborLevelId)) {
+        currentHarborLevelId = "surface";
+      }
+    }
     if (isV22Scene(currentScene)) await ensureV22Grid(currentScene);
     normalizeExperienceFocus();
     const root = await loadModel(sceneAsset(currentScene, currentMode));
