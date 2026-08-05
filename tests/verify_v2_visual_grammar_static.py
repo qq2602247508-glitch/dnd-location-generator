@@ -58,6 +58,7 @@ def main() -> None:
     floors = _function_source(tree, source, "build_level_floors_and_grids")
     camera = _function_source(tree, source, "content_camera_frame")
     connectors = _function_source(tree, source, "build_connectors")
+    feature_variants = _function_source(tree, source, "oriented_feature_boxes")
     if "roof_profile_boxes" not in roofs or "InnGableRoof" in source:
         raise AssertionError("inn roof is still duplicated instead of using the shared roof profile")
     if not {"facade_band_and_eave_boxes", "facade_window_boxes", "grammar_roles"} <= set(
@@ -72,6 +73,8 @@ def main() -> None:
         raise AssertionError("weathered city ground material is missing")
     if connectors.count('"connector_vertical"') < 4:
         raise AssertionError("stairs, ladders and hatches lack a shared vertical-transition language")
+    if "variant_digest" not in feature_variants or "feature.get(\"variant\"" not in feature_variants:
+        raise AssertionError("semantic dressing variants do not affect the visual grammar")
     print("v2 visual grammar static contract passed")
 
 

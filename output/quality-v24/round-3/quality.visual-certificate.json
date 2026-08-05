@@ -1,0 +1,23 @@
+{
+  "schema_version": "dnd-scene-visual-certificate-1.0",
+  "scene_id": "old_clock_quarter_v23",
+  "programmatic_report_sha256": "6130087923577917935f4f305cd92010c2a55044f39d9a4cf5bd3a441b809adf",
+  "images": [
+    {
+      "path": "scene-isometric.png",
+      "sha256": "61e35025cff6f56aaac5617c8cc168b1496404ddbf2a9e2aa588fb061a373216"
+    },
+    {
+      "path": "scene-topdown.png",
+      "sha256": "9f33e51767696a486b7ffda7e6bfbdda65aef277b7f4d6f117dae72a676d8e87"
+    }
+  ],
+  "ratings": {
+    "silhouette_naturalness": 3,
+    "landmark_hierarchy": 4,
+    "route_level_readability": 3,
+    "lived_in_plausibility": 4,
+    "tactical_clarity": 4
+  },
+  "critical_defects": []
+}

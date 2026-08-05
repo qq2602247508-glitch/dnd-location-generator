@@ -905,12 +905,22 @@ function resetView(): void {
   applyCameraState(scenePreset(currentScene));
 }
 
+function isRuntimeBackdropForFit(object: THREE.Mesh): boolean {
+  if (!isRuntimeScene(currentScene) || currentHarborFocus !== "surface") return false;
+  const kind = String(object.userData.prototype_kind ?? "");
+  const surfaceKind = String(object.userData.surface_kind ?? "");
+  // Allocation ground and its full-canvas grid are useful context, but they
+  // must not force the actual authored district into a tiny camera footprint.
+  // Roads, buildings, connectors and dressing still define the fit bounds.
+  return surfaceKind === "ground" && (kind === "surface" || kind === "grid");
+}
+
 function fitView(): void {
   if (!currentRoot) return;
   currentRoot.updateWorldMatrix(true, true);
   const box = new THREE.Box3();
   currentRoot.traverse((object) => {
-    if (!(object instanceof THREE.Mesh) || !object.visible) return;
+    if (!(object instanceof THREE.Mesh) || !object.visible || isRuntimeBackdropForFit(object)) return;
     object.geometry.computeBoundingBox();
     if (!object.geometry.boundingBox) return;
     box.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
@@ -1251,8 +1261,9 @@ function updateCutaway(now: number, force = false): void {
 }
 
 function applyRenderTuning(): void {
-  renderer.toneMappingExposure = dmTuning.exposure;
-  if (world.fog instanceof THREE.FogExp2) world.fog.density = dmTuning.fogDensity;
+  const runtimeOverview = isRuntimeScene(currentScene) && currentHarborFocus === "surface";
+  renderer.toneMappingExposure = dmTuning.exposure * (runtimeOverview ? 1.14 : 1);
+  if (world.fog instanceof THREE.FogExp2) world.fog.density = dmTuning.fogDensity * (runtimeOverview ? .58 : 1);
   tokenHolder.scale.setScalar(dmTuning.tokenScale);
   resize();
   markCutawayDirty();
@@ -2005,6 +2016,7 @@ function applyCityTransition(transition: CityTransition): boolean {
   clearCityNotice();
   clearCellSelection();
   rebuildTokens();
+  applyRenderTuning();
   applyLayerFilter();
   updateUi();
   if (returningOutside && cityDistrictCameraState) applyCameraState(cityDistrictCameraState);
@@ -2327,6 +2339,7 @@ function setHarborFocus(focus: string): void {
   currentHarborLevelId = levels[0]?.id ?? "all";
   clearCityNotice();
   clearCellSelection();
+  applyRenderTuning();
   applyLayerFilter();
   updateUi();
   fitView();
@@ -2350,6 +2363,7 @@ function renderRuntimePresets(): void {
       clearCityNotice();
       clearCellSelection();
       syncViewerState();
+      applyRenderTuning();
       applyLayerFilter();
       updateUi();
       fitView();

@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from math import atan2, pi
 from pathlib import Path
 from typing import Any
 
@@ -23,11 +24,108 @@ from .compiler import (
     validate,
 )
 from .location import LOCATION_SCHEMA, validate_location
-from .mask import Cell, CellMask
+from .mask import Cell, CellMask, neighbors
 from .rng import named_rng, named_seed
 
 
 REALIZER_VERSION = "2.3.0-prototype.1"
+
+
+# These quotas deliberately stay below the scene feature budget.  Each recipe
+# gets its own named stream, so adding a new recipe cannot move an established
+# kind's dressing.
+MARKET_DRESSING: tuple[tuple[str, int, tuple[int, int, int], tuple[str, ...]], ...] = (
+    ("market_stall", 5, (5, 5, 6), ("used", "rain_stained", "patched")),
+    ("canvas_awning", 5, (5, 5, 4), ("patched", "faded", "rain_stained")),
+    ("handcart", 4, (5, 5, 4), ("worn", "repaired", "loaded")),
+    ("crate_cluster", 5, (5, 5, 4), ("stacked", "weathered", "marked")),
+    ("produce_basket", 5, (5, 5, 4), ("fresh", "picked_over", "rain_damp")),
+)
+STREET_DRESSING: tuple[tuple[str, int, tuple[int, int, int], tuple[str, ...]], ...] = (
+    ("puddle", 4, (4, 4, 1), ("rainwater", "oil_sheened", "muddy")),
+    ("wheel_rut", 4, (4, 4, 1), ("fresh", "worn", "rain_cut")),
+    ("notice_board", 3, (4, 4, 5), ("posted", "weathered", "torn")),
+    ("barrel", 3, (4, 4, 5), ("waterlogged", "banded", "reused")),
+    ("laundry_line", 4, (4, 4, 5), ("windblown", "patched", "dripping")),
+    ("drain_grate", 4, (4, 4, 1), ("wet", "leaf_choked", "rusted")),
+)
+SEWER_DRESSING: tuple[tuple[str, int, tuple[int, int, int], tuple[str, ...]], ...] = (
+    ("verdigris_pipe", 3, (4, 4, 3), ("corroded", "dripping", "verdigris")),
+    ("fungus_patch", 3, (4, 4, 3), ("luminous", "pale_green", "black_mold")),
+    ("rat_tracks", 3, (4, 4, 3), ("fresh", "muddy", "scattered")),
+    ("maintenance_debris", 3, (4, 4, 3), ("waterlogged", "rusted", "swept_aside")),
+)
+
+
+def _manhattan(left: Cell, right: Cell) -> int:
+    return abs(left[0] - right[0]) + abs(left[1] - right[1])
+
+
+def _edge_cells(candidates: set[Cell], containing: CellMask) -> list[Cell]:
+    """Return candidates touching the outside of their navigable region."""
+    return sorted(point for point in candidates if any(neighbor not in containing.cells for neighbor in neighbors(point)))
+
+
+def _outside_clearance(candidates: set[Cell], protected_points: tuple[Cell, ...], radius: int) -> list[Cell]:
+    return sorted(point for point in candidates if all(_manhattan(point, protected) > radius for protected in protected_points))
+
+
+def _perimeter_sector(candidates: list[Cell], center: Cell, sector: int, sectors: int) -> list[Cell]:
+    """A fixed angular sector prevents market recipes from stacking together."""
+    if not 0 <= sector < sectors:
+        raise ValueError("invalid perimeter sector")
+    return [
+        point for point in candidates
+        if int(((atan2(point[0] - center[0], point[1] - center[1]) + pi) * sectors) / (2 * pi)) % sectors == sector
+    ]
+
+
+def _scatter_poisson_like(candidates: list[Cell] | set[Cell], count: int, *, seed: int, stream: str,
+                          minimum_distance: int, anchors: tuple[Cell, ...] = (),
+                          cluster_radius: int | None = None) -> list[Cell]:
+    """Select stable, separated points, optionally clustered around a local anchor.
+
+    The function owns its RNG stream rather than accepting mutable RNG state.
+    That makes a kind's placement independent of call order and of other kinds.
+    """
+    ordered = sorted(set(candidates))
+    if count < 0 or count > len(ordered):
+        raise ValueError("dressing scatter count exceeds its candidate set")
+    rng = named_rng(seed, stream)
+    selected_anchor = rng.choice(sorted(anchors)) if anchors else None
+    scored = [
+        (
+            _manhattan(point, selected_anchor) if selected_anchor is not None else 0,
+            rng.random(),
+            point,
+        )
+        for point in ordered
+    ]
+    scored.sort()
+    if selected_anchor is not None and cluster_radius is not None:
+        nearby = [item for item in scored if item[0] <= cluster_radius]
+        if len(nearby) >= count:
+            scored = nearby
+    ranked = [point for _, _, point in scored]
+    chosen: list[Cell] = []
+    for point in ranked:
+        if all(_manhattan(point, placed) >= minimum_distance for placed in chosen):
+            chosen.append(point)
+            if len(chosen) == count:
+                return chosen
+    # A narrow irregular edge can lack enough separated cells.  Preserve the
+    # exact quota deterministically rather than dropping a visible dressing kind.
+    for point in ranked:
+        if point not in chosen:
+            chosen.append(point)
+            if len(chosen) == count:
+                return chosen
+    raise AssertionError("dressing scatter failed to satisfy its quota")
+
+
+def _dressing_style(seed: int, stream: str, variants: tuple[str, ...], ordinal: int) -> tuple[int, str]:
+    rng = named_rng(seed, f"{stream}:style:{ordinal}")
+    return rng.choice((0, 90, 180, 270)), rng.choice(variants)
 
 
 def _room(room_id: str, name: str, level_id: str, volume_id: str, role: str, mask: CellMask, *,
@@ -511,25 +609,47 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
     protected = {(ep["level_id"], ep["row"], ep["col"]) for connector in connectors for ep in connector["endpoints"]}
     protected.update((anchor["level_id"], anchor["row"], anchor["col"]) for anchor in anchors)
     features: list[dict[str, Any]] = []
-    surface_rng = named_rng(seed, "location:old_clock:surface_dressing")
-    market_candidates = [point for point in market.sorted_cells() if point in surface_ground.cells and ("surface", *point) not in protected]
-    surface_rng.shuffle(market_candidates)
-    market_kinds = ["market_stall", "canvas_awning", "handcart", "crate_cluster", "produce_basket"]
-    for index, point in enumerate(market_candidates[:24]):
-        features.append(_feature(
-            f"market_trace_{index:02d}", market_kinds[index % len(market_kinds)], "surface", point,
-            dimensions=(5, 5, 6 if index % 2 else 4), rotation=(index % 4) * 90,
-            tags=["market", "lived_in", "soft_cover"], variant=surface_rng.choice(("used", "rain_stained", "patched")),
-        ))
-    street_candidates = [point for point in routes.sorted_cells() if ("surface", *point) not in protected and point not in market.cells]
-    surface_rng.shuffle(street_candidates)
-    street_kinds = ["puddle", "wheel_rut", "notice_board", "barrel", "laundry_line", "drain_grate"]
-    for index, point in enumerate(street_candidates[:22]):
-        features.append(_feature(
-            f"street_trace_{index:02d}", street_kinds[index % len(street_kinds)], "surface", point,
-            dimensions=(4, 4, 1 if index % 3 < 2 else 5), rotation=(index % 4) * 90,
-            tags=["street", "life_trace"], variant=surface_rng.choice(("wet", "worn", "patched")),
-        ))
+    market_candidates = {
+        point for point in market.cells
+        if point in surface_ground.cells and ("surface", *point) not in protected
+    }
+    market_perimeter = _edge_cells(market_candidates, market)
+    for sector, (kind, quota, dimensions, variants) in enumerate(MARKET_DRESSING):
+        stream = f"location:old_clock:dressing:market:{kind}"
+        sector_candidates = _perimeter_sector(market_perimeter, _mask_center(market), sector, len(MARKET_DRESSING))
+        points = _scatter_poisson_like(
+            sector_candidates, quota, seed=seed, stream=f"{stream}:placement",
+            minimum_distance=2, anchors=tuple(sector_candidates), cluster_radius=8,
+        )
+        for index, point in enumerate(points):
+            rotation, variant = _dressing_style(seed, stream, variants, index)
+            features.append(_feature(
+                f"market_trace_{kind}_{index:02d}", kind, "surface", point,
+                dimensions=dimensions, rotation=rotation,
+                tags=["market", "lived_in", "soft_cover", "perimeter_cluster"], variant=variant,
+            ))
+
+    street_candidates = {
+        point for point in routes.cells
+        if point not in market.cells and ("surface", *point) not in protected
+    }
+    street_clearance = (tower_entry_out, inn_entry_out, party_start, market_well, *layout["hatches"])
+    street_candidates = set(_outside_clearance(street_candidates, street_clearance, 2))
+    street_edge_candidates = _edge_cells(street_candidates, routes)
+    for kind, quota, dimensions, variants in STREET_DRESSING:
+        stream = f"location:old_clock:dressing:street:{kind}"
+        candidates = street_edge_candidates if kind in {"puddle", "drain_grate"} else sorted(street_candidates)
+        points = _scatter_poisson_like(
+            candidates, quota, seed=seed, stream=f"{stream}:placement", minimum_distance=3,
+        )
+        for index, point in enumerate(points):
+            rotation, variant = _dressing_style(seed, stream, variants, index)
+            features.append(_feature(
+                f"street_trace_{kind}_{index:02d}", kind, "surface", point,
+                dimensions=dimensions, rotation=rotation,
+                tags=["street", "life_trace", "circulation_edge" if kind in {"puddle", "drain_grate"} else "circulation_route"],
+                variant=variant,
+            ))
 
     room_recipes: dict[str, list[tuple[str, tuple[int, int, int], bool]]] = {
         "guard_post": [("guard_desk", (5, 3, 3), True), ("bell_rope", (2, 2, 10), False)],
@@ -560,14 +680,27 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
                 rotation=rng.choice((0, 90, 180, 270)), blocks=blocks, visibility=room["visibility"],
                 tags=["interior", "hero"], variant=rng.choice(("used", "well_kept", "dusty")),
             ))
-    sewer_candidates = [point for point in sewer_public.sorted_cells() if (sewer_level, *point) not in protected]
-    surface_rng.shuffle(sewer_candidates)
-    for index, point in enumerate(sewer_candidates[:12]):
-        features.append(_feature(
-            f"sewer_trace_{index:02d}", ["verdigris_pipe", "fungus_patch", "rat_tracks", "maintenance_debris"][index % 4], sewer_level, point,
-            volume_id=sewer_volume, room_id="sewer_channel" if point in sewage.cells else "sewer_walkway",
-            dimensions=(4, 4, 3), rotation=(index % 4) * 90, tags=["sewer", "life_trace"], variant="wet",
-        ))
+    sewer_candidates = {
+        point for point in sewer_public.cells if (sewer_level, *point) not in protected
+    }
+    sewer_wall_candidates = set(_edge_cells(sewer_candidates, sewer_public))
+    sewer_channel_candidates = {
+        point for point in sewer_candidates
+        if point in sewage.cells or any(neighbor in sewage.cells for neighbor in neighbors(point))
+    }
+    sewer_edge_candidates = sorted(sewer_wall_candidates | sewer_channel_candidates)
+    for kind, quota, dimensions, variants in SEWER_DRESSING:
+        stream = f"location:old_clock:dressing:sewer:{kind}"
+        points = _scatter_poisson_like(
+            sewer_edge_candidates, quota, seed=seed, stream=f"{stream}:placement", minimum_distance=4,
+        )
+        for index, point in enumerate(points):
+            rotation, variant = _dressing_style(seed, stream, variants, index)
+            features.append(_feature(
+                f"sewer_trace_{kind}_{index:02d}", kind, sewer_level, point,
+                volume_id=sewer_volume, room_id="sewer_channel" if point in sewage.cells else "sewer_walkway",
+                dimensions=dimensions, rotation=rotation, tags=["sewer", "life_trace", "wall_or_channel"], variant=variant,
+            ))
     secret_feature_cells = [
         point for point in secret_mask.sorted_cells()
         if (sewer_level, *point) not in protected
@@ -580,6 +713,15 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
         _feature("smuggler_crates", "sealed_cache", sewer_level, smuggler_crates, volume_id=sewer_volume, room_id="sealed_cistern", dimensions=(8, 5, 5), blocks=True, visibility="dm_only", tags=["secret", "reward"]),
         _feature("smuggler_table", "contraband_table", sewer_level, smuggler_table, volume_id=sewer_volume, room_id="sealed_cistern", dimensions=(5, 5, 3), visibility="dm_only", tags=["secret", "clue"]),
     ])
+    dressing_streams = tuple(
+        f"location:old_clock:dressing:{area}:{kind}"
+        for area, recipes in (
+            ("market", MARKET_DRESSING),
+            ("street", STREET_DRESSING),
+            ("sewer", SEWER_DRESSING),
+        )
+        for kind, _, _, _ in recipes
+    )
 
     plan = {
         "schema_version": "dnd-scene-plan-2.0", "generator_version": REALIZER_VERSION,
@@ -589,8 +731,8 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
         "location_program_sha256": location["location_sha256"],
         "seed_streams": {name: named_seed(seed, name) for name in (
             "location:old_clock:macro", "location:old_clock:streets", "location:old_clock:buildings",
-            "location:old_clock:roof", "location:old_clock:sewer", "location:old_clock:surface_dressing",
-            "location:old_clock:rooms",
+            "location:old_clock:roof", "location:old_clock:sewer", "location:old_clock:rooms",
+            *dressing_streams,
         )},
         "terrain": [
             {"id": "surface_ground", "level_id": "surface", "kind": "ground", "walkable": True, "cell_mask": plain_ground.to_rle()},

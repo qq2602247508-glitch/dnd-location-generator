@@ -962,6 +962,20 @@ def oriented_feature_boxes(feature: dict[str, Any], z: float) -> list[Box]:
     scale_x = min(2.0, max(.5, float(dimensions[0]) * FT))
     scale_y = min(2.0, max(.5, float(dimensions[1]) * FT))
     scale_z = min(1.8, max(.55, float(dimensions[2]) * FT))
+    # Variants alter only dressing presentation, never its tactical cell or
+    # collision truth. A stable variant hash gives reusable size/offset
+    # families without consuming another RNG stream or increasing draw calls.
+    variant = str(feature.get("variant", "weathered"))
+    variant_digest = hashlib.sha256(variant.encode("utf-8")).digest()
+    scale_x *= .90 + variant_digest[0] / 255 * .20
+    scale_y *= .90 + variant_digest[1] / 255 * .20
+    scale_z *= .88 + variant_digest[2] / 255 * .24
+    if any(token in variant for token in ("loaded", "stacked", "leaf_choked")):
+        scale_z *= 1.14
+    if any(token in variant for token in ("worn", "faded", "swept_aside", "picked_over")):
+        scale_z *= .88
+    jitter_x = (variant_digest[3] / 255 - .5) * .12
+    jitter_y = (variant_digest[4] / 255 - .5) * .12
     quarter_turn = round(float(feature.get("rotation_deg", 0)) / 90) % 2 == 1
     transformed: list[Box] = []
     for (cx, cy, cz), (sx, sy, sz) in boxes:
@@ -970,7 +984,7 @@ def oriented_feature_boxes(feature: dict[str, Any], z: float) -> list[Box]:
         if quarter_turn:
             dx, dy = -dy, dx
             out_sx, out_sy = sy * scale_y, sx * scale_x
-        transformed.append(((x + dx, y + dy, z + (cz - z) * scale_z), (out_sx, out_sy, sz * scale_z)))
+        transformed.append(((x + jitter_x + dx, y + jitter_y + dy, z + (cz - z) * scale_z), (out_sx, out_sy, sz * scale_z)))
     return transformed
 
 

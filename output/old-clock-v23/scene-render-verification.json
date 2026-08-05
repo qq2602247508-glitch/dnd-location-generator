@@ -4,24 +4,24 @@
   "blender_version": "4.5.10 LTS",
   "runtime_cells": 5386,
   "prototype_objects": 141,
-  "mesh_vertices": 33432,
+  "mesh_vertices": 33408,
   "connector_pick_nodes": 15,
   "mesh_count": 141,
   "draw_calls": 141,
   "images": {
     "scene-isometric.png": {
-      "bytes": 1792618,
-      "sha256": "96972012f431db07ea1b9511f8bed87f32b0451c7467685ebf8f8385b0dc6901"
+      "bytes": 1790162,
+      "sha256": "61e35025cff6f56aaac5617c8cc168b1496404ddbf2a9e2aa588fb061a373216"
     },
     "scene-topdown.png": {
-      "bytes": 1546545,
-      "sha256": "ed7abedbc6e89064a096c75923c81fee4af24d416d3f79f965a44d2669f9330e"
+      "bytes": 1545793,
+      "sha256": "9f33e51767696a486b7ffda7e6bfbdda65aef277b7f4d6f117dae72a676d8e87"
     }
   },
   "glb": {
     "version": 2,
-    "bytes": 2808308,
-    "sha256": "03f64f862a6b44b991f353e7f5cdd9734b2c649380113397c987a1b7e75ff15b"
+    "bytes": 2807340,
+    "sha256": "0ef33fea843086c767c2d11928f3c5762c6f42c66788c7be30b852e29b3c310c"
   },
-  "blend_bytes": 4562995
+  "blend_bytes": 4562387
 }
