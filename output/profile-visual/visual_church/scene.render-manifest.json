@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_church",
+    "name": "圣烛教堂·通用验证",
+    "type": "church",
+    "seed": 20260822
+  },
+  "category": "building",
+  "profile_hash": "3e7ce965218529d3435779b7f759df89c00976d265aec5721e7c86d2f4a00597",
+  "visual_plan_hash": "df9af95f64570cd76552eaacdbda4fec1a4edf2523170c47ec15977f35acdff3",
+  "prototype_objects": 224,
+  "mesh_vertices": 2760,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 448996,
+      "sha256": "6f53ca7b4e9ae807f0c37727a9d46dc12a8dea1d50c643beb2f3066da90037a7"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 159804,
+      "sha256": "8cfebb51f0284ebf50bd6d245c789e725020acde616bb72c7d9ba439f08c30c9"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1247735,
+      "sha256": "0f09163929e2374275cc1a331e92bd718c38cf85d196b1134e53dcd399a8bd1b"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1043637,
+      "sha256": "33c9350bc70a2facad16f82b961974ba0c9bb3c1ed7f7741bf258553e1f248b5"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

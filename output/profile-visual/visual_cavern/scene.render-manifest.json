@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_cavern",
+    "name": "菌光洞窟·通用验证",
+    "type": "cavern",
+    "seed": 20260821
+  },
+  "category": "building",
+  "profile_hash": "41bc0ce49fe274f62bc29d86ee82f96871181da3586f095c29f4527ef9abce54",
+  "visual_plan_hash": "47cfb59eee6e97dafcd83d83b0dbf2b69944e0d673b3320f54a8dac5cbfed208",
+  "prototype_objects": 46,
+  "mesh_vertices": 604,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 101820,
+      "sha256": "fa6bb62e4c73d335b56cc481b0c4509b830f4fa9f28a9c84535bd0b11e12c846"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 95209,
+      "sha256": "5e7f8a97036258d30eeb8dbaaeaaea375db4b8f96c8612336ecae1b5ce90b4fc"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1143391,
+      "sha256": "6851ced9cf4f540f45e3399a59ca4b41f2aa851e61bb3aa1ef099c271b41b0db"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1064058,
+      "sha256": "e9047ac5b529bf6fc1738cf9540400cd52da67a22f347b6c206be211786a105a"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

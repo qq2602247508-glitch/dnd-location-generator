@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_fortress",
+    "name": "灰石堡垒·通用验证",
+    "type": "fortress",
+    "seed": 20260823
+  },
+  "category": "building",
+  "profile_hash": "e734e445aa8f3a6a100f841ec71fa82a1cc8fb707879ee8428b2664553ce4fa6",
+  "visual_plan_hash": "15c46368892f23b5f6a32c2043d4ab2d533cd3328b96f908d45ccc06f36a9ef2",
+  "prototype_objects": 248,
+  "mesh_vertices": 3136,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 502444,
+      "sha256": "045ca96116d92cf19be60d229918d0af0ccc4bc1b96be4c726359f64b3803b52"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 169566,
+      "sha256": "2fb4b77c3c28aec7cea443c70ec600e7b67d28cd97db1bf09eb45902e12477fe"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1222325,
+      "sha256": "51d7650308457bde515afb0444da0f405158c2485b93ab948eb83a8b1323152f"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1049084,
+      "sha256": "a761ab2ea530c9a387d0886cc407049c1cd9d58d0183d03e532b77b28cfb8aa4"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

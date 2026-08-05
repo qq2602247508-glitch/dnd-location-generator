@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_warehouse",
+    "name": "潮仓·通用验证",
+    "type": "warehouse",
+    "seed": 20260835
+  },
+  "category": "building",
+  "profile_hash": "6f4c89b2b0e5eee49bc9bf98e6f55dce493663f88e78962ee20ff42e0713a972",
+  "visual_plan_hash": "89926c9b95d8911a2b559da76ef24e8369a98d12d7ab3de2f306168b929a238b",
+  "prototype_objects": 135,
+  "mesh_vertices": 1496,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 264184,
+      "sha256": "245f11b4d8f9bfe07af1a0e88ab484e2bd41e6d440a392f913bd2d7e1c3657d2"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 127186,
+      "sha256": "6e61de5bdfb88f097764d0909041e3e616f2c273303fce7201a4c74ddb157b30"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1191972,
+      "sha256": "9c0f96e46a701c54960e5e7bf85e796c147c662c3c03c3b314dfdc0077f9073f"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1028685,
+      "sha256": "7e714cb5d9838e9708cea82d137cd99574045f6f11c22ff1924524bd5efdad71"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_lighthouse",
+    "name": "潮灯塔·通用验证",
+    "type": "lighthouse",
+    "seed": 20260826
+  },
+  "category": "building",
+  "profile_hash": "e8de00a450e77a1ab0364fd517306363b0cf38a4a5f982327b5c52a428c41409",
+  "visual_plan_hash": "5c292d48babfcaff6732fc42ac740f06855553e7886be3076fb0d54e74605667",
+  "prototype_objects": 254,
+  "mesh_vertices": 3120,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 512052,
+      "sha256": "ff9daf89d03482d93c90121cf43d1e8f3479a4deb347d3f7872df7e05ab55084"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 171572,
+      "sha256": "47e8342478487e17f58f53c8f5114b4c707fde12f2dcbfaa7220d2914cded06f"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1222603,
+      "sha256": "3202ac0616f8c64f13cf5d6620cb71c07db0fb4ff98c086112ab535d47b53c9f"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1053649,
+      "sha256": "c4927d7cf3b5dbee5c4df8639a840922adac43f7ec0d4ab4a2f8bed6b8f82e92"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

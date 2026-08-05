@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_library",
+    "name": "星图图书馆·通用验证",
+    "type": "library",
+    "seed": 20260825
+  },
+  "category": "building",
+  "profile_hash": "e05e93f8d686b296a8fbde3a998fbb9cf8ddf16952e5aac10b63526e966b5962",
+  "visual_plan_hash": "001a9613011282d156501711072c780ee0601a1b044ceb76d4be472c9c57a0db",
+  "prototype_objects": 209,
+  "mesh_vertices": 2136,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 396164,
+      "sha256": "d604824f079d2c0d52f2d1627ba4215f68901ace1a069820868112048bc4630b"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 153549,
+      "sha256": "9cdccc1095e8ca5964c753b012a6f854f29909947047a763d6bfa2d57f290fc1"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1238183,
+      "sha256": "8479a0d302a9fb7bf10709beda3795336209f19deddb161ef681784b266514bb"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1025760,
+      "sha256": "02b4ab41ab2348314cc4b28700360d6379e2de839f18ea7564abaed4b03441d4"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

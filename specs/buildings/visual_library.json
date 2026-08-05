@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_library",
+    "name": "星图图书馆·通用验证",
+    "type": "library",
+    "seed": 20260825
+  },
+  "scale": "large",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 3
+  }
+}

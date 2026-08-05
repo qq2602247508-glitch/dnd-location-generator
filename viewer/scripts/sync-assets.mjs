@@ -48,6 +48,11 @@ const files = [
   ["output/profile-visual/visual_sewer/scene.glb", "profile-visual-sewer.glb"],
   ["output/profile-visual/visual_sewer/scene.render-manifest.json", "profile-visual-sewer.render-manifest.json"],
   ["output/profile-visual/visual_sewer.json", "profile-visual-sewer.input.json"],
+  ...["barracks", "cavern", "church", "fortress", "inn", "library", "lighthouse", "mine", "ruin", "tavern", "temple", "warehouse", "workshop"].flatMap((type) => [
+    [`output/profile-visual/visual_${type}/scene.glb`, `profile-visual-${type}.glb`],
+    [`output/profile-visual/visual_${type}/scene.render-manifest.json`, `profile-visual-${type}.render-manifest.json`],
+    [`output/profile-visual/visual_${type}.json`, `profile-visual-${type}.input.json`],
+  ]),
   ["specs/church.json", "church.json"],
   ["specs/underdark.json", "underdark.json"],
   ["specs/city.json", "city.json"],

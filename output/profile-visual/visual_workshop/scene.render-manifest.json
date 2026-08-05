@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_workshop",
+    "name": "船匠工坊·通用验证",
+    "type": "workshop",
+    "seed": 20260836
+  },
+  "category": "building",
+  "profile_hash": "793dfd3947543b73bf320c20f5cb5398bfdd349669242c8c8ab0ad7075360bd0",
+  "visual_plan_hash": "9cc4550de2d87b7012bf8c60ef159d16ec861488bfb64963d7026a39c07d7e3f",
+  "prototype_objects": 134,
+  "mesh_vertices": 1376,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 256176,
+      "sha256": "1cd27134ab68e2f1c952feff04511a3f9e3a85de171b7301a775a3636ecbb7b5"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 126565,
+      "sha256": "56e0a30173e176ed66c6a7782fb17d303bc2d45042774a60a765534b88d26f8f"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1188605,
+      "sha256": "c3199b4fb5b4ab0844c10c98a0bb10a5eef35793c31fc9c26c995d5f9a180103"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1026490,
+      "sha256": "0303ff31877499b3a11bc64d40ec929461e3e78df3e6e97b3881ecf7d91d0b97"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

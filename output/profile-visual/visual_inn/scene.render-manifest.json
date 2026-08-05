@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_inn",
+    "name": "盐风旅店·通用验证",
+    "type": "inn",
+    "seed": 20260824
+  },
+  "category": "building",
+  "profile_hash": "1bef5fe067c924e8132f2e4814318238f26ad432fe6da40e9920a953e92bd8b7",
+  "visual_plan_hash": "4ae5dc6329fd162dcccc7937aa9482bb90c9bee0f97532d9b084139f79cd8eb0",
+  "prototype_objects": 148,
+  "mesh_vertices": 1536,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 281304,
+      "sha256": "454cf21674d6f5cff85e3fd028bf8064e5c22ce138b85bf67468eb3df98eacc0"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 135062,
+      "sha256": "e5bc17538d23f41cbc5ff069e00fb0f2964bbdf626ca19bc89ff28555ec26603"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1194896,
+      "sha256": "79b871e1c62b85ef0a75c06787ed3fd037c766d0cac905002bbc7f0627f9526e"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1032851,
+      "sha256": "87b58e10b7365c8f21f9346a7bc3d62e4904689ddd60bd3993efb9ab7f5796ad"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

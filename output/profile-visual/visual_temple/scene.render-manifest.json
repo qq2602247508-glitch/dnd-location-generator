@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_temple",
+    "name": "月门神殿·通用验证",
+    "type": "temple",
+    "seed": 20260833
+  },
+  "category": "building",
+  "profile_hash": "9ddbf44ea4582a064f55521b4516fb54a0a5cb636975d262b5bcc7e3bdcaa879",
+  "visual_plan_hash": "2bff01ecf1c44b69dbba7611562bb5b38ae2917c011f6d83d21627bd7ebe33f6",
+  "prototype_objects": 217,
+  "mesh_vertices": 2720,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 437824,
+      "sha256": "3d9d9dd500aa83e62e4b0f5b27e782ccffe5fe89f1202109829f67b6c3f85110"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 157341,
+      "sha256": "f9ff81fd08283b92825ecfb69d3870d63b6fae5810c5ac3884293d3993fa04f7"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1217336,
+      "sha256": "4399ac0fc8130923947a3eb45d54f5a67edfd9ef1500d8ccc186b432bdb62f36"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1038029,
+      "sha256": "55ac5b7973570b43e2d60476118a9ea1a9bb271dfdb67d08cf7a8c6f0d502b73"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

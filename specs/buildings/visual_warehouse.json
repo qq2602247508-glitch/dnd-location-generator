@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_warehouse",
+    "name": "潮仓·通用验证",
+    "type": "warehouse",
+    "seed": 20260835
+  },
+  "scale": "medium",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 2
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_temple",
+    "name": "月门神殿·通用验证",
+    "type": "temple",
+    "seed": 20260833
+  },
+  "scale": "medium",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 3
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_workshop",
+    "name": "船匠工坊·通用验证",
+    "type": "workshop",
+    "seed": 20260836
+  },
+  "scale": "medium",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 2
+  }
+}

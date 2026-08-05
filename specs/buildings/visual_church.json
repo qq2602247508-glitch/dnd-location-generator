@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_church",
+    "name": "圣烛教堂·通用验证",
+    "type": "church",
+    "seed": 20260822
+  },
+  "scale": "medium",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 3
+  }
+}

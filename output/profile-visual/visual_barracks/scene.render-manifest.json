@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_barracks",
+    "name": "边墙兵营·通用验证",
+    "type": "barracks",
+    "seed": 20260820
+  },
+  "category": "building",
+  "profile_hash": "081ed1dfee2ef51245218b6d8b1a0f0c51ec020bafbf206fc3d056b6783da1ab",
+  "visual_plan_hash": "53de5dc0c9b854dd3e4314245fb5f84acd635ceb6b1d6965d2b92d712885e097",
+  "prototype_objects": 160,
+  "mesh_vertices": 1696,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 307692,
+      "sha256": "14e7a3f879da692618da8f97537d7b243549671dbe2c8c6f492373d617a87b1b"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 140427,
+      "sha256": "460755cdac63e9843ac8dcfcb11142ba7b236ecf89b6f39e2bfae5d971040ff7"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1191438,
+      "sha256": "18090990bf2c9f2381d6de142ef0dff3936d25a9eaea34c65b0bc54f8f119be7"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1036815,
+      "sha256": "8534c78837d4dea12c876b32db8975157f6775b707e0e6cd8a46dcccdbafac20"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

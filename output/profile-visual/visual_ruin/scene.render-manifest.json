@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_ruin",
+    "name": "坍塌遗迹·通用验证",
+    "type": "ruin",
+    "seed": 20260830
+  },
+  "category": "building",
+  "profile_hash": "6843300058425895a2be3b94fe4c1c793b5a9db9186f9543f9ba632e0cd9a408",
+  "visual_plan_hash": "9bc0f0e4a6f8f57cf8773c6e63ad68254f45c336eac9788cca3638ea1b996d70",
+  "prototype_objects": 49,
+  "mesh_vertices": 684,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 110252,
+      "sha256": "b380fe05d48dc95565a4bbb9e2af57d306827ce8cb90d926ba72300a373e2316"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 94874,
+      "sha256": "6027767ccf7e3b7241f22a0cc2a7d89d7bfd5944048066b513eca8c94aee2dc6"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1134216,
+      "sha256": "1f845f566b25cb05751895b4d675cfe3aed4164c106289e842b98aad7ee6863a"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1064528,
+      "sha256": "506a62e8c1d20f5856e3e968e23a4b9b3bff0d0799fa770747ab45c51a32ce46"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

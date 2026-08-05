@@ -1,0 +1,180 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_tavern",
+    "name": "铜杯酒馆·通用验证",
+    "type": "tavern",
+    "seed": 20260832
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_tavern",
+      "name": "铜杯酒馆·通用验证",
+      "type": "tavern",
+      "seed": 20260832
+    },
+    "scale": "medium",
+    "family": "street_front_commerce",
+    "footprint": "street_front_courtyard",
+    "frontage": "main_street_and_sign",
+    "vertical_grammar": "public_stair_to_guest_rooms",
+    "floor_policy": {
+      "mode": "target",
+      "value": 2
+    },
+    "room_grammar": [
+      "taproom",
+      "kitchen",
+      "stage",
+      "guest_room",
+      "cellar",
+      "back_room",
+      "secret"
+    ],
+    "traits": [
+      "domestic",
+      "interior_rooms",
+      "secret_route"
+    ],
+    "packs": [
+      "lived_in_detail",
+      "room_dressing",
+      "secret_detail"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "7c9b25f61b849498de89cf7f0eabc0622ae3378f7c276239809cf19b7cc64601",
+    "category": "building",
+    "scene": {
+      "id": "visual_tavern",
+      "name": "铜杯酒馆·通用验证",
+      "type": "tavern",
+      "seed": 20260832
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_tavern",
+      "name": "铜杯酒馆·通用验证",
+      "type": "tavern",
+      "seed": 20260832
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "lived_in_detail",
+      "room_dressing",
+      "secret_detail"
+    ],
+    "palette": {
+      "id": "inland",
+      "base": "warm_gray",
+      "accent": "ochre",
+      "light": "lantern"
+    },
+    "materials": [
+      "ceramic",
+      "cloth",
+      "concealed_stone",
+      "dark_wood",
+      "patched_wood",
+      "scuffed_plaster",
+      "warm_lamp",
+      "wax_seal",
+      "wood"
+    ],
+    "dressing": {
+      "roles": [
+        "coded_marks",
+        "false_panels",
+        "functional_props",
+        "mess",
+        "personal_items",
+        "scratches",
+        "shelves",
+        "stacked_goods",
+        "tables"
+      ],
+      "budget": 12,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "cache",
+      "clue",
+      "furniture",
+      "hidden_door",
+      "light",
+      "room_prop",
+      "storage",
+      "wear"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "cache",
+        "clue",
+        "furniture",
+        "hidden_door",
+        "light",
+        "room_prop",
+        "storage",
+        "wear"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "0695fa5624edfb1765d00fbe4775d41c94c2df3240213c7dc3bcb47ba21de8dd"
+  },
+  "source_brief_sha256": "7c9b25f61b849498de89cf7f0eabc0622ae3378f7c276239809cf19b7cc64601"
+}

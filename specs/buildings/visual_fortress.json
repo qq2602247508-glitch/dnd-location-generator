@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_fortress",
+    "name": "灰石堡垒·通用验证",
+    "type": "fortress",
+    "seed": 20260823
+  },
+  "scale": "large",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 3
+  }
+}

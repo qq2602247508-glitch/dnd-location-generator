@@ -1,0 +1,194 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_library",
+    "name": "星图图书馆·通用验证",
+    "type": "library",
+    "seed": 20260825
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_library",
+      "name": "星图图书馆·通用验证",
+      "type": "library",
+      "seed": 20260825
+    },
+    "scale": "large",
+    "family": "scholarly_civic",
+    "footprint": "courtyard_or_l",
+    "frontage": "formal_steps",
+    "vertical_grammar": "gallery_stair_and_archive_lift",
+    "floor_policy": {
+      "mode": "target",
+      "value": 3
+    },
+    "room_grammar": [
+      "entry",
+      "reading_hall",
+      "gallery",
+      "archive",
+      "scriptorium",
+      "vault",
+      "secret"
+    ],
+    "traits": [
+      "interior_rooms",
+      "multi_level",
+      "secret_route"
+    ],
+    "packs": [
+      "landmark_detail",
+      "room_dressing",
+      "secret_detail",
+      "vertical_connections"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "2e08fe735a986e94a3bd816858775f3e1965b2692aac2b737c3345cb433a97a9",
+    "category": "building",
+    "scene": {
+      "id": "visual_library",
+      "name": "星图图书馆·通用验证",
+      "type": "library",
+      "seed": 20260825
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_library",
+      "name": "星图图书馆·通用验证",
+      "type": "library",
+      "seed": 20260825
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "landmark_detail",
+      "room_dressing",
+      "secret_detail",
+      "vertical_connections"
+    ],
+    "palette": {
+      "id": "harbor",
+      "base": "blue_gray",
+      "accent": "verdigris",
+      "light": "amber"
+    },
+    "materials": [
+      "accent_stone",
+      "ceramic",
+      "cloth",
+      "concealed_stone",
+      "dark_wood",
+      "iron_grate",
+      "rope_rail",
+      "signal_metal",
+      "step_stone",
+      "wax_seal",
+      "weathered_banner",
+      "wood"
+    ],
+    "dressing": {
+      "roles": [
+        "coded_marks",
+        "fall_edges",
+        "false_panels",
+        "focal_props",
+        "functional_props",
+        "handrails",
+        "lanterns",
+        "scratches",
+        "shelves",
+        "signage",
+        "tables",
+        "wear_marks"
+      ],
+      "budget": 16,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "bridge",
+      "cache",
+      "clue",
+      "furniture",
+      "hidden_door",
+      "ladder",
+      "landmark",
+      "platform",
+      "room_prop",
+      "stairs",
+      "vista"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "bridge",
+        "cache",
+        "clue",
+        "furniture",
+        "hidden_door",
+        "ladder",
+        "landmark",
+        "platform",
+        "room_prop",
+        "stairs",
+        "vista"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "e05e93f8d686b296a8fbde3a998fbb9cf8ddf16952e5aac10b63526e966b5962"
+  },
+  "source_brief_sha256": "2e08fe735a986e94a3bd816858775f3e1965b2692aac2b737c3345cb433a97a9"
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_cavern",
+    "name": "菌光洞窟·通用验证",
+    "type": "cavern",
+    "seed": 20260821
+  },
+  "scale": "large",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 2
+  }
+}

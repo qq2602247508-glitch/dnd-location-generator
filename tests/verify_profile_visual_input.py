@@ -18,9 +18,7 @@ def main() -> None:
     fixtures = [
         ROOT / "specs" / "districts" / "harbor_district_composer.json",
         ROOT / "specs" / "buildings" / "darkflow_pump_house.json",
-        ROOT / "specs" / "buildings" / "visual_tower.json",
-        ROOT / "specs" / "buildings" / "visual_manor.json",
-        ROOT / "specs" / "buildings" / "visual_sewer.json",
+        *sorted((ROOT / "specs" / "buildings").glob("visual_*.json")),
         ROOT / "specs" / "outdoor" / "silverfall_outdoor_composer.json",
     ]
     reports = []

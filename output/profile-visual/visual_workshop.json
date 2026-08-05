@@ -1,0 +1,179 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_workshop",
+    "name": "船匠工坊·通用验证",
+    "type": "workshop",
+    "seed": 20260836
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_workshop",
+      "name": "船匠工坊·通用验证",
+      "type": "workshop",
+      "seed": 20260836
+    },
+    "scale": "medium",
+    "family": "industrial_craft",
+    "footprint": "yard_attached",
+    "frontage": "service_lane",
+    "vertical_grammar": "mezzanine_and_lift",
+    "floor_policy": {
+      "mode": "target",
+      "value": 2
+    },
+    "room_grammar": [
+      "work_floor",
+      "store",
+      "office",
+      "yard",
+      "hazard_room"
+    ],
+    "traits": [
+      "infrastructure",
+      "interior_rooms"
+    ],
+    "packs": [
+      "room_dressing",
+      "utility_detail",
+      "vertical_connections"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "813228b7d72f1c02d71a9439571bd7fff1b6db3ed09d356708ef79dc5fbd7254",
+    "category": "building",
+    "scene": {
+      "id": "visual_workshop",
+      "name": "船匠工坊·通用验证",
+      "type": "workshop",
+      "seed": 20260836
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_workshop",
+      "name": "船匠工坊·通用验证",
+      "type": "workshop",
+      "seed": 20260836
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "room_dressing",
+      "utility_detail",
+      "vertical_connections"
+    ],
+    "palette": {
+      "id": "harbor",
+      "base": "blue_gray",
+      "accent": "verdigris",
+      "light": "amber"
+    },
+    "materials": [
+      "blackened_bronze",
+      "ceramic",
+      "cloth",
+      "iron_grate",
+      "oxidized_iron",
+      "rope_rail",
+      "step_stone",
+      "wet_brick",
+      "wood"
+    ],
+    "dressing": {
+      "roles": [
+        "fall_edges",
+        "functional_props",
+        "gauges",
+        "handrails",
+        "service_ladders",
+        "shelves",
+        "tables",
+        "valves",
+        "wear_marks"
+      ],
+      "budget": 9,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "bridge",
+      "furniture",
+      "ladder",
+      "machine",
+      "pipe",
+      "platform",
+      "room_prop",
+      "sluice",
+      "stairs"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "bridge",
+        "furniture",
+        "ladder",
+        "machine",
+        "pipe",
+        "platform",
+        "room_prop",
+        "sluice",
+        "stairs"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "793dfd3947543b73bf320c20f5cb5398bfdd349669242c8c8ab0ad7075360bd0"
+  },
+  "source_brief_sha256": "813228b7d72f1c02d71a9439571bd7fff1b6db3ed09d356708ef79dc5fbd7254"
+}

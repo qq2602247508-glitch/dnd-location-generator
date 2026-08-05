@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "visual_mine",
+    "name": "黑脉矿井·通用验证",
+    "type": "mine",
+    "seed": 20260828
+  },
+  "category": "building",
+  "profile_hash": "db364c6e03cc9c8dcffc68c581fad0a4d5617ea8f30132842acd977016cc1c78",
+  "visual_plan_hash": "1b1ad2d93f7ee4246f9bc9d5e82623cc0b25949ca5f6e8b880c3e69f3d2396b7",
+  "prototype_objects": 192,
+  "mesh_vertices": 2126,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 370788,
+      "sha256": "477a63a783c485b98067b383f4a287cee0c3bd00dc77de8631dca31348573bc2"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 148511,
+      "sha256": "185f8778d305176b7f6ab06d172a19e8cc8938bfb370727bea1ad98d73bc9835"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1236410,
+      "sha256": "deb6def32bac4e7d76c0c0236d1857150728194892f58c75fb1ff8f7689e7784"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1039112,
+      "sha256": "02645efb833cbcad2093bb56bfe7e6f3b8b27fcef733a685a5b7aa8c732547e6"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

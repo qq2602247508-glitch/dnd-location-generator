@@ -14,9 +14,7 @@ FIXTURES = {
     "harbor_district": "district",
     "silverfall_outdoor": "outdoor",
     "darkflow_pump_house": "building",
-    "visual_tower": "building",
-    "visual_manor": "building",
-    "visual_sewer": "building",
+    **{path.stem: "building" for path in sorted(PROFILE_ROOT.glob("visual_*.json"))},
 }
 
 

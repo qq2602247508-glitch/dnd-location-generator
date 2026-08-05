@@ -1,0 +1,193 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_church",
+    "name": "圣烛教堂·通用验证",
+    "type": "church",
+    "seed": 20260822
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_church",
+      "name": "圣烛教堂·通用验证",
+      "type": "church",
+      "seed": 20260822
+    },
+    "scale": "medium",
+    "family": "processional_civic",
+    "footprint": "axial_nave_and_side_aisles",
+    "frontage": "processional_forecourt",
+    "vertical_grammar": "bell_tower_and_roof_walk",
+    "floor_policy": {
+      "mode": "target",
+      "value": 3
+    },
+    "room_grammar": [
+      "nave",
+      "aisle",
+      "chapel",
+      "vestry",
+      "crypt",
+      "bell_chamber"
+    ],
+    "traits": [
+      "interior_rooms",
+      "multi_level",
+      "vertical_landmark"
+    ],
+    "packs": [
+      "landmark_detail",
+      "masonry_defense",
+      "room_dressing",
+      "vertical_connections"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "8f2f289cc8c59367170f0baf8e41a0f706b4ed2e4e56271e4a15b3620907df17",
+    "category": "building",
+    "scene": {
+      "id": "visual_church",
+      "name": "圣烛教堂·通用验证",
+      "type": "church",
+      "seed": 20260822
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_church",
+      "name": "圣烛教堂·通用验证",
+      "type": "church",
+      "seed": 20260822
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "landmark_detail",
+      "masonry_defense",
+      "room_dressing",
+      "vertical_connections"
+    ],
+    "palette": {
+      "id": "harbor",
+      "base": "blue_gray",
+      "accent": "verdigris",
+      "light": "amber"
+    },
+    "materials": [
+      "accent_stone",
+      "ceramic",
+      "cloth",
+      "cut_stone",
+      "iron_gate",
+      "iron_grate",
+      "moss_mortar",
+      "rope_rail",
+      "signal_metal",
+      "step_stone",
+      "weathered_banner",
+      "wood"
+    ],
+    "dressing": {
+      "roles": [
+        "arrow_slits",
+        "crenels",
+        "fall_edges",
+        "focal_props",
+        "functional_props",
+        "guard_lanterns",
+        "handrails",
+        "lanterns",
+        "shelves",
+        "signage",
+        "tables",
+        "wear_marks"
+      ],
+      "budget": 14,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "battlement",
+      "bridge",
+      "furniture",
+      "gate",
+      "ladder",
+      "landmark",
+      "platform",
+      "room_prop",
+      "stairs",
+      "vista",
+      "wall"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "battlement",
+        "bridge",
+        "furniture",
+        "gate",
+        "ladder",
+        "landmark",
+        "platform",
+        "room_prop",
+        "stairs",
+        "vista",
+        "wall"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "3e7ce965218529d3435779b7f759df89c00976d265aec5721e7c86d2f4a00597"
+  },
+  "source_brief_sha256": "8f2f289cc8c59367170f0baf8e41a0f706b4ed2e4e56271e4a15b3620907df17"
+}

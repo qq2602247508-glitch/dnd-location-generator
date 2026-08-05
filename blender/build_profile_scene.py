@@ -135,6 +135,25 @@ def cylinder(name: str, center: tuple[float, float, float], radius: float, depth
     return tag(obj, kind, material_id, **extras)
 
 
+def cone(name: str, center: tuple[float, float, float], radius1: float, radius2: float, depth: float, material_id: str, kind: str, *, vertices: int = 12, **extras: Any) -> bpy.types.Object:
+    bpy.ops.mesh.primitive_cone_add(vertices=vertices, radius1=radius1, radius2=radius2, depth=depth, location=center)
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.materials.append(MATERIALS[material_id])
+    for polygon in obj.data.polygons:
+        polygon.use_smooth = kind in {"landmark", "rock_formation", "vegetation"}
+    return tag(obj, kind, material_id, **extras)
+
+
+def ico_rock(name: str, center: tuple[float, float, float], scale: tuple[float, float, float], material_id: str = "stone_light", **extras: Any) -> bpy.types.Object:
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=1.0, location=center)
+    obj = bpy.context.object
+    obj.name = name
+    obj.scale = scale
+    obj.data.materials.append(MATERIALS[material_id])
+    return tag(obj, "rock_formation", material_id, **extras)
+
+
 def cylinder_between(name: str, start: tuple[float, float, float], end: tuple[float, float, float], radius: float, material_id: str, kind: str, **extras: Any) -> bpy.types.Object:
     a, b = Vector(start), Vector(end)
     delta = b - a
@@ -392,10 +411,11 @@ def add_lamp_post(name: str, position: tuple[float, float, float], height: float
 
 def add_crate_stack(name: str, position: tuple[float, float, float], count: int, **extras: Any) -> None:
     crate_extras = {"dressing_role": "crates", **extras}
+    base_z = float(position[2])
     for index in range(count):
         offset_x = (index % 2) * .16
         offset_y = (index // 2) * .16
-        box(f"{name}_{index}", (position[0] + offset_x, position[1] + offset_y, .09 + (index // 4) * .18), (.22, .22, .16), "wood", "street_dressing", **crate_extras)
+        box(f"{name}_{index}", (position[0] + offset_x, position[1] + offset_y, base_z + .09 + (index // 4) * .18), (.22, .22, .16), "wood", "street_dressing", **crate_extras)
 
 
 def rotated_offset(dx: float, dy: float, degrees: float) -> tuple[float, float]:
@@ -855,9 +875,22 @@ def add_building_detail_pack(building_type: str, center: tuple[float, float], wi
         if building_type == "lighthouse":
             cylinder(f"LighthouseBeacon_{building_id}", (cx, cy, top_z + .60), .08, .12, "window", "landmark_detail", building_id=building_id, role="beacon")
             add_battlements(f"LighthouseLantern_{building_id}", (cx, cy, top_z + .66), width * .62, depth * .62, top_z + .80, "metal", building_id=building_id)
+            # A tapered lantern roof and a continuous outer gallery turn the
+            # generic vertical stack into a recognizable coastal landmark.
+            cone(f"LighthouseRoof_{building_id}", (cx, cy, top_z + 1.02), width * .34, .04, .50, "roof", "roof", vertices=12, building_id=building_id, role="lantern_roof")
+            for side in (-1, 1):
+                cylinder_between(f"LighthouseGalleryRail_{building_id}_{side}", (cx - width * .36, cy + side * depth * .35, top_z + .72), (cx + width * .36, cy + side * depth * .35, top_z + .72), .024, "metal", "railing", building_id=building_id, role="gallery")
         if building_type == "fortress":
             for side in (-1, 1):
                 box(f"FortressWallWalk_{building_id}_{side}", (cx + side * width * .35, cy, top_z + .10), (width * .20, depth * .86, .12), "stone_light", "wall_walk", building_id=building_id)
+            # Four corner keeps and a heavier gatehouse provide a defensive
+            # silhouette without sealing the cutaway floors.
+            for corner, (dx, dy) in enumerate(((-.42, -.42), (.42, -.42), (-.42, .42), (.42, .42))):
+                keep_h = top_z + .62 + (corner % 2) * .16
+                cylinder(f"FortressKeep_{building_id}_{corner}", (cx + dx * width, cy + dy * depth, keep_h / 2), width * .12, keep_h, "stone_light", "keep", vertices=10, building_id=building_id, role="corner_tower")
+                add_battlements(f"FortressKeepCap_{building_id}_{corner}", (cx + dx * width, cy + dy * depth, keep_h), width * .12, depth * .12, keep_h + .12, "stone_light", building_id=building_id)
+            box(f"FortressGate_{building_id}", (cx, cy - depth * .48, .64), (width * .46, .12, .88), "stone_light", "gate", building_id=building_id, role="gatehouse")
+            box(f"FortressGateOpening_{building_id}", (cx, cy - depth * .55, .58), (width * .18, .035, .58), "dark", "gate", building_id=building_id, role="portcullis")
     elif building_type in {"church", "temple"}:
         # Processional axis + side aisles remain legible from above and give
         # the same grammar enough identity for chapels, crypts and sanctums.
@@ -868,6 +901,33 @@ def add_building_detail_pack(building_type: str, center: tuple[float, float], wi
                 cylinder(f"AisleColumn_{building_id}_{side}_{index}", (cx + side * width * .28, py, .52), .075, 1.0, "stone_light", "support", building_id=building_id, role="aisle")
         box(f"Altar_{building_id}", (cx, cy + depth * .28, .38), (width * .30, depth * .16, .24), "stone_light", "altar", building_id=building_id)
         box(f"CryptHatch_{building_id}", (cx, cy - depth * .28, .20), (width * .22, depth * .15, .06), "dark", "secret_detail", building_id=building_id, role="crypt")
+        # A raised nave, clerestory lights and a side bell tower are shared
+        # by churches and temples but remain independent of any scene name.
+        # Keep the nave identity as a slim ridge rather than a solid roof: the
+        # viewer is a cutaway tactical scene and must still see the upper
+        # rooms, stairs and altar from above.
+        box(f"NaveSpine_{building_id}", (cx, cy, top_z + .20), (.12, depth * .84, .18), "roof", "roof_detail", building_id=building_id, role="nave_ridge")
+        for floor in range(floors):
+            z = .35 + floor * spacing
+            for side in (-1, 1):
+                for index in range(3):
+                    py = cy - depth * .28 + index * depth * .28
+                    cylinder(f"Clerestory_{building_id}_{floor}_{side}_{index}", (cx + side * width * .20, py, z + .40), .045, .32, "window", "window_detail", building_id=building_id, floor=floor + 1)
+        bell_x = cx + width * .38
+        box(f"BellTower_{building_id}", (bell_x, cy + depth * .20, top_z * .48), (width * .22, depth * .22, top_z * .94), "wall", "bell_tower", building_id=building_id)
+        cone(f"BellRoof_{building_id}", (bell_x, cy + depth * .20, top_z + .58), width * .18, .02, .42, "roof", "roof", vertices=4, building_id=building_id, role="bell_roof")
+        cone(f"SanctumSpire_{building_id}", (cx, cy + depth * .28, top_z + .84), .12, .015, .62, "accent", "landmark", vertices=8, building_id=building_id, role="sanctum_spire")
+        if building_type == "temple":
+            for side in (-1, 1):
+                box(f"TempleProcessional_{building_id}_{side}", (cx + side * width * .32, cy - depth * .04, .34), (width * .12, depth * .62, .08), "stone_light", "aisle", building_id=building_id, role="side_aisle")
+        else:
+            box(f"ChurchRoseWindow_{building_id}", (cx, cy - depth * .49, top_z * .48), (width * .22, .04, width * .22), "window", "window_detail", building_id=building_id, role="rose_window")
+        for floor in range(floors):
+            z = .25 + floor * spacing
+            for index in range(4):
+                py = cy - depth * .34 + index * depth * .23
+                cylinder(f"ProcessionalPillar_{building_id}_{floor}_{index}", (cx, py, z + .30), .055, .56, "stone_light", "support", building_id=building_id, floor=floor + 1, role="processional_pillar")
+            box(f"SanctumRunner_{building_id}_{floor}", (cx, cy + depth * .10, z + .13), (width * .12, depth * .46, .04), "accent", "floor_dressing", building_id=building_id, floor=floor + 1, role="processional_runner")
     elif building_type == "manor":
         for floor in range(floors):
             z = .25 + floor * spacing
@@ -892,9 +952,18 @@ def add_building_detail_pack(building_type: str, center: tuple[float, float], wi
             elif building_type == "barracks":
                 for bunk in range(2):
                     box(f"Bunk_{building_id}_{floor}_{bunk}", (cx - width * .18 + bunk * width * .36, cy - depth * .18, z + .14), (width * .22, depth * .14, .11), "wood", "furniture", building_id=building_id, floor=floor + 1, role="quarters")
+                box(f"ArmoryRack_{building_id}_{floor}", (cx + width * .26, cy + depth * .20, z + .30), (width * .12, .08, .46), "wood", "furniture", building_id=building_id, floor=floor + 1, role="weapon_rack")
+                for spear in range(3):
+                    cylinder_between(f"Spear_{building_id}_{floor}_{spear}", (cx + width * (.20 + spear * .06), cy + depth * .20, z + .34), (cx + width * (.20 + spear * .06), cy + depth * .20, z + .72), .018, "metal", "equipment", building_id=building_id, floor=floor + 1, role="spear")
             else:
                 box(f"CivicTable_{building_id}_{floor}", (cx, cy, z + .22), (width * .34, depth * .16, .12), "wood", "furniture", building_id=building_id, floor=floor + 1, role="public")
                 add_lamp_post(f"CivicLamp_{building_id}_{floor}", (cx, cy - depth * .22, z + .20), .36, building_id=building_id, floor=floor + 1)
+                for barrel in range(2):
+                    cylinder(f"CivicBarrel_{building_id}_{floor}_{barrel}", (cx - width * .28 + barrel * width * .18, cy + depth * .24, z + .18), .10, .26, "wood", "furniture", vertices=10, building_id=building_id, floor=floor + 1, role="barrel")
+                if building_type == "tavern":
+                    box(f"TavernStage_{building_id}_{floor}", (cx + width * .24, cy + depth * .26, z + .18), (width * .26, depth * .15, .12), "wood", "platform", building_id=building_id, floor=floor + 1, role="stage")
+                else:
+                    box(f"InnReception_{building_id}_{floor}", (cx + width * .24, cy + depth * .26, z + .18), (width * .22, depth * .12, .12), "wood", "furniture", building_id=building_id, floor=floor + 1, role="reception")
     elif building_type in {"sewer", "sewer_main", "drainage"}:
         channel_x = cx - width * .10
         box(f"SewerChannel_{building_id}", (channel_x, cy, .18), (width * .30, depth * .80, .10), "water", "water_channel", building_id=building_id, role="waste_flow")
@@ -912,9 +981,51 @@ def add_building_detail_pack(building_type: str, center: tuple[float, float], wi
         # The same cutaway building contract can host a natural chamber: dark
         # ledges, a pool and a rope bridge stand in for straight room walls.
         box(f"CavernPool_{building_id}", (cx + width * .20, cy, .20), (width * .34, depth * .40, .06), "water", "water", building_id=building_id, role="underground_lake")
-        for side in (-1, 1):
-            cylinder(f"CavernStalagmite_{building_id}_{side}", (cx + side * width * .30, cy + depth * .12, .44), .16, .70, "stone_light", "rock_formation", building_id=building_id)
+        for index, (dx, dy, sx, sy, sz) in enumerate(((-.42, .36, .25, .22, .85), (-.28, .12, .18, .16, .62), (.34, .28, .22, .18, .74), (.44, -.22, .16, .20, .58), (-.06, .43, .14, .16, .52))):
+            ico_rock(f"CavernWallRock_{building_id}_{index}", (cx + dx * width, cy + dy * depth, sz * .42), (sx, sy, sz), building_id=building_id, role="cave_wall")
+            cone(f"CavernStalactite_{building_id}_{index}", (cx + dx * width, cy + dy * depth, top_z - .18), sx * .54, .025, max(.24, sz * .75), "stone_light", "rock_formation", vertices=8, building_id=building_id, role="stalactite")
         cylinder_between(f"CavernBridge_{building_id}", (cx - width * .34, cy - depth * .10, .55), (cx + width * .20, cy - depth * .10, .55), .045, "wood", "bridge", building_id=building_id)
+        box(f"CavernLedge_{building_id}", (cx - width * .20, cy + depth * .26, .92), (width * .42, depth * .20, .10), "stone_light", "platform", building_id=building_id, role="upper_ledge")
+        cylinder_between(f"CavernRopeRail_{building_id}", (cx - width * .40, cy - depth * .10, .72), (cx + width * .25, cy - depth * .10, .72), .022, "wood", "railing", building_id=building_id)
+    elif building_type == "ruin":
+        # Ruins are intentionally incomplete: offset wall fragments and
+        # collapsed slabs create negative space rather than another intact
+        # rectangular building.
+        for index, (dx, dy, sx, sy, sz, rot) in enumerate(((-.40, .28, .16, .72, 1.10, 0), (.38, .28, .18, .54, .82, 0), (-.25, -.38, .62, .14, .54, 12), (.20, -.12, .42, .12, .30, -18))):
+            obj = box(f"RuinWall_{building_id}_{index}", (cx + dx * width, cy + dy * depth, sz / 2), (sx * width, sy * depth, sz), "stone_light", "ruin_wall", building_id=building_id, role="broken_wall")
+            obj.rotation_euler[2] = math.radians(rot)
+        for index, (dx, dy, scale) in enumerate(((-.30, -.26, .16), (.08, -.34, .12), (.36, .16, .14), (-.08, .34, .10), (.25, -.02, .08))):
+            ico_rock(f"RuinRubble_{building_id}_{index}", (cx + dx * width, cy + dy * depth, scale * .55), (scale, scale * .72, scale * .55), building_id=building_id, role="collapsed_masonry")
+        box(f"RuinFoundation_{building_id}", (cx, cy, .17), (width * .84, depth * .78, .08), "stone_light", "foundation", building_id=building_id, role="exposed_foundation")
+        cylinder_between(f"RuinClimbBeam_{building_id}", (cx - width * .30, cy - depth * .22, .44), (cx + width * .20, cy + depth * .16, 1.08), .045, "wood", "bridge", building_id=building_id, role="climb_route")
+        for index, (dx, dy, length, angle) in enumerate(((-.34, -.06, .52, 0), (-.10, .20, .44, 24), (.26, -.26, .34, -18), (.40, .24, .28, 12), (-.24, .40, .24, -8))):
+            start_x, start_y = cx + dx * width, cy + dy * depth
+            end_dx, end_dy = rotated_offset(length, 0, angle)
+            cylinder_between(f"RuinTimber_{building_id}_{index}", (start_x, start_y, .32 + index * .05), (start_x + end_dx, start_y + end_dy, .52 + index * .05), .035, "wood", "support", building_id=building_id, role="collapsed_timber")
+    elif building_type == "workshop":
+        for floor in range(floors):
+            z = .25 + floor * spacing
+            box(f"ForgeBed_{building_id}_{floor}", (cx - width * .18, cy + depth * .10, z + .19), (width * .24, depth * .20, .16), "stone_light", "equipment", building_id=building_id, floor=floor + 1, role="forge")
+            cone(f"ForgeFlue_{building_id}_{floor}", (cx - width * .18, cy + depth * .10, z + .48), .10, .07, .32, "metal", "equipment", vertices=8, building_id=building_id, floor=floor + 1, role="chimney")
+            add_crate_stack(f"WorkshopMaterials_{building_id}_{floor}", (cx + width * .22, cy - depth * .20, z + .10), 3, building_id=building_id, floor=floor + 1, dressing_role="materials")
+        cylinder_between(f"WorkshopHoist_{building_id}", (cx + width * .28, cy - depth * .25, .30), (cx + width * .28, cy - depth * .25, top_z + .10), .035, "metal", "equipment", building_id=building_id, role="hoist")
+        box(f"WorkshopBeam_{building_id}", (cx + width * .28, cy - depth * .25, top_z + .14), (width * .46, .10, .10), "wood", "support", building_id=building_id, role="hoist_beam")
+        for index in range(4):
+            x = cx - width * .30 + index * width * .20
+            cylinder(f"WorkshopTool_{building_id}_{index}", (x, cy - depth * .28, .40), .035, .28, "metal", "equipment", building_id=building_id, role="hanging_tool")
+            box(f"WorkshopBench_{building_id}_{index}", (x, cy + depth * .24, .22), (width * .15, .12, .12), "wood", "furniture", building_id=building_id, role="workbench")
+    elif building_type == "warehouse":
+        for floor in range(floors):
+            z = .25 + floor * spacing
+            for shelf in range(3):
+                box(f"WarehouseRack_{building_id}_{floor}_{shelf}", (cx - width * .28 + shelf * width * .28, cy + depth * .16, z + .28), (width * .16, .10, .52), "wood", "furniture", building_id=building_id, floor=floor + 1, role="cargo_rack")
+            add_crate_stack(f"WarehouseCargo_{building_id}_{floor}", (cx + width * .20, cy - depth * .20, z + .10), 4, building_id=building_id, floor=floor + 1, dressing_role="cargo")
+        box(f"WarehouseLoadingDock_{building_id}", (cx, cy - depth * .50, .28), (width * .58, .24, .16), "wood", "platform", building_id=building_id, role="loading_dock")
+        cylinder_between(f"WarehouseCrane_{building_id}", (cx + width * .30, cy - depth * .42, .38), (cx + width * .30, cy - depth * .42, top_z + .30), .04, "metal", "equipment", building_id=building_id, role="gantry")
+        for index in range(4):
+            x = cx - width * .30 + index * width * .20
+            cylinder_between(f"WarehouseHoist_{building_id}_{index}", (x, cy - depth * .36, .36), (x, cy - depth * .36, top_z + .10), .025, "metal", "equipment", building_id=building_id, role="cargo_hoist")
+            add_lamp_post(f"WarehouseLamp_{building_id}_{index}", (x, cy - depth * .44, .24), .28, building_id=building_id, dressing_role="loading_lamp")
     elif building_type == "mine":
         box(f"MineShaft_{building_id}", (cx, cy, .18), (width * .30, depth * .30, .08), "dark", "shaft", building_id=building_id)
         for side in (-1, 1):
@@ -944,8 +1055,16 @@ def add_building() -> None:
     # Open floor plates and corner columns preserve line-of-sight between
     # levels, unlike stacked opaque boxes.  The same deck grammar works for a
     # tower, shrine, pump house or sewer chamber; room packs only choose props.
+    natural_space = building_type in {"cavern", "ruin"}
     for floor in range(floors):
         z = .16 + floor * spacing
+        if natural_space:
+            # Natural/ruined profiles do not inherit the civic floor stack.
+            # Give only the lower chamber a walkable base and let the detail
+            # pack supply broken ledges, rubble and cave walls.
+            if floor == 0:
+                box(f"NaturalFloor_{building_id}", (center[0], center[1], z), (width * .86, depth * .82, .10), "road", "terrain_band", floor=1, building_id=building_id)
+            continue
         material_id = "dark" if floor else "road"
         box(f"BuildingFloor_{floor + 1}", (center[0], center[1], z), (width, depth, .14), material_id, "building_floor", floor=floor + 1, building_id=building_id)
         # Grid strips are clipped to each deck, making the vertical stack
@@ -975,13 +1094,14 @@ def add_building() -> None:
     rooms = [str(room) for room in PROFILE.get("room_grammar", [])]
     room_slots = [(-.26, -.28), (.26, -.28), (-.26, .28), (.26, .28), (0.0, -.05), (0.0, .34)]
     for index, room in enumerate(rooms):
-        floor = min(floors - 1, index % floors)
+        floor = 0 if natural_space else min(floors - 1, index % floors)
         z = .25 + floor * spacing
         slot_x, slot_y = room_slots[index % len(room_slots)]
         x = center[0] + slot_x * width
         y = center[1] + slot_y * depth
         room_width, room_depth = width * (.28 if len(rooms) > 5 else .34), depth * (.24 if len(rooms) > 5 else .30)
-        add_room_shell(f"RoomShell_{room}_{index}", (x, y), room_width, room_depth, z + .10, "wall", room=room, floor=floor + 1, building_id=building_id)
+        if not natural_space:
+            add_room_shell(f"RoomShell_{room}_{index}", (x, y), room_width, room_depth, z + .10, "wall", room=room, floor=floor + 1, building_id=building_id)
         box(f"Room_{room}_{index}", (x, y, z + .16), (room_width * .78, room_depth * .76, .08), "feature", "room_function", room=room, floor=floor + 1, building_id=building_id)
         if room in {"intake", "collector", "channel", "sewage_channel", "underground_lake"}:
             box(f"WaterBasin_{index}", (x, y + depth * .10, z + .12), (width * .24, depth * .22, .05), "water", "water_channel", room=room, floor=floor + 1, building_id=building_id)
@@ -1051,7 +1171,7 @@ def add_building() -> None:
             box(f"Stair_{floor}_{step}", (center[0] + side * (-width * .34 + t * width * .42), center[1] - depth * .34, start_z + t * spacing), (.24, .44, .07), "wood", "stair", floor=floor + 1, building_id=building_id)
         cylinder_between(f"StairRail_{floor}", (center[0] - width * .40, center[1] - depth * .56, start_z + .20), (center[0] + width * .10, center[1] - depth * .56, start_z + spacing + .20), .028, "metal", "railing", building_id=building_id)
     add_building_detail_pack(building_type, center, width, depth, floors, spacing, top_z, building_id)
-    utility_types = {"pump_house", "sewer", "sewer_main", "drainage", "mine", "workshop", "warehouse"}
+    utility_types = {"pump_house", "sewer", "sewer_main", "drainage", "mine"}
     if building_type in utility_types:
         # Service layer is shared, but only infrastructure recipes receive a
         # visible channel and pipe manifold; it must not turn every manor or
@@ -1070,6 +1190,11 @@ def add_building() -> None:
         box("RoofEast", (center[0] + width * .46, center[1], roof_z), (.10, depth * .90, .16), "roof", "roof", building_id=building_id, building_type=building_type)
         cylinder("BuildingVerticalLandmark", (center[0], center[1], top_z + .54), .20, .72, "metal", "landmark", building_id=building_id)
         cylinder("RoofVentCap", (center[0] + width * .22, center[1] - depth * .18, top_z + .42), .11, .20, "accent", "equipment", equipment="vent", building_id=building_id)
+    elif building_type in {"ruin", "cavern"}:
+        # Natural and collapsed spaces use their own negative-space silhouette
+        # from add_building_detail_pack; an intact roof frame would erase the
+        # very incompleteness that makes these profiles useful.
+        pass
     else:
         roof_z = top_z + .16
         # Profile renders are cutaway tactical views: a solid roof would hide

@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_tavern",
+    "name": "铜杯酒馆·通用验证",
+    "type": "tavern",
+    "seed": 20260832
+  },
+  "scale": "medium",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 2
+  }
+}

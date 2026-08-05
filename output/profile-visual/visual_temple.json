@@ -1,0 +1,194 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_temple",
+    "name": "月门神殿·通用验证",
+    "type": "temple",
+    "seed": 20260833
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_temple",
+      "name": "月门神殿·通用验证",
+      "type": "temple",
+      "seed": 20260833
+    },
+    "scale": "medium",
+    "family": "ritual_complex",
+    "footprint": "forecourt_axis_and_crypt",
+    "frontage": "ceremonial_steps",
+    "vertical_grammar": "sanctum_gallery_and_crypt",
+    "floor_policy": {
+      "mode": "target",
+      "value": 3
+    },
+    "room_grammar": [
+      "forecourt",
+      "nave",
+      "sanctum",
+      "side_chapel",
+      "crypt",
+      "secret_vault"
+    ],
+    "traits": [
+      "interior_rooms",
+      "multi_level",
+      "secret_route",
+      "vertical_landmark"
+    ],
+    "packs": [
+      "landmark_detail",
+      "room_dressing",
+      "secret_detail",
+      "vertical_connections"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "a0668e82c5277250c6f6fe41eb36255a90998e072e8f7b170587e57af0db6da2",
+    "category": "building",
+    "scene": {
+      "id": "visual_temple",
+      "name": "月门神殿·通用验证",
+      "type": "temple",
+      "seed": 20260833
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_temple",
+      "name": "月门神殿·通用验证",
+      "type": "temple",
+      "seed": 20260833
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "landmark_detail",
+      "room_dressing",
+      "secret_detail",
+      "vertical_connections"
+    ],
+    "palette": {
+      "id": "harbor",
+      "base": "blue_gray",
+      "accent": "verdigris",
+      "light": "amber"
+    },
+    "materials": [
+      "accent_stone",
+      "ceramic",
+      "cloth",
+      "concealed_stone",
+      "dark_wood",
+      "iron_grate",
+      "rope_rail",
+      "signal_metal",
+      "step_stone",
+      "wax_seal",
+      "weathered_banner",
+      "wood"
+    ],
+    "dressing": {
+      "roles": [
+        "coded_marks",
+        "fall_edges",
+        "false_panels",
+        "focal_props",
+        "functional_props",
+        "handrails",
+        "lanterns",
+        "scratches",
+        "shelves",
+        "signage",
+        "tables",
+        "wear_marks"
+      ],
+      "budget": 14,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "bridge",
+      "cache",
+      "clue",
+      "furniture",
+      "hidden_door",
+      "ladder",
+      "landmark",
+      "platform",
+      "room_prop",
+      "stairs",
+      "vista"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "bridge",
+        "cache",
+        "clue",
+        "furniture",
+        "hidden_door",
+        "ladder",
+        "landmark",
+        "platform",
+        "room_prop",
+        "stairs",
+        "vista"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "9ddbf44ea4582a064f55521b4516fb54a0a5cb636975d262b5bcc7e3bdcaa879"
+  },
+  "source_brief_sha256": "a0668e82c5277250c6f6fe41eb36255a90998e072e8f7b170587e57af0db6da2"
+}

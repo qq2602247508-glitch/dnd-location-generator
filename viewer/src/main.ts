@@ -4,10 +4,10 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "tower" | "manor" | "sewer" | "river_valley" | "sewer_dungeon" | "dragonbone_rift" | "profile_harbor" | "profile_outdoor" | "profile_pump_house" | "profile_visual_tower" | "profile_visual_manor" | "profile_visual_sewer";
+type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "tower" | "manor" | "sewer" | "river_valley" | "sewer_dungeon" | "dragonbone_rift" | "profile_harbor" | "profile_outdoor" | "profile_pump_house" | "profile_visual_tower" | "profile_visual_manor" | "profile_visual_sewer" | "profile_visual_barracks" | "profile_visual_cavern" | "profile_visual_church" | "profile_visual_fortress" | "profile_visual_inn" | "profile_visual_library" | "profile_visual_lighthouse" | "profile_visual_mine" | "profile_visual_ruin" | "profile_visual_tavern" | "profile_visual_temple" | "profile_visual_warehouse" | "profile_visual_workshop";
 type V22SceneKey = "river_valley" | "sewer_dungeon" | "dragonbone_rift";
 type RuntimeSceneKey = "harbor" | "old_clock" | "tower" | "manor" | "sewer";
-type ProfileSceneKey = "profile_harbor" | "profile_outdoor" | "profile_pump_house" | "profile_visual_tower" | "profile_visual_manor" | "profile_visual_sewer";
+type ProfileSceneKey = Exclude<SceneKey, "church" | "underdark" | "city" | "harbor" | "old_clock" | "tower" | "manor" | "sewer" | "river_valley" | "sewer_dungeon" | "dragonbone_rift">;
 type ViewMode = "dm" | "player";
 type ExperienceMode = "theatre" | "exploration" | "tactical";
 type QualityPreset = "quality" | "balanced" | "performance";
@@ -524,6 +524,123 @@ const PROFILE_SCENES: Record<ProfileSceneKey, ProfileSceneDescriptor> = {
     inputAsset: "profile-visual-sewer.input.json",
     manifestAsset: "profile-visual-sewer.render-manifest.json",
     camera: { position: new THREE.Vector3(8.8, 7.0, 9.0), target: new THREE.Vector3(1.45, 0.65, -1.5) },
+  },
+  profile_visual_barracks: {
+    name: "通用兵营·独立验证",
+    description: "共享建筑语法的兵营样本：门厅、值守、兵器库、铺位与多层楼梯，保持可拼贴的独立建筑接口。",
+    category: "building",
+    asset: "profile-visual-barracks.glb",
+    inputAsset: "profile-visual-barracks.input.json",
+    manifestAsset: "profile-visual-barracks.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.8, 7.0, 9.0), target: new THREE.Vector3(1.45, 1.15, -1.5) },
+  },
+  profile_visual_cavern: {
+    name: "通用洞窟·独立验证",
+    description: "共享自然空间语法的洞窟样本：岩壁、地下湖、钟乳石、桥与战术高低差。",
+    category: "building",
+    asset: "profile-visual-cavern.glb",
+    inputAsset: "profile-visual-cavern.input.json",
+    manifestAsset: "profile-visual-cavern.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.8, 6.5, 9.0), target: new THREE.Vector3(1.45, 0.85, -1.5) },
+  },
+  profile_visual_church: {
+    name: "通用教堂·独立验证",
+    description: "共享建筑语法的教堂样本：中殿、侧廊、柱列、祭坛、地窖与跨层连接。",
+    category: "building",
+    asset: "profile-visual-church.glb",
+    inputAsset: "profile-visual-church.input.json",
+    manifestAsset: "profile-visual-church.render-manifest.json",
+    camera: { position: new THREE.Vector3(9.0, 8.0, 9.2), target: new THREE.Vector3(1.45, 1.65, -1.5) },
+  },
+  profile_visual_fortress: {
+    name: "通用堡垒·独立验证",
+    description: "共享防御建筑语法的堡垒样本：城门、墙道、角楼、内院、指挥层与密道。",
+    category: "building",
+    asset: "profile-visual-fortress.glb",
+    inputAsset: "profile-visual-fortress.input.json",
+    manifestAsset: "profile-visual-fortress.render-manifest.json",
+    camera: { position: new THREE.Vector3(9.4, 8.2, 9.4), target: new THREE.Vector3(1.45, 1.75, -1.5) },
+  },
+  profile_visual_inn: {
+    name: "通用旅店·独立验证",
+    description: "共享民用建筑语法的旅店样本：门厅、酒廊、客房、后勤与阁楼路线。",
+    category: "building",
+    asset: "profile-visual-inn.glb",
+    inputAsset: "profile-visual-inn.input.json",
+    manifestAsset: "profile-visual-inn.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.7, 6.8, 8.9), target: new THREE.Vector3(1.45, 1.05, -1.5) },
+  },
+  profile_visual_library: {
+    name: "通用图书馆·独立验证",
+    description: "共享知识建筑语法的图书馆样本：阅览厅、档案架、侧室、密藏与竖向交通。",
+    category: "building",
+    asset: "profile-visual-library.glb",
+    inputAsset: "profile-visual-library.input.json",
+    manifestAsset: "profile-visual-library.render-manifest.json",
+    camera: { position: new THREE.Vector3(9.2, 8.0, 9.3), target: new THREE.Vector3(1.45, 1.55, -1.5) },
+  },
+  profile_visual_lighthouse: {
+    name: "通用灯塔·独立验证",
+    description: "共享垂直地标语法的灯塔样本：锥形塔身、旋梯、外部平台与灯室。",
+    category: "building",
+    asset: "profile-visual-lighthouse.glb",
+    inputAsset: "profile-visual-lighthouse.input.json",
+    manifestAsset: "profile-visual-lighthouse.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.8, 9.5, 9.0), target: new THREE.Vector3(1.45, 2.1, -1.5) },
+  },
+  profile_visual_mine: {
+    name: "通用矿井·独立验证",
+    description: "共享地下工业建筑语法的矿井样本：井口、木支撑、矿堆、轨道与多层竖井。",
+    category: "building",
+    asset: "profile-visual-mine.glb",
+    inputAsset: "profile-visual-mine.input.json",
+    manifestAsset: "profile-visual-mine.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.8, 7.0, 9.0), target: new THREE.Vector3(1.45, 1.15, -1.5) },
+  },
+  profile_visual_ruin: {
+    name: "通用遗迹·独立验证",
+    description: "共享残垣建筑语法的遗迹样本：断墙、坍塌楼板、暴露地基、碎石与可攀路线。",
+    category: "building",
+    asset: "profile-visual-ruin.glb",
+    inputAsset: "profile-visual-ruin.input.json",
+    manifestAsset: "profile-visual-ruin.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.8, 6.7, 9.0), target: new THREE.Vector3(1.45, 0.9, -1.5) },
+  },
+  profile_visual_tavern: {
+    name: "通用酒馆·独立验证",
+    description: "共享社交建筑语法的酒馆样本：吧台、座席、舞台、客房与后门路线。",
+    category: "building",
+    asset: "profile-visual-tavern.glb",
+    inputAsset: "profile-visual-tavern.input.json",
+    manifestAsset: "profile-visual-tavern.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.7, 6.8, 8.9), target: new THREE.Vector3(1.45, 1.05, -1.5) },
+  },
+  profile_visual_temple: {
+    name: "通用神殿·独立验证",
+    description: "共享宗教建筑语法的神殿样本：仪式轴线、祭坛、侧廊、圣物库与地下密室。",
+    category: "building",
+    asset: "profile-visual-temple.glb",
+    inputAsset: "profile-visual-temple.input.json",
+    manifestAsset: "profile-visual-temple.render-manifest.json",
+    camera: { position: new THREE.Vector3(9.0, 8.0, 9.2), target: new THREE.Vector3(1.45, 1.65, -1.5) },
+  },
+  profile_visual_warehouse: {
+    name: "通用仓库·独立验证",
+    description: "共享物流建筑语法的仓库样本：装卸口、货架、吊机、夹层与服务通道。",
+    category: "building",
+    asset: "profile-visual-warehouse.glb",
+    inputAsset: "profile-visual-warehouse.input.json",
+    manifestAsset: "profile-visual-warehouse.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.7, 6.8, 8.9), target: new THREE.Vector3(1.45, 1.05, -1.5) },
+  },
+  profile_visual_workshop: {
+    name: "通用工坊·独立验证",
+    description: "共享生产建筑语法的工坊样本：工作台、炉具、工具架、材料堆与后勤路线。",
+    category: "building",
+    asset: "profile-visual-workshop.glb",
+    inputAsset: "profile-visual-workshop.input.json",
+    manifestAsset: "profile-visual-workshop.render-manifest.json",
+    camera: { position: new THREE.Vector3(8.7, 6.8, 8.9), target: new THREE.Vector3(1.45, 1.05, -1.5) },
   },
 };
 

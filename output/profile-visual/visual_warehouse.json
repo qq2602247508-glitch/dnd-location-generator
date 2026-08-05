@@ -1,0 +1,177 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_warehouse",
+    "name": "潮仓·通用验证",
+    "type": "warehouse",
+    "seed": 20260835
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_warehouse",
+      "name": "潮仓·通用验证",
+      "type": "warehouse",
+      "seed": 20260835
+    },
+    "scale": "medium",
+    "family": "logistics_span",
+    "footprint": "large_span_with_loading_yard",
+    "frontage": "cargo_route",
+    "vertical_grammar": "gantry_and_roof_access",
+    "floor_policy": {
+      "mode": "target",
+      "value": 2
+    },
+    "room_grammar": [
+      "loading_floor",
+      "storage",
+      "office",
+      "hidden_cache"
+    ],
+    "traits": [
+      "infrastructure",
+      "interior_rooms",
+      "secret_route"
+    ],
+    "packs": [
+      "room_dressing",
+      "secret_detail",
+      "utility_detail"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "f98eae71ddc1636a0e28bbdd030de377fe4c69dd5f789457a17d3314b3a0b343",
+    "category": "building",
+    "scene": {
+      "id": "visual_warehouse",
+      "name": "潮仓·通用验证",
+      "type": "warehouse",
+      "seed": 20260835
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_warehouse",
+      "name": "潮仓·通用验证",
+      "type": "warehouse",
+      "seed": 20260835
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "room_dressing",
+      "secret_detail",
+      "utility_detail"
+    ],
+    "palette": {
+      "id": "inland",
+      "base": "warm_gray",
+      "accent": "ochre",
+      "light": "lantern"
+    },
+    "materials": [
+      "blackened_bronze",
+      "ceramic",
+      "cloth",
+      "concealed_stone",
+      "dark_wood",
+      "oxidized_iron",
+      "wax_seal",
+      "wet_brick",
+      "wood"
+    ],
+    "dressing": {
+      "roles": [
+        "coded_marks",
+        "false_panels",
+        "functional_props",
+        "gauges",
+        "scratches",
+        "service_ladders",
+        "shelves",
+        "tables",
+        "valves"
+      ],
+      "budget": 7,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "cache",
+      "clue",
+      "furniture",
+      "hidden_door",
+      "machine",
+      "pipe",
+      "room_prop",
+      "sluice"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "cache",
+        "clue",
+        "furniture",
+        "hidden_door",
+        "machine",
+        "pipe",
+        "room_prop",
+        "sluice"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "6f4c89b2b0e5eee49bc9bf98e6f55dce493663f88e78962ee20ff42e0713a972"
+  },
+  "source_brief_sha256": "f98eae71ddc1636a0e28bbdd030de377fe4c69dd5f789457a17d3314b3a0b343"
+}

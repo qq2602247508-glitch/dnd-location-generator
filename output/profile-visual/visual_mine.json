@@ -1,0 +1,212 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_mine",
+    "name": "黑脉矿井·通用验证",
+    "type": "mine",
+    "seed": 20260828
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_mine",
+      "name": "黑脉矿井·通用验证",
+      "type": "mine",
+      "seed": 20260828
+    },
+    "scale": "large",
+    "family": "subterranean_extraction",
+    "footprint": "tunnel_chambers_and_shaft",
+    "frontage": "adit",
+    "vertical_grammar": "shaft_ladders_and_lifts",
+    "floor_policy": {
+      "mode": "target",
+      "value": 3
+    },
+    "room_grammar": [
+      "adit",
+      "ore_face",
+      "support_chamber",
+      "lift",
+      "collapsed_branch",
+      "cache"
+    ],
+    "traits": [
+      "cave",
+      "infrastructure",
+      "multi_level",
+      "secret_route"
+    ],
+    "packs": [
+      "rock_formation",
+      "secret_detail",
+      "terrain_detail",
+      "utility_detail",
+      "vertical_connections"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "1a281a762573c4fa3e9abe8ba1950ab421ccb05e624383d4ea72a1743b329bf7",
+    "category": "building",
+    "scene": {
+      "id": "visual_mine",
+      "name": "黑脉矿井·通用验证",
+      "type": "mine",
+      "seed": 20260828
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_mine",
+      "name": "黑脉矿井·通用验证",
+      "type": "mine",
+      "seed": 20260828
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "rock_formation",
+      "secret_detail",
+      "terrain_detail",
+      "utility_detail",
+      "vertical_connections"
+    ],
+    "palette": {
+      "id": "harbor",
+      "base": "blue_gray",
+      "accent": "verdigris",
+      "light": "amber"
+    },
+    "materials": [
+      "blackened_bronze",
+      "concealed_stone",
+      "dark_wood",
+      "exposed_gravel",
+      "fractured_slate",
+      "grass",
+      "iron_grate",
+      "layered_rock",
+      "mineral_streak",
+      "oxidized_iron",
+      "rope_rail",
+      "soil",
+      "step_stone",
+      "wax_seal",
+      "wet_brick"
+    ],
+    "dressing": {
+      "roles": [
+        "boulders",
+        "coded_marks",
+        "fall_edges",
+        "fallen_logs",
+        "false_panels",
+        "gauges",
+        "handrails",
+        "moss",
+        "scratches",
+        "service_ladders",
+        "shrubs",
+        "stalactites",
+        "talus",
+        "valves",
+        "wear_marks"
+      ],
+      "budget": 17,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "bridge",
+      "cache",
+      "cave",
+      "cliff",
+      "clue",
+      "cover",
+      "ground",
+      "hidden_door",
+      "ladder",
+      "machine",
+      "pipe",
+      "platform",
+      "sluice",
+      "stairs",
+      "strata",
+      "vegetation"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "bridge",
+        "cache",
+        "cave",
+        "cliff",
+        "clue",
+        "cover",
+        "ground",
+        "hidden_door",
+        "ladder",
+        "machine",
+        "pipe",
+        "platform",
+        "sluice",
+        "stairs",
+        "strata",
+        "vegetation"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "db364c6e03cc9c8dcffc68c581fad0a4d5617ea8f30132842acd977016cc1c78"
+  },
+  "source_brief_sha256": "1a281a762573c4fa3e9abe8ba1950ab421ccb05e624383d4ea72a1743b329bf7"
+}

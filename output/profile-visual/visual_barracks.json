@@ -1,0 +1,182 @@
+{
+  "schema_version": "dnd-profile-visual-input-1.0",
+  "input_version": "3.0.0-prototype.1",
+  "category": "building",
+  "scene": {
+    "id": "visual_barracks",
+    "name": "边墙兵营·通用验证",
+    "type": "barracks",
+    "seed": 20260820
+  },
+  "profile": {
+    "schema_version": "dnd-building-profile-1.0",
+    "factory_version": "3.0.0-prototype.1",
+    "building": {
+      "id": "visual_barracks",
+      "name": "边墙兵营·通用验证",
+      "type": "barracks",
+      "seed": 20260820
+    },
+    "scale": "medium",
+    "family": "military_quarters",
+    "footprint": "street_front_courtyard",
+    "frontage": "training_yard",
+    "vertical_grammar": "stair_to_bunks_and_watch",
+    "floor_policy": {
+      "mode": "target",
+      "value": 2
+    },
+    "room_grammar": [
+      "entry",
+      "barracks",
+      "armory",
+      "mess",
+      "yard",
+      "command",
+      "cache"
+    ],
+    "traits": [
+      "fortification",
+      "interior_rooms",
+      "multi_level"
+    ],
+    "packs": [
+      "masonry_defense",
+      "room_dressing",
+      "vertical_connections"
+    ],
+    "quality_profile": {
+      "views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_evidence": [
+        "exterior_silhouette",
+        "interior_function",
+        "vertical_connection"
+      ],
+      "count_policy": "single_or_composed_instance"
+    },
+    "source_brief_sha256": "2a39a7f842cbf4c15f60053176e16549136dda5bc9633ba7d1d225e857ad722a",
+    "category": "building",
+    "scene": {
+      "id": "visual_barracks",
+      "name": "边墙兵营·通用验证",
+      "type": "barracks",
+      "seed": 20260820
+    }
+  },
+  "visual_plan": {
+    "schema_version": "dnd-visual-plan-1.0",
+    "visual_pack_version": "3.0.0-prototype.1",
+    "scene": {
+      "id": "visual_barracks",
+      "name": "边墙兵营·通用验证",
+      "type": "barracks",
+      "seed": 20260820
+    },
+    "category": "building",
+    "kind": "",
+    "packs": [
+      "masonry_defense",
+      "room_dressing",
+      "vertical_connections"
+    ],
+    "palette": {
+      "id": "highland",
+      "base": "slate",
+      "accent": "silver_moss",
+      "light": "overcast"
+    },
+    "materials": [
+      "ceramic",
+      "cloth",
+      "cut_stone",
+      "iron_gate",
+      "iron_grate",
+      "moss_mortar",
+      "rope_rail",
+      "step_stone",
+      "wood"
+    ],
+    "dressing": {
+      "roles": [
+        "arrow_slits",
+        "crenels",
+        "fall_edges",
+        "functional_props",
+        "guard_lanterns",
+        "handrails",
+        "shelves",
+        "tables",
+        "wear_marks"
+      ],
+      "budget": 12,
+      "variation": "seeded_sparse_and_dense_clusters"
+    },
+    "semantic_kinds": [
+      "battlement",
+      "bridge",
+      "furniture",
+      "gate",
+      "ladder",
+      "platform",
+      "room_prop",
+      "stairs",
+      "wall"
+    ],
+    "camera_presets": {
+      "far": {
+        "purpose": "silhouette_and_composition",
+        "exposure": "broad",
+        "show_grid": false
+      },
+      "mid": {
+        "purpose": "routes_and_frontage",
+        "exposure": "balanced",
+        "show_grid": false
+      },
+      "near": {
+        "purpose": "material_and_function",
+        "exposure": "detail",
+        "show_grid": false
+      },
+      "tactical": {
+        "purpose": "cover_height_and_connectors",
+        "exposure": "readable",
+        "show_grid": true
+      }
+    },
+    "evidence": {
+      "required_views": [
+        "far",
+        "mid",
+        "near",
+        "tactical"
+      ],
+      "required_semantic_kinds": [
+        "battlement",
+        "bridge",
+        "furniture",
+        "gate",
+        "ladder",
+        "platform",
+        "room_prop",
+        "stairs",
+        "wall"
+      ],
+      "score_dimensions": [
+        "composition",
+        "silhouette",
+        "material_coherence",
+        "vertical_readability",
+        "tactical_legibility"
+      ],
+      "minimum_score": 3.0
+    },
+    "source_profile_sha256": "081ed1dfee2ef51245218b6d8b1a0f0c51ec020bafbf206fc3d056b6783da1ab"
+  },
+  "source_brief_sha256": "2a39a7f842cbf4c15f60053176e16549136dda5bc9633ba7d1d225e857ad722a"
+}

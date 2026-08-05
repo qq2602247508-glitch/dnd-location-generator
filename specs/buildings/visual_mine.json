@@ -1,0 +1,16 @@
+{
+  "schema_version": "dnd-building-brief-1.0",
+  "building": {
+    "id": "visual_mine",
+    "name": "黑脉矿井·通用验证",
+    "type": "mine",
+    "seed": 20260828
+  },
+  "scale": "large",
+  "traits": [],
+  "packs": [],
+  "floors": {
+    "mode": "target",
+    "value": 3
+  }
+}
