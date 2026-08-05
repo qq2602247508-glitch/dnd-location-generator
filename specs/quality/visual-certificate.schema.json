@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dnd-visual-certificate.schema.json",
+  "title": "D&D Blind Visual Quality Certificate",
+  "description": "A human review record bound to one rendered PNG and a blinded capture-case identifier.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "certificate_id",
+    "blind_case_id",
+    "image",
+    "metrics",
+    "ratings",
+    "critical_defects"
+  ],
+  "properties": {
+    "schema_version": { "const": "dnd-visual-certificate-1.0" },
+    "certificate_id": { "type": "string", "pattern": "^visual-[a-f0-9]{16}$" },
+    "blind_case_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "byte_size", "width", "height", "png_color_type", "png_bit_depth"],
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "byte_size": { "type": "integer", "minimum": 1 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "png_color_type": { "type": "integer", "enum": [0, 2, 3, 4, 6] },
+        "png_bit_depth": { "const": 8 }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["analysis_version", "image_sha256", "png", "luminance", "coverage", "edges", "colors"],
+      "properties": {
+        "analysis_version": { "const": "visual-quality-images-1.0" },
+        "image_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "png": { "type": "object" },
+        "luminance": { "type": "object" },
+        "coverage": { "type": "object" },
+        "edges": { "type": "object" },
+        "colors": { "type": "object" }
+      }
+    },
+    "ratings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["composition", "readability", "lighting", "material_separation", "tactical_clarity"],
+      "properties": {
+        "composition": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "readability": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "lighting": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "material_separation": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "tactical_clarity": { "type": "integer", "minimum": 1, "maximum": 5 }
+      }
+    },
+    "critical_defects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "note"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "black_frame",
+              "empty_frame",
+              "unreadable_tactical_surface",
+              "permission_leak",
+              "layer_leak",
+              "transition_obscured",
+              "render_artifact",
+              "other"
+            ]
+          },
+          "note": { "type": "string", "maxLength": 1000 }
+        }
+      }
+    }
+  }
+}

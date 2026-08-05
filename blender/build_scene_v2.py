@@ -154,6 +154,47 @@ def boundary_edges(cells: set[tuple[int, int]]) -> set[Edge]:
     return result
 
 
+def grid_strip_boxes(cells: set[tuple[int, int]], z: float, *, thickness: float = .022) -> list[Box]:
+    """Merge per-cell grid marks into continuous strips.
+
+    The tactical contract still exposes every five-foot cell through the floor
+    mesh/runtime.  This only compresses the visual overlay, avoiding two tiny
+    cuboids (and their vertices) for every cell in a large map.
+    """
+    horizontal: dict[int, list[int]] = defaultdict(list)
+    vertical: dict[int, list[int]] = defaultdict(list)
+    for row, col in cells:
+        horizontal[row].append(col)
+        vertical[col].append(row)
+
+    def runs(values: list[int]) -> Iterable[tuple[int, int]]:
+        ordered = sorted(set(values))
+        if not ordered:
+            return
+        start = previous = ordered[0]
+        for value in ordered[1:]:
+            if value != previous + 1:
+                yield start, previous + 1
+                start = value
+            previous = value
+        yield start, previous + 1
+
+    boxes: list[Box] = []
+    for row, cols in sorted(horizontal.items()):
+        for start, end in runs(cols):
+            boxes.append((
+                (((start + end) * CELL / 2), row * CELL + .012, z),
+                ((end - start) * CELL - .025, thickness, .014),
+            ))
+    for col, rows in sorted(vertical.items()):
+        for start, end in runs(rows):
+            boxes.append((
+                (col * CELL + .012, ((start + end) * CELL / 2), z),
+                (thickness, (end - start) * CELL - .025, .014),
+            ))
+    return boxes
+
+
 def edge_key(left: tuple[int, int], right: tuple[int, int]) -> frozenset[tuple[int, int]]:
     return frozenset((left, right))
 
@@ -204,13 +245,7 @@ def build_terrain() -> None:
             pick_role="tactical_floor" if terrain.get("walkable") else "blocked_surface",
             surface_kind=kind, walkable=bool(terrain.get("walkable")), area_id=terrain["id"], cell_count=len(cells),
         )
-        grid_boxes = []
-        for row, col in sorted(cells):
-            grid_z = z + z_offset + .012
-            grid_boxes.extend([
-                ((col * CELL + CELL / 2, row * CELL + .012, grid_z), (CELL - .025, .022, .014)),
-                ((col * CELL + .012, row * CELL + CELL / 2, grid_z), (.022, CELL - .025, .014)),
-            ])
+        grid_boxes = grid_strip_boxes(cells, z + z_offset + .012)
         boxes_mesh(
             f"SurfaceGrid_{level_id}_{kind}", grid_boxes, MATERIALS["grid_surface"],
             kind="grid", level_id=level_id, material_id="grid_surface", visibility="public", pick_role="none",
@@ -235,7 +270,7 @@ def runtime_groups() -> dict[tuple[str, str, str], list[dict[str, Any]]]:
 
 
 def build_level_floors_and_grids() -> None:
-    grid_by_level: dict[tuple[str, str], list[Box]] = defaultdict(list)
+    grid_cells_by_level: dict[tuple[str, str], set[tuple[int, int]]] = defaultdict(set)
     for (level_id, surface, visibility), cells in sorted(runtime_groups().items()):
         z = float(LEVELS[level_id]["z_base_ft"]) * FT
         material_name = "sewage" if surface == "sewage" else ("secret_floor" if visibility == "dm_only" else "interior")
@@ -247,13 +282,12 @@ def build_level_floors_and_grids() -> None:
             kind="floor", level_id=level_id, material_id=material_name, visibility=visibility, pick_role="tactical_floor",
             room_ids=room_ids, volume_ids=volume_ids, surface_kind=surface, cell_count=len(cells),
         )
-        for cell in cells:
-            row, col = int(cell["row"]), int(cell["col"])
-            grid_by_level[(level_id, visibility)].extend([
-                ((col * CELL + CELL / 2, row * CELL + .012, z + .018), (CELL - .03, .024, .016)),
-                ((col * CELL + .012, row * CELL + CELL / 2, z + .018), (.024, CELL - .03, .016)),
-            ])
-    for (level_id, visibility), boxes in grid_by_level.items():
+        grid_cells_by_level[(level_id, visibility)].update(
+            (int(cell["row"]), int(cell["col"])) for cell in cells
+        )
+    for (level_id, visibility), grid_cells in grid_cells_by_level.items():
+        z = float(LEVELS[level_id]["z_base_ft"]) * FT
+        boxes = grid_strip_boxes(grid_cells, z + .018, thickness=.024)
         boxes_mesh(f"Grid_{level_id}_{visibility}", boxes, MATERIALS["grid"], kind="grid", level_id=level_id, material_id="grid", visibility=visibility, pick_role="none", line_count=len(boxes))
 
 

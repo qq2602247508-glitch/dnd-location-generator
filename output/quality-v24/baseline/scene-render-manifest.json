@@ -1,0 +1,48 @@
+{
+  "status": "generated",
+  "schema_version": "dnd-scene-render-manifest-2.0",
+  "scene_id": "old_clock_quarter_v23",
+  "generator_version": "2.3.0-prototype.1",
+  "plan_sha256": "c25e81c8ece4d5c15391aafb41d56b8bc4b769fbaa2cc8ccd0dd9bccdb8f52fa",
+  "runtime_sha256": "f25a78cec0f645b54aa56e6b40096fced3c159f1c7c2106291d95135091a6035",
+  "blender_version": "4.5.10 LTS",
+  "grid": {
+    "cell_size_ft": 5,
+    "coordinate_contract": "cell(row,col)->world_ft(col*5,-row*5,z_base_ft)",
+    "height": 64,
+    "origin_ft": [
+      0,
+      0,
+      0
+    ],
+    "width": 72
+  },
+  "levels": 13,
+  "rooms": 19,
+  "connectors": 15,
+  "features": 81,
+  "prototype_objects": 139,
+  "estimated_draw_calls": 139,
+  "visual_layer_version": "2.3",
+  "batched_boxes": 18581,
+  "mesh_vertices": 148648,
+  "object_kinds": {
+    "anchor": 6,
+    "archetype_detail": 14,
+    "connector": 15,
+    "connector_visual": 14,
+    "feature": 38,
+    "floor": 12,
+    "grid": 16,
+    "life_trace": 1,
+    "roof": 7,
+    "surface": 4,
+    "wall": 12
+  },
+  "outputs": [
+    "scene.glb",
+    "scene-prototype.blend",
+    "scene-isometric.png",
+    "scene-topdown.png"
+  ]
+}

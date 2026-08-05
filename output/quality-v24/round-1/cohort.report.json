@@ -1,0 +1,105 @@
+{
+  "schema_version": "dnd-scene-quality-cohort-1.0",
+  "evaluator_version": "2.4.0-prototype.1",
+  "policy_version": "2.4.0-prototype.1",
+  "round": "round1",
+  "status": "passed",
+  "thresholds_enforced": true,
+  "checks": {
+    "minimum_samples": true,
+    "zero_hard_failures": true,
+    "score_median": true,
+    "score_p10": true,
+    "unique_layout_rate": true,
+    "clone_rate": true,
+    "pairwise_distance_median": true,
+    "pairwise_distance_p10": true,
+    "per_archetype_median": true
+  },
+  "failure_ids": [],
+  "metrics": {
+    "samples": 8,
+    "hard_failure_count": 0,
+    "score_median": 85.07,
+    "score_p10": 84.83,
+    "unique_layouts": 8,
+    "unique_layout_rate": 1.0,
+    "clone_rate": 0.0,
+    "pairwise_distance_median": 0.9751,
+    "pairwise_distance_p10": 0.9489,
+    "per_archetype": {
+      "built_district": {
+        "samples": 8,
+        "median_score": 85.07,
+        "p10_score": 84.83
+      }
+    }
+  },
+  "samples": [
+    {
+      "scene_id": "old_clock_quarter_v23",
+      "seed": 731029,
+      "archetype": "built_district",
+      "status": "rejected_soft_score",
+      "soft_score": 84.43,
+      "layout_fingerprint": "b0f9dfd366846f3729b5b7f32f8ad6c44ba154829f646bf0dabb4149184ac3af"
+    },
+    {
+      "scene_id": "old_clock_quarter_v23",
+      "seed": 835758,
+      "archetype": "built_district",
+      "status": "rejected_soft_score",
+      "soft_score": 85.06,
+      "layout_fingerprint": "ecd9734f77b545fe135865f6d3c557d3b233dfe73dd8a6f92c6d77fcb449e075"
+    },
+    {
+      "scene_id": "old_clock_quarter_v23",
+      "seed": 940487,
+      "archetype": "built_district",
+      "status": "rejected_soft_score",
+      "soft_score": 85.09,
+      "layout_fingerprint": "73a3dd12247425ada3f8fda8bbb28c7f3aa8873dee676cdc9f2fe7acc5b64b03"
+    },
+    {
+      "scene_id": "old_clock_quarter_v23",
+      "seed": 1045216,
+      "archetype": "built_district",
+      "status": "rejected_soft_score",
+      "soft_score": 85.03,
+      "layout_fingerprint": "0db65faf568ab8d9c8d8afa2268ecc741c8e885712c7be8a03765af77a0ea772"
+    },
+    {
+      "scene_id": "old_clock_quarter_v23",
+      "seed": 1149945,
+      "archetype": "built_district",
+      "status": "rejected_soft_score",
+      "soft_score": 85.0,
+      "layout_fingerprint": "69ca580bc974a6441723666298b2974fe00ed1af8005f05a126f1eed2cca25df"
+    },
+    {
+      "scene_id": "old_clock_quarter_v23",
+      "seed": 1254674,
+      "archetype": "built_district",
+      "status": "rejected_soft_score",
+      "soft_score": 85.32,
+      "layout_fingerprint": "3a45b6b7a056f60a72bf06962e67cad8c867b32c844406130a2786fa9033abfd"
+    },
+    {
+      "scene_id": "old_clock_quarter_v23",
+      "seed": 1359403,
+      "archetype": "built_district",
+      "status": "rejected_soft_score",
+      "soft_score": 85.08,
+      "layout_fingerprint": "6cfaf8cc8fb572ff923bf0848174e60d6151e240ddf5a08c4e2da4a1f5e324b9"
+    },
+    {
+      "scene_id": "old_clock_quarter_v23",
+      "seed": 1464132,
+      "archetype": "built_district",
+      "status": "rejected_soft_score",
+      "soft_score": 85.29,
+      "layout_fingerprint": "5611ac338d2e25fcf88ce1cc3e29632a8bd82e40863446f3eb54f5bf5f612ba6"
+    }
+  ],
+  "report_sha256": "141855cd248a5aafef1ec21b5e164457ffe9689a69d0e3a33dd7f00c2555c445"
+}

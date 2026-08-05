@@ -15,11 +15,9 @@ from typing import Any
 
 from .compiler import (
     canonical_bytes,
-    cell_id,
     compile_runtime,
     endpoint,
     first_shared_edge,
-    l_shape,
     sha256_value,
     split_mask,
     validate,
@@ -91,35 +89,285 @@ def _contains(mask: CellMask, point: Cell, label: str) -> Cell:
     return point
 
 
+def _notched_footprint(row: int, col: int, height: int, width: int, notch_height: int, notch_width: int,
+                        corner: str) -> CellMask:
+    """Return a connected irregular footprint with a deterministic corner notch."""
+    if not 0 < notch_height < height or not 0 < notch_width < width:
+        raise ValueError("building notch must be smaller than its footprint")
+    whole = CellMask.rect(row, col, height, width)
+    starts = {
+        "nw": (row, col),
+        "ne": (row, col + width - notch_width),
+        "sw": (row + height - notch_height, col),
+        "se": (row + height - notch_height, col + width - notch_width),
+    }
+    if corner not in starts:
+        raise ValueError(f"unsupported building notch corner: {corner}")
+    notch_row, notch_col = starts[corner]
+    return whole - CellMask.rect(notch_row, notch_col, notch_height, notch_width)
+
+
+def _mask_center(mask: CellMask) -> Cell:
+    if not mask.cells:
+        raise ValueError("cannot find the center of an empty mask")
+    rows, cols = zip(*mask.cells)
+    return ((min(rows) + max(rows)) // 2, (min(cols) + max(cols)) // 2)
+
+
+def _nearest_cell(mask: CellMask, target: Cell, *, exclude: set[Cell] | None = None) -> Cell:
+    excluded = exclude or set()
+    candidates = [point for point in mask.cells if point not in excluded]
+    if not candidates:
+        raise ValueError("no eligible cell in mask")
+    return min(candidates, key=lambda point: (abs(point[0] - target[0]) + abs(point[1] - target[1]), point))
+
+
+def _entry_connection(base: CellMask, bounds: CellMask, occupied: CellMask, target: Cell) -> tuple[Cell, Cell]:
+    """Pick a stable outside/inside door pair on an unobstructed building edge."""
+    candidates = [
+        (inside, outside)
+        for inside, outside in base.boundary_edges()
+        if outside in bounds.cells and outside not in occupied.cells
+    ]
+    if not candidates:
+        raise AssertionError("building has no free surface edge for a public entrance")
+    inside, outside = min(
+        candidates,
+        key=lambda item: (
+            abs(item[1][0] - target[0]) + abs(item[1][1] - target[1]),
+            item[1], item[0],
+        ),
+    )
+    return outside, inside
+
+
+def _old_clock_layout(seed: int, width: int, height: int) -> dict[str, Any]:
+    """Build the macro geometry before room realization.
+
+    The named streams deliberately keep streets, footprints, roofs and sewers
+    independent.  This lets a dressing change stay cosmetic while every seed
+    still receives a materially different navigable district.
+    """
+    if width < 64 or height < 60:
+        raise ValueError("old-clock layout requires a grid of at least 64x60 cells")
+
+    bounds = CellMask.rect(0, 0, height, width)
+    macro_rng = named_rng(seed, "location:old_clock:macro")
+    street_rng = named_rng(seed, "location:old_clock:streets")
+    building_rng = named_rng(seed, "location:old_clock:buildings")
+    roof_rng = named_rng(seed, "location:old_clock:roof")
+    sewer_rng = named_rng(seed, "location:old_clock:sewer")
+
+    def irregular(row: int, col: int, rows: int, cols: int) -> CellMask:
+        return _notched_footprint(
+            row,
+            col,
+            rows,
+            cols,
+            3 + building_rng.randrange(2),
+            3 + building_rng.randrange(3),
+            building_rng.choice(("nw", "ne", "sw", "se")),
+        )
+
+    tower = CellMask.rect(
+        6 + building_rng.randrange(3),
+        27 + building_rng.randrange(4),
+        7 + building_rng.randrange(3),
+        7 + building_rng.randrange(3),
+    )
+    inn = irregular(
+        19 + building_rng.randrange(4),
+        43 + building_rng.randrange(3),
+        9 + building_rng.randrange(3),
+        11 + building_rng.randrange(3),
+    )
+    scribes = irregular(
+        17 + building_rng.randrange(3),
+        12 + building_rng.randrange(3),
+        8 + building_rng.randrange(3),
+        10 + building_rng.randrange(3),
+    )
+    shrine = irregular(
+        32 + building_rng.randrange(3),
+        14 + building_rng.randrange(3),
+        7 + building_rng.randrange(3),
+        8 + building_rng.randrange(3),
+    )
+    locksmith = irregular(
+        35 + building_rng.randrange(3),
+        45 + building_rng.randrange(3),
+        7 + building_rng.randrange(3),
+        9 + building_rng.randrange(3),
+    )
+    tenement = irregular(
+        46 + building_rng.randrange(3),
+        13 + building_rng.randrange(4),
+        9 + building_rng.randrange(3),
+        11 + building_rng.randrange(3),
+    )
+    ward_post = CellMask.rect(
+        49 + building_rng.randrange(3),
+        44 + building_rng.randrange(3),
+        7 + building_rng.randrange(3),
+        8 + building_rng.randrange(3),
+    )
+    blueprints = [
+        {"id": "old_clock_tower", "name": "旧钟塔", "kind": "tower", "archetype": "clock_tower", "base": tower, "levels": 3},
+        {"id": "crooked_bell_inn", "name": "歪钟旅店", "kind": "building", "archetype": "inn", "base": inn, "levels": 2},
+        {"id": "scribes_guild", "name": "抄写员行会", "kind": "building", "archetype": "guildhall", "base": scribes, "levels": 1},
+        {"id": "copper_shrine", "name": "铜雨小祠", "kind": "building", "archetype": "shrine", "base": shrine, "levels": 1},
+        {"id": "locksmith_row", "name": "锁匠铺", "kind": "building", "archetype": "shop", "base": locksmith, "levels": 1},
+        {"id": "leaning_tenement", "name": "斜檐公寓", "kind": "building", "archetype": "tenement", "base": tenement, "levels": 1},
+        {"id": "ward_post", "name": "旧钟岗亭", "kind": "building", "archetype": "watchhouse", "base": ward_post, "levels": 1},
+    ]
+    footprints = CellMask.empty()
+    for blueprint in blueprints:
+        base = blueprint["base"]
+        if not base.cells <= bounds.cells:
+            raise AssertionError(f"building footprint escapes the grid: {blueprint['id']}")
+        if footprints.cells & base.cells:
+            raise AssertionError(f"building footprints overlap: {blueprint['id']}")
+        footprints = footprints | base
+
+    tower_entry_out, tower_entry_in = _entry_connection(
+        tower,
+        bounds,
+        footprints,
+        (max(point[0] for point in tower.cells) + 3, _mask_center(tower)[1]),
+    )
+    inn_entry_out, inn_entry_in = _entry_connection(
+        inn,
+        bounds,
+        footprints,
+        (_mask_center(inn)[0], min(point[1] for point in inn.cells) - 3),
+    )
+
+    market_row = 24 + macro_rng.randrange(4)
+    market_col = 27 + macro_rng.randrange(3)
+    market = CellMask.rect(market_row, market_col, 9 + macro_rng.randrange(3), 12 + macro_rng.randrange(3))
+    market_center = _mask_center(market)
+    party_start = (height - 3, 30 + street_rng.randrange(9))
+    main_street = CellMask.path([
+        party_start,
+        (height - 10, party_start[1] + street_rng.randrange(-4, 5)),
+        (height - 19, market_center[1] + street_rng.randrange(-5, 6)),
+        (market_center[0] + 6, market_center[1] + street_rng.randrange(-3, 4)),
+        market_center,
+        (tower_entry_out[0] + 3, tower_entry_out[1] + street_rng.randrange(-2, 3)),
+        tower_entry_out,
+    ], radius=1 + macro_rng.randrange(2)).clipped(height, width)
+    crooked_alley = CellMask.path([
+        (height - 10, party_start[1] + street_rng.randrange(-2, 3)),
+        (height - 16, 38 + street_rng.randrange(-3, 4)),
+        (40 + street_rng.randrange(-2, 3), inn_entry_out[1] - 3),
+        inn_entry_out,
+    ], radius=1).clipped(height, width)
+    guild_lane = CellMask.path([
+        (market_center[0] + 5, market_center[1] - 3),
+        (32 + street_rng.randrange(-2, 3), 26 + street_rng.randrange(-3, 4)),
+        (min(point[0] for point in scribes.cells) + 3, max(point[1] for point in scribes.cells) + 1),
+    ], radius=1).clipped(height, width)
+    east_lane = CellMask.path([
+        (height - 19, market_center[1] + 2),
+        (43 + street_rng.randrange(-2, 3), min(point[1] for point in locksmith.cells) - 2),
+        (min(point[0] for point in locksmith.cells) + 3, min(point[1] for point in locksmith.cells) - 1),
+    ], radius=1).clipped(height, width)
+    routes = (main_street | market | crooked_alley | guild_lane | east_lane) - footprints
+    surface_ground = bounds - footprints
+    plain_ground = surface_ground - routes
+
+    tower_roof = _nearest_cell(tower, _mask_center(inn))
+    inn_roof = _nearest_cell(inn, _mask_center(tower))
+    roof_midpoint = ((tower_roof[0] + inn_roof[0]) // 2, (tower_roof[1] + inn_roof[1]) // 2)
+    roof_mask = CellMask.path([
+        inn_roof,
+        (inn_roof[0] + roof_rng.randrange(-2, 3), inn_roof[1] - roof_rng.randrange(2, 6)),
+        (roof_midpoint[0] + roof_rng.randrange(-3, 4), roof_midpoint[1] + roof_rng.randrange(-3, 4)),
+        (tower_roof[0] + roof_rng.randrange(1, 4), tower_roof[1] + roof_rng.randrange(-2, 3)),
+        tower_roof,
+    ], radius=1).clipped(height, width)
+    roof_vantage = _nearest_cell(roof_mask, roof_midpoint, exclude={tower_roof, inn_roof})
+
+    ring_top = 16 + sewer_rng.randrange(3)
+    ring_bottom = 49 + sewer_rng.randrange(3)
+    ring_left = 18 + sewer_rng.randrange(3)
+    ring_right = 50 + sewer_rng.randrange(3)
+    sewer_ring = CellMask.path([
+        (ring_top, ring_left), (ring_top, ring_right), (ring_bottom, ring_right),
+        (ring_bottom, ring_left), (ring_top, ring_left),
+    ], radius=1).clipped(height, width)
+    upper_hatch = (market_center[0] + sewer_rng.randrange(-2, 3), market_center[1] + sewer_rng.randrange(-2, 3))
+    lower_hatch = (46 + sewer_rng.randrange(4), 31 + sewer_rng.randrange(7))
+    upper_turn = (upper_hatch[0] + sewer_rng.randrange(-3, 4), ring_right - sewer_rng.randrange(3, 8))
+    lower_turn = (lower_hatch[0] - sewer_rng.randrange(1, 5), ring_left + sewer_rng.randrange(3, 8))
+    sewer_branches = (
+        CellMask.path([upper_hatch, upper_turn, (upper_turn[0], ring_right)], radius=1)
+        | CellMask.path([lower_hatch, lower_turn, (lower_turn[0], ring_left)], radius=1)
+    ).clipped(height, width)
+    sewer_public = sewer_ring | sewer_branches
+    sewage = CellMask.path([
+        (ring_top + 1, ring_left + 1), (ring_top + 1, ring_right - 1),
+        (ring_bottom - 1, ring_right - 1),
+    ], radius=0) & sewer_public
+    sewer_dry = sewer_public - sewage
+    secret_height = 5 + sewer_rng.randrange(2)
+    secret_width = 5 + sewer_rng.randrange(2)
+    secret_mask = CellMask.rect(ring_bottom - 7 - sewer_rng.randrange(3), ring_right + 2, secret_height, secret_width)
+    sewer_junction = (upper_turn[0], ring_right)
+    smuggler_cache = _nearest_cell(secret_mask, _mask_center(secret_mask))
+
+    for label, mask, point in (
+        ("party_start", surface_ground, party_start),
+        ("market_well", surface_ground, _nearest_cell(market & surface_ground, market_center)),
+        ("tower_entry", surface_ground, tower_entry_out),
+        ("inn_entry", surface_ground, inn_entry_out),
+        ("hatch_one", surface_ground, upper_hatch),
+        ("hatch_two", surface_ground, lower_hatch),
+        ("sewer_junction", sewer_public, sewer_junction),
+    ):
+        _contains(mask, point, label)
+
+    return {
+        "blueprints": blueprints,
+        "footprints": footprints,
+        "market": market,
+        "routes": routes,
+        "surface_ground": surface_ground,
+        "plain_ground": plain_ground,
+        "tower_entry_out": tower_entry_out,
+        "tower_entry_in": tower_entry_in,
+        "inn_entry_out": inn_entry_out,
+        "inn_entry_in": inn_entry_in,
+        "tower_roof": tower_roof,
+        "inn_roof": inn_roof,
+        "roof_mask": roof_mask,
+        "roof_vantage": roof_vantage,
+        "sewer_public": sewer_public,
+        "sewage": sewage,
+        "sewer_dry": sewer_dry,
+        "secret_mask": secret_mask,
+        "hatches": (upper_hatch, lower_hatch),
+        "party_start": party_start,
+        "market_well": _nearest_cell(market & surface_ground, market_center),
+        "clock_objective": sorted(tower.cells)[len(tower.cells) // 2],
+        "inn_hub": inn_entry_in,
+        "sewer_junction": sewer_junction,
+        "smuggler_cache": smuggler_cache,
+    }
+
+
 def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
     validate_location(location)
     if location.get("schema_version") != LOCATION_SCHEMA or location["scene"]["id"] != "old_clock_quarter_v23":
         raise ValueError("prototype.1 realizes only the old_clock_quarter_v23 location pack")
     seed = int(location["scene"]["seed"])
     width, height = int(location["grid"]["width"]), int(location["grid"]["height"])
-    bounds = CellMask.rect(0, 0, height, width)
-
-    blueprints = [
-        {"id": "old_clock_tower", "name": "旧钟塔", "kind": "tower", "archetype": "clock_tower", "base": CellMask.rect(7, 29, 8, 8), "levels": 3},
-        {"id": "crooked_bell_inn", "name": "歪钟旅店", "kind": "building", "archetype": "inn", "base": l_shape(20, 43, 10, 12, 4, 4), "levels": 2},
-        {"id": "scribes_guild", "name": "抄写员行会", "kind": "building", "archetype": "guildhall", "base": l_shape(18, 14, 9, 11, 3, 4), "levels": 1},
-        {"id": "copper_shrine", "name": "铜雨小祠", "kind": "building", "archetype": "shrine", "base": l_shape(32, 16, 8, 9, 3, 3), "levels": 1},
-        {"id": "locksmith_row", "name": "锁匠铺", "kind": "building", "archetype": "shop", "base": l_shape(35, 45, 8, 10, 3, 3), "levels": 1},
-        {"id": "leaning_tenement", "name": "斜檐公寓", "kind": "building", "archetype": "tenement", "base": l_shape(47, 15, 10, 12, 4, 4), "levels": 1},
-        {"id": "ward_post", "name": "旧钟岗亭", "kind": "building", "archetype": "watchhouse", "base": CellMask.rect(49, 43, 8, 9), "levels": 1},
-    ]
-    footprints = CellMask.empty()
-    for blueprint in blueprints:
-        footprints = footprints | blueprint["base"]
-
-    main_street = CellMask.path([(63, 34), (54, 31), (45, 35), (36, 32), (28, 36), (18, 33), (15, 33)], radius=2).clipped(height, width)
-    market = CellMask.rect(25, 28, 10, 13)
-    crooked_alley = CellMask.path([(54, 31), (48, 40), (40, 42), (30, 42), (25, 43)], radius=1).clipped(height, width)
-    guild_lane = CellMask.path([(36, 32), (32, 26), (26, 25), (22, 25)], radius=1).clipped(height, width)
-    east_lane = CellMask.path([(45, 35), (43, 43), (40, 45)], radius=1).clipped(height, width)
-    routes = (main_street | market | crooked_alley | guild_lane | east_lane) - footprints
-    surface_ground = bounds - footprints
-    plain_ground = surface_ground - routes
+    layout = _old_clock_layout(seed, width, height)
+    blueprints: list[dict[str, Any]] = layout["blueprints"]
+    market: CellMask = layout["market"]
+    routes: CellMask = layout["routes"]
+    surface_ground: CellMask = layout["surface_ground"]
+    plain_ground: CellMask = layout["plain_ground"]
 
     volumes: list[dict[str, Any]] = []
     levels: list[dict[str, Any]] = []
@@ -181,8 +429,8 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
                 return str(room["id"])
         raise AssertionError(f"no room at {level_id}:{point}")
 
-    tower_entry_out, tower_entry_in = (15, 33), (14, 33)
-    inn_entry_out, inn_entry_in = (25, 42), (25, 43)
+    tower_entry_out, tower_entry_in = layout["tower_entry_out"], layout["tower_entry_in"]
+    inn_entry_out, inn_entry_in = layout["inn_entry_out"], layout["inn_entry_in"]
     for connector_id, volume_id, level_id, outside, inside in (
         ("entrance_old_clock_tower", "old_clock_tower", "old_clock_tower_l1", tower_entry_out, tower_entry_in),
         ("entrance_crooked_bell_inn", "crooked_bell_inn", "crooked_bell_inn_l1", inn_entry_out, inn_entry_in),
@@ -194,7 +442,9 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
             "endpoints": [endpoint("surface", outside), endpoint(level_id, inside, volume_id=volume_id, room_id=room_at(level_id, inside))],
         })
 
-    roof_mask = CellMask.path([(22, 46), (23, 41), (25, 38), (21, 36), (15, 34), (12, 34)], radius=1).clipped(height, width)
+    roof_mask: CellMask = layout["roof_mask"]
+    inn_roof: Cell = layout["inn_roof"]
+    tower_roof: Cell = layout["tower_roof"]
     roof_level = "old_clock_roof_route"
     roof_volume = "old_clock_roofscape"
     levels.append({"id": roof_level, "volume_id": roof_volume, "label": "Roof Route · +30 ft", "z_base_ft": 30, "height_ft": 5, "cell_mask": roof_mask.to_rle()})
@@ -203,24 +453,19 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
     volumes.append({"id": roof_volume, "name": "旧钟屋脊", "kind": "roof_route", "archetype": "roof_route", "parcel_id": "", "level_ids": [roof_level], **_presentation("roof_route")})
     connectors.extend([
         {"id": "ladder_inn_to_roof", "type": "ladder", "bidirectional": True, "visibility": "public", "endpoints": [
-            endpoint("crooked_bell_inn_l2", (22, 46), volume_id="crooked_bell_inn", room_id=room_at("crooked_bell_inn_l2", (22, 46))),
-            endpoint(roof_level, (22, 46), volume_id=roof_volume, room_id="roof_walkway"),
+            endpoint("crooked_bell_inn_l2", inn_roof, volume_id="crooked_bell_inn", room_id=room_at("crooked_bell_inn_l2", inn_roof)),
+            endpoint(roof_level, inn_roof, volume_id=roof_volume, room_id="roof_walkway"),
         ]},
         {"id": "bridge_roof_to_tower", "type": "bridge", "bidirectional": True, "visibility": "public", "endpoints": [
-            endpoint(roof_level, (12, 34), volume_id=roof_volume, room_id="roof_walkway"),
-            endpoint("old_clock_tower_l3", (12, 34), volume_id="old_clock_tower", room_id=room_at("old_clock_tower_l3", (12, 34))),
+            endpoint(roof_level, tower_roof, volume_id=roof_volume, room_id="roof_walkway"),
+            endpoint("old_clock_tower_l3", tower_roof, volume_id="old_clock_tower", room_id=room_at("old_clock_tower_l3", tower_roof)),
         ]},
     ])
 
-    sewer_ring = CellMask.path([(17, 19), (17, 51), (50, 51), (50, 19), (17, 19)], radius=1).clipped(height, width)
-    sewer_branches = (
-        CellMask.path([(30, 34), (30, 51)], radius=1)
-        | CellMask.path([(50, 33), (42, 33), (42, 19)], radius=1)
-    ).clipped(height, width)
-    sewer_public = sewer_ring | sewer_branches
-    sewage = CellMask.path([(18, 20), (18, 50), (49, 50)], radius=0) & sewer_public
-    sewer_dry = sewer_public - sewage
-    secret_mask = CellMask.rect(44, 53, 5, 6)
+    sewer_public: CellMask = layout["sewer_public"]
+    sewage: CellMask = layout["sewage"]
+    sewer_dry: CellMask = layout["sewer_dry"]
+    secret_mask: CellMask = layout["secret_mask"]
     sewer_mask = sewer_public | secret_mask
     sewer_level, sewer_volume = "old_clock_sewer_b1", "old_clock_underworks"
     levels.append({"id": sewer_level, "volume_id": sewer_volume, "label": "B1 · -15 ft", "z_base_ft": -15, "height_ft": 12, "cell_mask": sewer_mask.to_rle()})
@@ -237,7 +482,7 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
         "id": "secret_door_sealed_cistern", "type": "secret_door", "bidirectional": True, "visibility": "dm_only",
         "endpoints": [endpoint(sewer_level, secret_a, volume_id=sewer_volume, room_id=secret_source), endpoint(sewer_level, secret_b, volume_id=sewer_volume, room_id="sealed_cistern")],
     })
-    for index, hatch_cell in enumerate(((30, 34), (50, 33)), 1):
+    for index, hatch_cell in enumerate(layout["hatches"], 1):
         _contains(surface_ground, hatch_cell, f"hatch_{index}")
         _contains(sewer_public, hatch_cell, f"hatch_{index}")
         sewer_room = "sewer_channel" if hatch_cell in sewage.cells else "sewer_walkway"
@@ -246,14 +491,21 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
             "endpoints": [endpoint("surface", hatch_cell), endpoint(sewer_level, hatch_cell, volume_id=sewer_volume, room_id=sewer_room)],
         })
 
+    party_start: Cell = layout["party_start"]
+    market_well: Cell = layout["market_well"]
+    clock_objective: Cell = layout["clock_objective"]
+    inn_hub: Cell = layout["inn_hub"]
+    roof_vantage: Cell = layout["roof_vantage"]
+    sewer_junction: Cell = layout["sewer_junction"]
+    smuggler_cache: Cell = layout["smuggler_cache"]
     anchors = [
-        {"id": "party_start", "kind": "party_start", "level_id": "surface", "row": 61, "col": 34, "visibility": "public"},
-        {"id": "market_well", "kind": "social", "level_id": "surface", "row": 29, "col": 35, "visibility": "public"},
-        {"id": "clock_objective", "kind": "objective", "level_id": "old_clock_tower_l3", "row": 11, "col": 33, "visibility": "public"},
-        {"id": "inn_hub", "kind": "social", "level_id": "crooked_bell_inn_l1", "row": 24, "col": 46, "visibility": "public"},
-        {"id": "roof_vantage", "kind": "encounter", "level_id": roof_level, "row": 21, "col": 36, "visibility": "public"},
-        {"id": "sewer_junction", "kind": "encounter", "level_id": sewer_level, "row": 30, "col": 50, "visibility": "public"},
-        {"id": "smuggler_cache", "kind": "secret", "level_id": sewer_level, "row": 46, "col": 55, "visibility": "dm_only"},
+        {"id": "party_start", "kind": "party_start", "level_id": "surface", "row": party_start[0], "col": party_start[1], "visibility": "public"},
+        {"id": "market_well", "kind": "social", "level_id": "surface", "row": market_well[0], "col": market_well[1], "visibility": "public"},
+        {"id": "clock_objective", "kind": "objective", "level_id": "old_clock_tower_l3", "row": clock_objective[0], "col": clock_objective[1], "visibility": "public"},
+        {"id": "inn_hub", "kind": "social", "level_id": "crooked_bell_inn_l1", "row": inn_hub[0], "col": inn_hub[1], "visibility": "public"},
+        {"id": "roof_vantage", "kind": "encounter", "level_id": roof_level, "row": roof_vantage[0], "col": roof_vantage[1], "visibility": "public"},
+        {"id": "sewer_junction", "kind": "encounter", "level_id": sewer_level, "row": sewer_junction[0], "col": sewer_junction[1], "visibility": "public"},
+        {"id": "smuggler_cache", "kind": "secret", "level_id": sewer_level, "row": smuggler_cache[0], "col": smuggler_cache[1], "visibility": "dm_only"},
     ]
 
     protected = {(ep["level_id"], ep["row"], ep["col"]) for connector in connectors for ep in connector["endpoints"]}
@@ -316,9 +568,17 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
             volume_id=sewer_volume, room_id="sewer_channel" if point in sewage.cells else "sewer_walkway",
             dimensions=(4, 4, 3), rotation=(index % 4) * 90, tags=["sewer", "life_trace"], variant="wet",
         ))
+    secret_feature_cells = [
+        point for point in secret_mask.sorted_cells()
+        if (sewer_level, *point) not in protected
+    ]
+    if len(secret_feature_cells) < 2:
+        raise AssertionError("sealed cistern has no safe cells for its reward dressing")
+    smuggler_crates = secret_feature_cells[-1]
+    smuggler_table = secret_feature_cells[len(secret_feature_cells) // 2]
     features.extend([
-        _feature("smuggler_crates", "sealed_cache", sewer_level, (46, 57), volume_id=sewer_volume, room_id="sealed_cistern", dimensions=(8, 5, 5), blocks=True, visibility="dm_only", tags=["secret", "reward"]),
-        _feature("smuggler_table", "contraband_table", sewer_level, (47, 56), volume_id=sewer_volume, room_id="sealed_cistern", dimensions=(5, 5, 3), visibility="dm_only", tags=["secret", "clue"]),
+        _feature("smuggler_crates", "sealed_cache", sewer_level, smuggler_crates, volume_id=sewer_volume, room_id="sealed_cistern", dimensions=(8, 5, 5), blocks=True, visibility="dm_only", tags=["secret", "reward"]),
+        _feature("smuggler_table", "contraband_table", sewer_level, smuggler_table, volume_id=sewer_volume, room_id="sealed_cistern", dimensions=(5, 5, 3), visibility="dm_only", tags=["secret", "clue"]),
     ])
 
     plan = {
@@ -327,7 +587,11 @@ def compile_location_plan(location: dict[str, Any]) -> dict[str, Any]:
         "grid": {**location["grid"], "origin_ft": [0, 0, 0], "coordinate_contract": "cell(row,col)->world_ft(col*5,-row*5,z_base_ft)"},
         "pack_contract_sha256": sha256_value(location["resolved_packs"]),
         "location_program_sha256": location["location_sha256"],
-        "seed_streams": {name: named_seed(seed, name) for name in ("location:old_clock:surface_dressing", "location:old_clock:rooms", "location:old_clock:sewer")},
+        "seed_streams": {name: named_seed(seed, name) for name in (
+            "location:old_clock:macro", "location:old_clock:streets", "location:old_clock:buildings",
+            "location:old_clock:roof", "location:old_clock:sewer", "location:old_clock:surface_dressing",
+            "location:old_clock:rooms",
+        )},
         "terrain": [
             {"id": "surface_ground", "level_id": "surface", "kind": "ground", "walkable": True, "cell_mask": plain_ground.to_rle()},
             {"id": "old_clock_streets", "level_id": "surface", "kind": "road", "walkable": True, "cell_mask": routes.to_rle()},

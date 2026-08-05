@@ -1,0 +1,78 @@
+{
+  "schema_version": "dnd-scene-quality-policy-1.0",
+  "policy_version": "2.4.0-prototype.1",
+  "weights": {
+    "diversity": 15,
+    "silhouette": 15,
+    "routes_landmarks_levels": 20,
+    "life_traces": 15,
+    "tactical_readability": 20,
+    "performance": 15
+  },
+  "hard_gates": {
+    "require_render_manifest": true
+  },
+  "hard_limits": {
+    "runtime_bytes": 10000000,
+    "glb_bytes": 16000000,
+    "draw_calls": 250,
+    "vertices": 450000,
+    "build_seconds": 180
+  },
+  "soft_thresholds": {
+    "scene_score_min": 80,
+    "minimum_dimension_ratio": 0.60,
+    "life_trace_density_per_100_cells": {
+      "outer_low": 0.0,
+      "ideal_low": 0.5,
+      "ideal_high": 4.0,
+      "outer_high": 10.0
+    }
+  },
+  "rounds": {
+    "baseline": {
+      "enforce": false,
+      "minimum_samples": 1,
+      "score_median_min": 0,
+      "score_p10_min": 0,
+      "archetype_median_min": 0,
+      "unique_layout_rate_min": 0,
+      "clone_rate_max": 1,
+      "pairwise_distance_median_min": 0,
+      "pairwise_distance_p10_min": 0
+    },
+    "round1": {
+      "enforce": true,
+      "minimum_samples": 8,
+      "score_median_min": 65,
+      "score_p10_min": 55,
+      "archetype_median_min": 60,
+      "unique_layout_rate_min": 0.65,
+      "clone_rate_max": 0.35,
+      "pairwise_distance_median_min": 0.10,
+      "pairwise_distance_p10_min": 0.02
+    },
+    "round2": {
+      "enforce": true,
+      "minimum_samples": 24,
+      "score_median_min": 75,
+      "score_p10_min": 65,
+      "archetype_median_min": 70,
+      "unique_layout_rate_min": 0.80,
+      "clone_rate_max": 0.20,
+      "pairwise_distance_median_min": 0.15,
+      "pairwise_distance_p10_min": 0.03
+    },
+    "round3": {
+      "enforce": true,
+      "minimum_samples": 64,
+      "score_median_min": 80,
+      "score_p10_min": 70,
+      "archetype_median_min": 75,
+      "unique_layout_rate_min": 0.90,
+      "clone_rate_max": 0.05,
+      "pairwise_distance_median_min": 0.20,
+      "pairwise_distance_p10_min": 0.05
+    }
+  }
+}

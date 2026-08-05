@@ -1,0 +1,77 @@
+{
+  "certificates": [
+    {
+      "blind_case_id": "blind-baseline",
+      "certificate_id": "visual-f90e7f18b890cac1",
+      "critical_defects": [],
+      "image": {
+        "byte_size": 1569939,
+        "height": 1000,
+        "png_bit_depth": 8,
+        "png_color_type": 6,
+        "sha256": "f90e7f18b890cac18da9d8c561bd22e233f1b2fd167461205a62de7622ef684f",
+        "width": 1400
+      },
+      "metrics": {
+        "analysis_version": "visual-quality-images-1.0",
+        "byte_size": 1569939,
+        "colors": {
+          "bucket_count": 59,
+          "dominant_bucket": [
+            0,
+            0,
+            0
+          ],
+          "dominant_bucket_fraction": 0.661529,
+          "dominant_non_background_bucket": [
+            0,
+            1,
+            1
+          ],
+          "dominant_non_background_bucket_fraction": 0.727961,
+          "non_background_bucket_count": 59,
+          "quantization": "rgb_3bit_per_channel"
+        },
+        "coverage": {
+          "background_rgb": [
+            0,
+            1,
+            2
+          ],
+          "distance_threshold": 0.075,
+          "non_background_fraction": 0.381654
+        },
+        "edges": {
+          "density": 0.018087,
+          "mean_strength": 0.012678,
+          "method": "central_difference_luminance",
+          "sample_step": 4,
+          "threshold": 0.1
+        },
+        "image_sha256": "f90e7f18b890cac18da9d8c561bd22e233f1b2fd167461205a62de7622ef684f",
+        "luminance": {
+          "contrast_p95_minus_p05": 0.180392,
+          "method": "bt709_srgb_encoded",
+          "p05": 0.0,
+          "p50": 0.0,
+          "p95": 0.180392
+        },
+        "png": {
+          "bit_depth": 8,
+          "color_type": 6,
+          "height": 1000,
+          "interlaced": false,
+          "width": 1400
+        }
+      },
+      "ratings": {
+        "composition": 2,
+        "lighting": 2,
+        "material_separation": 2,
+        "readability": 3,
+        "tactical_clarity": 4
+      },
+      "schema_version": "dnd-visual-certificate-1.0"
+    }
+  ]
+}

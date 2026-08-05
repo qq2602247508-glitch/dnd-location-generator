@@ -2,26 +2,26 @@
   "status": "passed",
   "scene_id": "old_clock_quarter_v23",
   "blender_version": "4.5.10 LTS",
-  "runtime_cells": 5429,
-  "prototype_objects": 139,
-  "mesh_vertices": 148648,
+  "runtime_cells": 5386,
+  "prototype_objects": 141,
+  "mesh_vertices": 68528,
   "connector_pick_nodes": 15,
-  "mesh_count": 139,
-  "draw_calls": 139,
+  "mesh_count": 141,
+  "draw_calls": 141,
   "images": {
     "scene-isometric.png": {
-      "bytes": 1569939,
-      "sha256": "f90e7f18b890cac18da9d8c561bd22e233f1b2fd167461205a62de7622ef684f"
+      "bytes": 1565729,
+      "sha256": "46948f335b1eefba7d82a164e01b5af888e64b2cf8cd7053a834f9357bd181b7"
     },
     "scene-topdown.png": {
-      "bytes": 1502524,
-      "sha256": "0358e9cae4902c9213fc711774d89d872bd2612bc36cf48f64b4174e6de5ca13"
+      "bytes": 1505362,
+      "sha256": "2096f174b98eca63cd26e46cdd0ae31a7a370cd734d4034af33033dbd913ffc9"
     }
   },
   "glb": {
     "version": 2,
-    "bytes": 12826936,
-    "sha256": "6321589e1aa7e093b3f9893671a9d29f860fea1b05e681938089983159c82af7"
+    "bytes": 5864392,
+    "sha256": "91b8040b2b7ab055f88b71ddd61b5525404d1dd13aaf9924606974fb379673b6"
   },
-  "blend_bytes": 10487561
+  "blend_bytes": 6095468
 }
