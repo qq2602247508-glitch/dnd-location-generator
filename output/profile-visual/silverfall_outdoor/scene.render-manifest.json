@@ -8,28 +8,28 @@
   "category": "outdoor",
   "profile_hash": "66ecb76ee9f59e9f9459d1f7ca42ad9c9f2e71b3dcd15247d1ff3da0a5255338",
   "visual_plan_hash": "e361ef32856395904b6e182cc8b21a2affc0a4e40156c266cb3d0764ee99ced0",
-  "prototype_objects": 25,
-  "mesh_vertices": 182,
+  "prototype_objects": 97,
+  "mesh_vertices": 188022,
   "outputs": [
     {
       "path": "scene.glb",
-      "bytes": 405532,
-      "sha256": "4a945e922fa0d3cbec7cde029677937d25d0848d46c0aee57c7739b3fee5cb34"
+      "bytes": 16625232,
+      "sha256": "32519bcf961754c8c72d879be564edfc49e05f2822c753395b84a6a4a9078740"
     },
     {
       "path": "scene-prototype.blend",
-      "bytes": 735343,
-      "sha256": "4598417849c332d14eb1847b5839725c087cd7477e15b8ee517dfce0cbc0d314"
+      "bytes": 3356081,
+      "sha256": "1436700fd89cf547fd0611db1db0df3af2f18a8eee2fadf1add7fa3d6617827d"
     },
     {
       "path": "scene-isometric.png",
-      "bytes": 1144331,
-      "sha256": "46571cdef9536bf70288a1485874e297a11d3a9e461a431d59b66e5d7ef75334"
+      "bytes": 1728654,
+      "sha256": "39057574852cd9ec9943f0ac95419ccda8132f58daf2a72d38e5df2c89856b5a"
     },
     {
       "path": "scene-topdown.png",
-      "bytes": 1115412,
-      "sha256": "59a57d80fbfc9e495e10a0d993bc092d344e2773f1cb9100e7fb2c276497104e"
+      "bytes": 1272905,
+      "sha256": "652b3d06d5ee26f5e8c8203b13fee7aab0ea57c4a40fec43f2aebfc0723ad900"
     }
   ],
   "visual_evidence_views": [

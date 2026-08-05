@@ -8,28 +8,28 @@
   "category": "district",
   "profile_hash": "2a1ef08acbe8252168fb95af88a4a8666a5503ce46a4a20fe16a9afa72446609",
   "visual_plan_hash": "7a1df8619e617ef05253fb5a93948c24794245a7947425076e9497d1f50d83e4",
-  "prototype_objects": 50,
-  "mesh_vertices": 296,
+  "prototype_objects": 287,
+  "mesh_vertices": 82238,
   "outputs": [
     {
       "path": "scene.glb",
-      "bytes": 357468,
-      "sha256": "16a5daa805b93dd29facc45ed475294a8dc9e609601426ef6cfeeadcd32c5985"
+      "bytes": 7926804,
+      "sha256": "3ed571063f9f88a7b0431ed7d38b71946a82491f47fe9cb2288a8c7bf5cda6d9"
     },
     {
       "path": "scene-prototype.blend",
-      "bytes": 875570,
-      "sha256": "74250d449c9d20a0a86623bc543083c23e216a719edd0949e1ceae6d0b6ef17f"
+      "bytes": 1688411,
+      "sha256": "5cdb9e4a45758789970934857d533876483be25ebac7fb5014a0f5ffa031d002"
     },
     {
       "path": "scene-isometric.png",
-      "bytes": 1148831,
-      "sha256": "90525c11c3744e4815c3915230986b96e43182e30a3a124668398b14d13ed362"
+      "bytes": 1465439,
+      "sha256": "570a1d524eafdfc7421f9893e8c9e17bbd01391d78f504cae8fd1e1c9d75a459"
     },
     {
       "path": "scene-topdown.png",
-      "bytes": 1121047,
-      "sha256": "1ef6842c61f3dfdf0b1aeded16c07c9b7a3d05806ddcadf2bc30396ad2675803"
+      "bytes": 1197085,
+      "sha256": "091fe85e6fa4f1df575620c1b390d18687c9c747e1bfb29a42826ab7ed3df626"
     }
   ],
   "visual_evidence_views": [
