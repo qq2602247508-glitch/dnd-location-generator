@@ -1,0 +1,36 @@
+{
+  "schema_version": "dnd-archetype-manifest-1.0",
+  "id": "tower",
+  "name": "塔楼",
+  "family": "vertical_building",
+  "room_solver": {"strategy": "guillotine", "min_span": 3, "floor_height_ft": 12},
+  "constraints": {
+    "require_entry": true,
+    "require_objective": true,
+    "require_secret": true,
+    "require_vertical_connector": true,
+    "required_cycles": 1
+  },
+  "floors": [
+    {"id": "l1", "label": "一层·值守", "z_base_ft": 0, "rooms": [
+      {"id": "entry_hall", "name": "入口值守厅", "role": "entry", "min_area": 36, "max_area": 220, "min_span": 3, "tags": ["public", "arrival"]},
+      {"id": "guard_post", "name": "卫兵室", "role": "support", "min_area": 24, "max_area": 220, "min_span": 3, "tags": ["security"]},
+      {"id": "stair_landing_l1", "name": "旋梯厅", "role": "landing", "min_area": 24, "max_area": 180, "min_span": 3, "tags": ["vertical"]},
+      {"id": "sealed_cellar", "name": "封蜡地窖", "role": "secret", "min_area": 24, "max_area": 180, "min_span": 3, "visibility": "dm_only", "tags": ["secret", "dm_clue"]}
+    ]},
+    {"id": "l2", "label": "二层·藏卷", "z_base_ft": 12, "rooms": [
+      {"id": "archive", "name": "旧档案室", "role": "support", "min_area": 36, "max_area": 240, "min_span": 3, "tags": ["clue"]},
+      {"id": "quarters", "name": "塔守寝室", "role": "support", "min_area": 36, "max_area": 240, "min_span": 3, "tags": ["lived_in"]},
+      {"id": "stair_landing_l2", "name": "二层旋梯厅", "role": "landing", "min_area": 24, "max_area": 180, "min_span": 3, "tags": ["vertical"]}
+    ]},
+    {"id": "l3", "label": "三层·钟室", "z_base_ft": 24, "rooms": [
+      {"id": "bell_chamber", "name": "大钟室", "role": "objective", "min_area": 48, "max_area": 260, "min_span": 3, "tags": ["hero", "high_ground"]},
+      {"id": "roof_walk", "name": "垛口观景台", "role": "support", "min_area": 36, "max_area": 220, "min_span": 3, "tags": ["rooftop", "vista"]}
+    ]}
+  ],
+  "themes": {
+    "default": {"family": "weathered_clock_tower", "materials": ["blue_gray_stone", "verdigris_copper", "dark_wood"], "landmark": "clock_faces"},
+    "arcane": {"family": "arcane_signal_tower", "materials": ["black_stone", "violet_glass", "brass"], "landmark": "spell_beacon"},
+    "ruined": {"family": "collapsed_watch_tower", "materials": ["cracked_stone", "moss", "rusted_iron"], "landmark": "broken_bell"}
+  }
+}

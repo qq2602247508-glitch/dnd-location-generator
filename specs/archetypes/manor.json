@@ -1,0 +1,33 @@
+{
+  "schema_version": "dnd-archetype-manifest-1.0",
+  "id": "manor",
+  "name": "庄园宅邸",
+  "family": "nested_residence",
+  "room_solver": {"strategy": "guillotine", "min_span": 3, "floor_height_ft": 12},
+  "constraints": {
+    "require_entry": true,
+    "require_objective": true,
+    "require_secret": true,
+    "require_vertical_connector": true,
+    "required_cycles": 1
+  },
+  "floors": [
+    {"id": "ground", "label": "一层·公共区", "z_base_ft": 0, "rooms": [
+      {"id": "front_hall", "name": "门厅", "role": "entry", "min_area": 36, "max_area": 220, "min_span": 3, "tags": ["public", "arrival"]},
+      {"id": "salon", "name": "会客厅", "role": "support", "min_area": 48, "max_area": 260, "min_span": 3, "tags": ["social"]},
+      {"id": "service_wing", "name": "仆役后廊", "role": "support", "min_area": 36, "max_area": 220, "min_span": 3, "tags": ["service"]},
+      {"id": "wine_cellar", "name": "封闭酒窖", "role": "secret", "min_area": 24, "max_area": 180, "min_span": 3, "visibility": "dm_only", "tags": ["secret", "reward"]}
+    ]},
+    {"id": "upper", "label": "二层·家族区", "z_base_ft": 12, "rooms": [
+      {"id": "gallery", "name": "家族长廊", "role": "landing", "min_area": 36, "max_area": 220, "min_span": 3, "tags": ["vertical", "social"]},
+      {"id": "library", "name": "藏书室", "role": "support", "min_area": 48, "max_area": 260, "min_span": 3, "tags": ["clue"]},
+      {"id": "bedchamber", "name": "主卧", "role": "support", "min_area": 36, "max_area": 220, "min_span": 3, "tags": ["lived_in"]},
+      {"id": "attic_study", "name": "阁楼秘室", "role": "objective", "min_area": 36, "max_area": 220, "min_span": 3, "tags": ["hero", "clue"]}
+    ]}
+  ],
+  "themes": {
+    "default": {"family": "deepwater_manor", "materials": ["painted_plaster", "dark_oak", "aged_brass"], "landmark": "family_portrait_hall"},
+    "noble": {"family": "bright_noble_estate", "materials": ["pale_stone", "silk", "polished_bronze"], "landmark": "glass_conservatory"},
+    "haunted": {"family": "haunted_manor", "materials": ["damp_plaster", "black_wood", "cold_iron"], "landmark": "sealed_portrait"}
+  }
+}

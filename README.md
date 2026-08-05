@@ -142,6 +142,24 @@ python3 tests/verify_spatial_grammar.py
 `special_site=2`；故意把密道改成公开、把河流改成逆坡或提高不可能的循环预算都会在
 进入几何阶段前失败。实现见 `generator/v2/spatial_grammar.py`。
 
+### V2.5 声明式 archetype 与房间求解器
+
+V2.5 把塔楼、庄园、下水道的结构从 Python 特判中拆成
+`specs/archetypes/*.json` manifest。manifest 描述楼层、房间角色、面积/最小跨度、
+密室权限、楼梯需求、回环需求和视觉主题；`room_solver.py` 用 named RNG 确定性切分
+矩形或环形房间，并输出 `room.layout.json`，后续可直接接 Blender/Viewer。
+
+```bash
+python3 tests/verify_archetype_manifests.py
+python3 -m generator.v2.archetype_cli \
+  specs/archetypes/tower.json --seed 20260805 --theme default \
+  --out output/archetypes/tower.layout.json
+```
+
+当前样板结果：塔楼 3 层/9 房间/12 连接，庄园 2 层/8 房间/11 连接，下水道 1 层/4
+房间/5 连接/2 个拓扑回环。房间重叠、面积、门相邻性、楼梯跨层、密门 DM-only 和布局
+哈希均有门禁。
+
 AdventureDirector 使用独立 DM profile 生成 NPC、怪物遭遇、奖励和任务槽位；这些槽位
 只保存位置、阵营、难度与风险意图，不含具体怪物 statblock。默认 Null adapter 不访问
 或写入现有 DND 项目，未来正式 adapter 可以只重投内容而不重建场景几何。

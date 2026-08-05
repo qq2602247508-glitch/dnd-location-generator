@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "manifest_id": "sewer",
+  "theme_id": "default",
+  "floors": 1,
+  "rooms": 4,
+  "connectors": 5,
+  "cycle_rank": 2,
+  "layout_sha256": "467ce78aa1ba8ed198062e2fa30b1e8f8ca95522b588358f27d40343e5a9ed23"
+}

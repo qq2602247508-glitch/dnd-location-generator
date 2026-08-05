@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "manifest_id": "manor",
+  "theme_id": "default",
+  "floors": 2,
+  "rooms": 8,
+  "connectors": 11,
+  "cycle_rank": 4,
+  "layout_sha256": "02501406b349d6c3a1936c3a890b8cfe3360afaa7570860fd7cf05a5ffa53133"
+}

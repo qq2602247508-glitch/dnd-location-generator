@@ -87,3 +87,28 @@ DM profile 当前包含队伍等级/人数、遭遇难度/密度/首领比例，
 `DndContentAdapter` 是未来正式接入点。原型默认使用 `NullDndContentAdapter`：它原样
 保留槽位，明确声明不生成 statblock、不写外部项目，并支持未来在不重建几何的情况下
 重新解析 NPC、怪物和奖励。
+
+## Archetype Manifest V2.5
+
+`specs/archetypes/` 是下一层可扩展地点模板，不承担具体几何美术，而是声明“这个地方
+应该由什么房间和连接组成”：
+
+- `tower.json`：多层值守厅、旋梯厅、钟室、屋顶和 DM-only 地窖；
+- `manor.json`：门厅、会客厅、仆役后廊、家族区、藏书室和密酒窖；
+- `sewer.json`：检修入口、汇流渠、泵房、被埋旧祠和环形路线。
+
+`generator/v2/archetype_manifest.py` 负责 schema、主题和 manifest hash；
+`generator/v2/room_solver.py` 负责面积/跨度约束、无重叠分区、同层门、跨层楼梯、密门
+权限和拓扑回环。求解器只输出规则中间产物，不改变现有 V2.3/V2.4 场景。
+
+```text
+archetype manifest
+  -> theme resolver
+  -> deterministic room solver
+  -> room.layout.json
+  -> future Blender / Viewer compiler
+```
+
+当前输出样例保存在 `output/archetypes/`。下一步是把这个 `room.layout.json` 接到统一
+Blender 编译器：同一份房间拓扑同时生成墙、门、楼梯、家具锚点和 DND 拾取格，然后再
+让 AdventureDirector 把 NPC、怪物、奖励槽位绑定到角色房间和路线节点。

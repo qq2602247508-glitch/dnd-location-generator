@@ -1,0 +1,27 @@
+{
+  "schema_version": "dnd-archetype-manifest-1.0",
+  "id": "sewer",
+  "name": "下水道地下城",
+  "family": "infrastructure_dungeon",
+  "room_solver": {"strategy": "ring", "min_span": 3, "floor_height_ft": 10},
+  "constraints": {
+    "require_entry": true,
+    "require_objective": true,
+    "require_secret": true,
+    "require_loop": true,
+    "required_cycles": 1
+  },
+  "floors": [
+    {"id": "b1", "label": "B1·潮下检修网", "z_base_ft": -15, "rooms": [
+      {"id": "intake", "name": "地表检修入口", "role": "entry", "min_area": 36, "max_area": 260, "min_span": 3, "tags": ["hatch", "arrival"]},
+      {"id": "collector", "name": "主汇流渠", "role": "support", "min_area": 36, "max_area": 260, "min_span": 3, "tags": ["water", "route"]},
+      {"id": "pump_hall", "name": "排污泵房", "role": "objective", "min_area": 36, "max_area": 260, "min_span": 3, "tags": ["machine", "control"]},
+      {"id": "buried_shrine", "name": "被埋旧祠", "role": "secret", "min_area": 36, "max_area": 260, "min_span": 3, "visibility": "dm_only", "tags": ["secret", "boss_clue"]}
+    ]}
+  ],
+  "themes": {
+    "default": {"family": "undertide_sewer", "materials": ["wet_brick", "verdigris_pipe", "black_water"], "landmark": "twin_pumps"},
+    "ancient": {"family": "buried_aqueduct", "materials": ["carved_stone", "blue_moss", "silver_water"], "landmark": "forgotten_water_clock"},
+    "corrupted": {"family": "cult_overflow", "materials": ["soaked_brick", "rusted_iron", "sickly_fungus"], "landmark": "sealed_altar"}
+  }
+}

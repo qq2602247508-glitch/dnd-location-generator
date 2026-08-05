@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "manifest_id": "tower",
+  "theme_id": "default",
+  "floors": 3,
+  "rooms": 9,
+  "connectors": 12,
+  "cycle_rank": 4,
+  "layout_sha256": "ff0f209dcf84167f32026f484757aaaed8e51d05041a4ad8af8b0a0d7c7d1ae2"
+}
