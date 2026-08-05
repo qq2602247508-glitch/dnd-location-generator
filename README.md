@@ -236,6 +236,27 @@ Viewer 提供与 DM / 玩家权限正交的剧场、探索、战术三模式。�
 探索保留环境阅读，战术收敛到可操作层；DM 还能调整近侧墙剖切、格子、雾、曝光、
 Token 尺寸、权限对象、连接点和质量预设。
 
+### V3.0 三大场景类别合同
+
+V3.0 将输入规划统一为三类可扩展入口：`district`（街区/城市）、`building`（单体
+建筑/设施）和 `outdoor`（户外/特殊战术空间）。它们共享 Traits、Visual Packs、
+plan/runtime 和战术层，不是三个互相封闭的专用生成器。街区的建筑数量默认由规模、
+地块、密度、道路和地标推导，不被样本固定栋数限制；建筑先独立生成，再由街区编排器
+拼贴。
+
+当前合同和解析器：
+
+```bash
+python3 tests/verify_scene_contract.py
+python3 -m generator.v2.scene_contract_cli \
+  specs/scene_briefs/harbor_district.json --resolve \
+  --out output/scene-briefs/harbor_district.profile.json
+```
+
+实现见 `generator/v2/scene_contract.py` 和 `docs/scene-contract-v3.0.md`。本阶段只冻结
+三类输入、Trait/Pack 注册和质量证据要求；建筑工厂、街区编排器和户外 realizer 将在
+后续阶段接入，避免把当前尚未达标的塔楼、庄园、下水道图误当成视觉黄金标准。
+
 ### V2.3 一键地点编译器
 
 V2.3 新增 `LocationBrief -> pack resolver -> LocationProgram` 层。用户可以给出结构化

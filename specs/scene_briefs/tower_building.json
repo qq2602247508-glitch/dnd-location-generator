@@ -1,0 +1,14 @@
+{
+  "schema_version": "dnd-scene-brief-1.0",
+  "scene": {"id": "watch_tower_brief", "name": "旧海关瞭望塔", "seed": 20260806},
+  "category": "building",
+  "kind": "watch_tower",
+  "scale": "small",
+  "traits": ["multi_level", "vertical_landmark", "interior_rooms", "fortification", "secret_route"],
+  "planning": {
+    "landmarks": [{"id": "bell_room", "name": "钟室", "role": "high_ground"}],
+    "floor_targets": {"mode": "derived", "minimum": 3},
+    "room_mix": ["guard", "archive", "stairs", "bell_chamber", "hidden_cellar"]
+  },
+  "gameplay": {"focus": "vertical_assault", "encounter_density": "medium", "entry_points": ["gate", "roof"]}
+}
