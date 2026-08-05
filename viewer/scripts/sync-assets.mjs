@@ -16,6 +16,8 @@ const files = [
   ["output/city-grid.json", "city-grid.json"],
   ["output/harbor-v2/scene.glb", "harbor-v2.glb"],
   ["output/harbor-v2/scene.runtime.json", "harbor-v2.runtime.json"],
+  ["output/old-clock-v23/scene.glb", "old-clock-v23.glb"],
+  ["output/old-clock-v23/scene.runtime.json", "old-clock-v23.runtime.json"],
   ["output/v22-scenes/river_valley/scene.glb", "river-valley-v22.glb"],
   ["output/v22-scenes/river_valley/scene.grid.json", "river-valley-v22.grid.json"],
   ["output/v22-scenes/sewer_dungeon/scene.glb", "sewer-dungeon-v22.glb"],

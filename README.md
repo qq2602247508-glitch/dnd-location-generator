@@ -207,7 +207,7 @@ python3 tests/verify_location_compiler.py
 详细契约见 `docs/location-compiler-v2.3.md`。`generator/v2/location_realize.py` 已将冻结的
 LocationProgram 落到既有 `dnd-scene-plan-2.0 / dnd-scene-runtime-2.0`：72×64 格、9 个空间体、
 13 个层级、19 个房间、15 个连接器、10,117 条导航边，并提供街区、钟楼、屋顶和地下
-四个展示预设。公开锚点连通、DM 密室隔离、两处地表舍口、楼梯/爬梯/屋顶桥和字节级
+四个展示预设。公开锚点连通、DM 密室隔离、两处地表舱口、楼梯/爬梯/屋顶桥和字节级
 确定性均已自动验证。现有 DND 项目仍未修改。
 
 ```bash
@@ -226,13 +226,24 @@ Blender 继续复用同一个 V2 编译器，新增钟面/大钟、屋顶栏杆�
 python3 tests/verify_old_clock_v23_outputs.py
 ```
 
+Viewer 已加入第八个场景“旧钟区 V2.3”，直接读取同一份 GLB 与权威 runtime。四个一键
+预设分别聚焦街区总览、钟楼勘探、屋顶对峙和地下追踪；钟楼支持 L1–L3，歪钟旅店支持
+L1–L2，屋顶路线和地下排水网使用各自的战术层级。4 个测试 Token、格子移动和
+door / stairs / ladder / bridge / hatch / secret-door connector 共用同一套运行时逻辑。
+玩家模式会隐藏 DM 参数、密室对象和秘密连接器，不需要加载第二套场景规则。
+
+真实浏览器验收覆盖全部八个场景。旧钟区街区总览为 82 calls / 272,032 tris，钟楼 L1
+为 23 calls / 5,196 tris，屋顶为 13 calls / 5,292 tris，地下 DM 视图为 36 calls /
+38,904 tris；切换玩家地下视图后降为 22 calls / 36,348 tris。七个既有场景均保持非零
+几何与正确标题，潮钟港区仍读取 7,321 条导航边；控制台无 warning 或 error。
+
 ## 尚未接入
 
 - 现有数据库和 API；
 - React 或现有 D&D 前端集成；
 - 正式角色 Token、完整路径显示和战争迷雾；
 - Ollama 自然语言转场景合同；
-- 通用建筑类型生成。
+- 完全开放式、任意建筑类型的资产生成（当前由版本锁定的组合 pack 覆盖常用类型）。
 
 这些边界是刻意保留的：先确认视觉方向，再决定是否把只读适配器接入现有项目。
 

@@ -4,8 +4,9 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-type SceneKey = "church" | "underdark" | "city" | "harbor" | "river_valley" | "sewer_dungeon" | "dragonbone_rift";
+type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "river_valley" | "sewer_dungeon" | "dragonbone_rift";
 type V22SceneKey = "river_valley" | "sewer_dungeon" | "dragonbone_rift";
+type RuntimeSceneKey = "harbor" | "old_clock";
 type ViewMode = "dm" | "player";
 type ExperienceMode = "theatre" | "exploration" | "tactical";
 type QualityPreset = "quality" | "balanced" | "performance";
@@ -211,7 +212,7 @@ interface GenericRuntimeRoom {
 
 interface GenericRuntimeConnector {
   id: string;
-  type: "door" | "stairs" | "hatch" | "secret_door";
+  type: "door" | "stairs" | "ladder" | "bridge" | "hatch" | "secret_door";
   visibility: "public" | "dm_only";
   cell_ids: [string, string];
 }
@@ -219,7 +220,7 @@ interface GenericRuntimeConnector {
 interface GenericRuntimeNavEdge {
   a: string;
   b: string;
-  kind: "walk" | "door" | "stairs" | "hatch" | "secret_door";
+  kind: "walk" | "door" | "stairs" | "ladder" | "bridge" | "hatch" | "secret_door";
   connector_id?: string;
   cost: number;
   interaction_required?: boolean;
@@ -330,6 +331,25 @@ interface V22SceneDescriptor {
   theme: string;
 }
 
+interface RuntimePreset {
+  id: string;
+  label: string;
+  focus: string;
+  levelId: string | "all";
+  experience: ExperienceMode;
+}
+
+interface RuntimeSceneDescriptor {
+  name: string;
+  shortName: string;
+  description: string;
+  asset: string;
+  runtimeAsset: string;
+  supportsPlayer: boolean;
+  visibleFocusIds?: string[];
+  presets: RuntimePreset[];
+}
+
 interface CellSelection {
   row: number;
   col: number;
@@ -388,9 +408,32 @@ const V22_SCENES: Record<V22SceneKey, V22SceneDescriptor> = {
     theme: "奇观战术场 · 多高程 · 掩体与坠落风险",
   },
 };
+const RUNTIME_SCENES: Record<RuntimeSceneKey, RuntimeSceneDescriptor> = {
+  harbor: {
+    name: "潮钟港区 · 塔影与暗渠", shortName: "潮钟港区 V2",
+    description: "地表、塔楼、暗渠与密室；移动严格读取 runtime 导航图。",
+    asset: "harbor-v2.glb", runtimeAsset: "harbor-v2.runtime.json", supportsPlayer: false, presets: [],
+  },
+  old_clock: {
+    name: "旧钟区 · 钟影与密渠", shortName: "旧钟区 V2.3",
+    description: "不规则旧城街道、三层钟楼、两层旅店、屋顶路线与走私排水网。",
+    asset: "old-clock-v23.glb", runtimeAsset: "old-clock-v23.runtime.json", supportsPlayer: true,
+    visibleFocusIds: ["surface", "old_clock_tower", "crooked_bell_inn", "old_clock_roofscape", "old_clock_underworks"],
+    presets: [
+      { id: "district_overview", label: "街区总览", focus: "surface", levelId: "surface", experience: "theatre" },
+      { id: "clock_exploration", label: "钟楼勘探", focus: "old_clock_tower", levelId: "old_clock_tower_l1", experience: "exploration" },
+      { id: "roof_showdown", label: "屋顶对峙", focus: "old_clock_roofscape", levelId: "old_clock_roof_route", experience: "tactical" },
+      { id: "underworks_pursuit", label: "地下追踪", focus: "old_clock_underworks", levelId: "old_clock_sewer_b1", experience: "tactical" },
+    ],
+  },
+};
 
 function isV22Scene(sceneKey: SceneKey): sceneKey is V22SceneKey {
   return sceneKey in V22_SCENES;
+}
+
+function isRuntimeScene(sceneKey: SceneKey): sceneKey is RuntimeSceneKey {
+  return sceneKey in RUNTIME_SCENES;
 }
 
 function required<T extends Element>(selector: string): T {
@@ -440,6 +483,16 @@ experiencePanel.innerHTML = `
   </div>`;
 if (layerPanel) sidebar.insertBefore(experiencePanel, layerPanel);
 else sidebar.append(experiencePanel);
+
+const runtimePresetPanel = document.createElement("section");
+runtimePresetPanel.className = "panel runtime-preset-panel";
+runtimePresetPanel.hidden = true;
+runtimePresetPanel.innerHTML = `
+  <div class="panel-heading"><span>一键预设</span><small>V2.3 地点编译</small></div>
+  <div class="runtime-preset-controls" id="runtime-preset-controls"></div>`;
+if (layerPanel) sidebar.insertBefore(runtimePresetPanel, layerPanel);
+else sidebar.append(runtimePresetPanel);
+const runtimePresetControls = runtimePresetPanel.querySelector<HTMLElement>("#runtime-preset-controls")!;
 
 const dmSettingsPanel = document.createElement("section");
 dmSettingsPanel.className = "panel dm-settings-panel";
@@ -540,6 +593,10 @@ const harborCells = new Map<string, GenericRuntimeCell>();
 const harborNav = new Map<string, GenericRuntimeNavEdge[]>();
 const harborConnectors = new Map<string, GenericRuntimeConnector>();
 const harborRooms = new Map<string, GenericRuntimeRoom>();
+const oldClockCells = new Map<string, GenericRuntimeCell>();
+const oldClockNav = new Map<string, GenericRuntimeNavEdge[]>();
+const oldClockConnectors = new Map<string, GenericRuntimeConnector>();
+const oldClockRooms = new Map<string, GenericRuntimeRoom>();
 const v22Grids = new Map<V22SceneKey, TacticalGrid>();
 const v22Cells = new Map<V22SceneKey, Map<string, TacticalGridCell>>();
 const v22RouteNeighbors = new Map<V22SceneKey, Map<string, Set<string>>>();
@@ -558,6 +615,7 @@ let underdarkGrid: UnderdarkGrid | null = null;
 let citySpec: CitySpec | null = null;
 let cityGrid: CityGrid | null = null;
 let harborRuntime: GenericSceneRuntime | null = null;
+let oldClockRuntime: GenericSceneRuntime | null = null;
 let currentScene: SceneKey = "church";
 let currentMode: ViewMode = "dm";
 let currentLayer: LayerFilter = "all";
@@ -604,12 +662,12 @@ function syncViewerState(): void {
   viewerState.accessMode = currentMode;
   viewerState.focusId = currentScene === "city"
     ? currentCityScope
-    : currentScene === "harbor"
+    : isRuntimeScene(currentScene)
       ? currentHarborFocus
       : isV22Scene(currentScene)
         ? currentV22LevelId
         : `${currentScene}:${currentLayer}`;
-  viewerState.layer = currentScene === "harbor"
+  viewerState.layer = isRuntimeScene(currentScene)
     ? currentHarborLevelId
     : isV22Scene(currentScene)
       ? currentV22Elevation
@@ -647,6 +705,51 @@ async function fetchJson<T>(name: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function runtimeFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): GenericSceneRuntime | null {
+  return sceneKey === "old_clock" ? oldClockRuntime : harborRuntime;
+}
+
+function runtimeCellsFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): Map<string, GenericRuntimeCell> {
+  return sceneKey === "old_clock" ? oldClockCells : harborCells;
+}
+
+function runtimeNavFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): Map<string, GenericRuntimeNavEdge[]> {
+  return sceneKey === "old_clock" ? oldClockNav : harborNav;
+}
+
+function runtimeConnectorsFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): Map<string, GenericRuntimeConnector> {
+  return sceneKey === "old_clock" ? oldClockConnectors : harborConnectors;
+}
+
+function runtimeRoomsFor(sceneKey: RuntimeSceneKey = currentScene as RuntimeSceneKey): Map<string, GenericRuntimeRoom> {
+  return sceneKey === "old_clock" ? oldClockRooms : harborRooms;
+}
+
+function indexRuntimeScene(sceneKey: RuntimeSceneKey, runtime: GenericSceneRuntime): void {
+  const cells = runtimeCellsFor(sceneKey);
+  const nav = runtimeNavFor(sceneKey);
+  const connectors = runtimeConnectorsFor(sceneKey);
+  const rooms = runtimeRoomsFor(sceneKey);
+  if (cells.size) return;
+  for (const cell of runtime.cells) cells.set(cell.id, cell);
+  for (const edge of runtime.nav.edges) {
+    nav.set(edge.a, [...(nav.get(edge.a) ?? []), edge]);
+    nav.set(edge.b, [...(nav.get(edge.b) ?? []), edge]);
+  }
+  for (const connector of runtime.connectors) connectors.set(connector.id, connector);
+  for (const room of runtime.rooms ?? []) rooms.set(room.id, room);
+}
+
+async function ensureRuntimeScene(sceneKey: RuntimeSceneKey): Promise<GenericSceneRuntime> {
+  const cached = runtimeFor(sceneKey);
+  if (cached) return cached;
+  const runtime = await fetchJson<GenericSceneRuntime>(RUNTIME_SCENES[sceneKey].runtimeAsset);
+  if (sceneKey === "old_clock") oldClockRuntime = runtime;
+  else harborRuntime = runtime;
+  indexRuntimeScene(sceneKey, runtime);
+  return runtime;
+}
+
 async function ensureData(): Promise<void> {
   const [church, grid, city, cityData, harbor] = await Promise.all([
     churchSpec ? Promise.resolve(churchSpec) : fetchJson<ChurchSpec>("church.json"),
@@ -666,15 +769,7 @@ async function ensureData(): Promise<void> {
   if (cityCells.size === 0) {
     for (const cell of cityData.cells) cityCells.set(cityCellKey(cell.level_index, cell.row, cell.col), cell);
   }
-  if (harborCells.size === 0) {
-    for (const cell of harbor.cells) harborCells.set(cell.id, cell);
-    for (const edge of harbor.nav.edges) {
-      harborNav.set(edge.a, [...(harborNav.get(edge.a) ?? []), edge]);
-      harborNav.set(edge.b, [...(harborNav.get(edge.b) ?? []), edge]);
-    }
-    for (const connector of harbor.connectors) harborConnectors.set(connector.id, connector);
-    for (const room of harbor.rooms ?? []) harborRooms.set(room.id, room);
-  }
+  indexRuntimeScene("harbor", harbor);
 }
 
 function v22Grid(sceneKey: SceneKey = currentScene): TacticalGrid | undefined {
@@ -765,9 +860,9 @@ function loadModel(name: string): Promise<THREE.Group> {
 
 function sceneAsset(sceneKey: SceneKey, mode: ViewMode): string {
   if (isV22Scene(sceneKey)) return V22_SCENES[sceneKey].asset;
+  if (isRuntimeScene(sceneKey)) return RUNTIME_SCENES[sceneKey].asset;
   if (sceneKey === "underdark") return "underdark-dm.glb";
   if (sceneKey === "city") return "city-dm.glb";
-  if (sceneKey === "harbor") return "harbor-v2.glb";
   return mode === "player" ? "church-player.glb" : "church-dm.glb";
 }
 
@@ -782,6 +877,7 @@ function scenePreset(sceneKey: SceneKey): CameraState {
   if (sceneKey === "church") return { position: new THREE.Vector3(27, 24, 24), target: new THREE.Vector3(10, 3.6, -8) };
   if (sceneKey === "city") return { position: new THREE.Vector3(47, 38, 32), target: new THREE.Vector3(16, 1.8, -14) };
   if (sceneKey === "harbor") return { position: new THREE.Vector3(82, 70, 66), target: new THREE.Vector3(32, 4, -26) };
+  if (sceneKey === "old_clock") return { position: new THREE.Vector3(78, 62, 62), target: new THREE.Vector3(35, 4, -31) };
   if (isV22Scene(sceneKey)) {
     const grid = v22Grid(sceneKey);
     if (grid) {
@@ -977,8 +1073,8 @@ function buildSemanticCatalog(root: THREE.Group): void {
     const pickRole = objectMetadata(object, "pick_role");
     const entry: SemanticMesh = {
       mesh: object,
-      levelIds: currentScene === "harbor" || isV22Scene(currentScene) ? objectHarborLevelIds(object) : [],
-      volumeIds: currentScene === "harbor" ? objectHarborVolumeIds(object) : [],
+      levelIds: isRuntimeScene(currentScene) || isV22Scene(currentScene) ? objectHarborLevelIds(object) : [],
+      volumeIds: isRuntimeScene(currentScene) ? objectHarborVolumeIds(object) : [],
       prototypeKind,
       pickRole,
       visibility: objectMetadata(object, "prototype_visibility") || objectMetadata(object, "visibility"),
@@ -1002,11 +1098,11 @@ function buildSemanticCatalog(root: THREE.Group): void {
 }
 
 function harborLevel(levelId: string): GenericRuntimeLevel | undefined {
-  return harborRuntime?.scene.levels.find((level) => level.id === levelId);
+  return runtimeFor()?.scene.levels.find((level) => level.id === levelId);
 }
 
 function harborWorldHeight(zBaseFt: number): number {
-  return zBaseFt / (harborRuntime?.scene.grid.cell_size_ft ?? 5);
+  return zBaseFt / (runtimeFor()?.scene.grid.cell_size_ft ?? 5);
 }
 
 function harborObjectVisible(object: THREE.Mesh): boolean {
@@ -1017,9 +1113,11 @@ function harborObjectVisible(object: THREE.Mesh): boolean {
   if (!levelIds.length) return currentHarborFocus === "surface";
   if (currentHarborFocus === "surface") {
     if (levelIds.includes("surface")) return true;
+    if (currentScene === "old_clock") return ["wall", "roof", "archetype_detail", "life_trace"].includes(kind);
     return kind === "wall" || kind === "roof" || kind === "door";
   }
-  if (!volumeIds.includes(currentHarborFocus) || kind === "roof" || pickRole === "hideable") return false;
+  const tacticalRoof = currentScene === "old_clock" && currentHarborFocus === "old_clock_roofscape";
+  if (!volumeIds.includes(currentHarborFocus) || (!tacticalRoof && (kind === "roof" || pickRole === "hideable"))) return false;
   return currentHarborLevelId === "all" || levelIds.includes(currentHarborLevelId);
 }
 
@@ -1174,7 +1272,7 @@ function applyLayerFilter(): void {
       setObjectFilteredVisible(object, cityObjectVisible(object));
       return;
     }
-    if (currentScene === "harbor") {
+    if (isRuntimeScene(currentScene)) {
       setObjectFilteredVisible(object, harborObjectVisible(object));
       return;
     }
@@ -1200,7 +1298,7 @@ function applyLayerFilter(): void {
     setObjectFilteredVisible(object, elevation === null || elevation === currentLayer);
   });
   if (currentScene === "city") updateTransitionHotspotVisibility();
-  if (currentScene === "harbor") updateHarborTransitionHotspots();
+  if (isRuntimeScene(currentScene)) updateHarborTransitionHotspots();
   updateTokenVisibility();
   applyGridVisuals();
   markCutawayDirty();
@@ -1216,7 +1314,7 @@ function rebuildTacticalSurfaces(): void {
       ? objectMetadata(object, "prototype_kind") === "floor" || object.name.startsWith("Floor_")
       : currentScene === "city"
         ? objectMetadata(object, "pick_role") === "tactical_floor" || objectMetadata(object, "prototype_kind") === "floor" || /^Floor_City_|^City_Outdoor_/.test(object.name)
-        : currentScene === "harbor"
+        : isRuntimeScene(currentScene)
           ? objectMetadata(object, "pick_role") === "tactical_floor" || objectMetadata(object, "prototype_kind") === "floor"
           : isV22Scene(currentScene)
             ? objectMetadata(object, "pick_role") === "tactical_floor" || objectMetadata(object, "prototype_kind") === "surface"
@@ -1229,10 +1327,10 @@ function rebuildTacticalSurfaces(): void {
       || /^(Door|Stair)_/.test(object.name)
     );
     if (transition) transitionSurfaces.push(object);
-    const harborTransition = currentScene === "harbor" && (
+    const harborTransition = isRuntimeScene(currentScene) && (
       objectMetadata(object, "pick_role") === "connector"
       || Boolean(objectMetadata(object, "connector_id"))
-      || ["door", "stairs", "hatch", "secret_door"].includes(objectMetadata(object, "prototype_kind"))
+      || ["door", "stairs", "ladder", "bridge", "hatch", "secret_door"].includes(objectMetadata(object, "prototype_kind"))
     );
     if (harborTransition) transitionSurfaces.push(object);
   });
@@ -1303,10 +1401,11 @@ function clearHarborTransitionHotspots(): void {
 
 function rebuildHarborTransitionHotspots(): void {
   clearHarborTransitionHotspots();
-  if (currentScene !== "harbor") return;
-  for (const connector of harborRuntime?.connectors ?? []) {
+  if (!isRuntimeScene(currentScene)) return;
+  const cells = runtimeCellsFor();
+  for (const connector of runtimeFor()?.connectors ?? []) {
     for (const cellId of connector.cell_ids) {
-      const cell = harborCells.get(cellId);
+      const cell = cells.get(cellId);
       if (!cell) continue;
       const hotspot = new THREE.Mesh(
         new THREE.RingGeometry(0.22, 0.38, 24),
@@ -1333,7 +1432,7 @@ function updateHarborTransitionHotspots(): void {
     const levelId = objectHarborLevelId(object);
     const volumeId = objectHarborVolumeId(object);
     const visibleFocus = currentHarborFocus === "surface" ? levelId === "surface" : volumeId === currentHarborFocus;
-    object.visible = currentScene === "harbor"
+    object.visible = isRuntimeScene(currentScene)
       && hotspotAllowed(objectMetadata(object, "visibility"))
       && visibleFocus
       && (currentHarborLevelId === "all" || levelId === currentHarborLevelId);
@@ -1422,7 +1521,7 @@ function cityCellsReachable(start: CityCell, goal: CityCell): boolean {
 }
 
 function harborCellAt(levelId: string, row: number, col: number): GenericRuntimeCell | undefined {
-  return harborCells.get(`${levelId}:${row}:${col}`);
+  return runtimeCellsFor().get(`${levelId}:${row}:${col}`);
 }
 
 function harborFocusAllows(cell: GenericRuntimeCell): boolean {
@@ -1431,18 +1530,20 @@ function harborFocusAllows(cell: GenericRuntimeCell): boolean {
 
 function harborReachable(startId: string, targetId: string): boolean {
   if (startId === targetId) return true;
-  const start = harborCells.get(startId);
-  const target = harborCells.get(targetId);
+  const cells = runtimeCellsFor();
+  const nav = runtimeNavFor();
+  const start = cells.get(startId);
+  const target = cells.get(targetId);
   if (!start || !target || !harborFocusAllows(start) || !harborFocusAllows(target)) return false;
   const visited = new Set<string>([startId]);
   const queue = [startId];
   for (let index = 0; index < queue.length; index += 1) {
     const current = queue[index];
     if (!current) continue;
-    for (const edge of harborNav.get(current) ?? []) {
+    for (const edge of nav.get(current) ?? []) {
       if (edge.interaction_required || edge.connector_id || edge.kind !== "walk") continue;
       const next = edge.a === current ? edge.b : edge.a;
-      const cell = harborCells.get(next);
+      const cell = cells.get(next);
       if (!cell || visited.has(next) || !harborFocusAllows(cell)) continue;
       if (next === targetId) return true;
       visited.add(next);
@@ -1545,14 +1646,15 @@ function cellFromHit(hit: THREE.Intersection): CellSelection | null {
       movement: `消耗 ${cell.movement_cost} · 5 尺`,
     };
   }
-  if (currentScene === "harbor") {
+  if (isRuntimeScene(currentScene)) {
     const levelId = objectHarborLevelId(hit.object) || (currentHarborFocus === "surface" ? "surface" : currentHarborLevelId === "all" ? "" : currentHarborLevelId);
     if (!levelId) return null;
     const cell = harborCellAt(levelId, row, col);
     if (!cell?.walkable || !harborFocusAllows(cell) || (cell.visibility === "dm_only" && (currentMode !== "dm" || !dmTuning.showDmOnly))) return null;
     return {
       row, col, layer: 0, levelId: cell.level_id, zBaseFt: cell.z_base_ft, volumeId: cell.volume_id,
-      area: harborRooms.get(cell.room_id)?.name || cell.room_id || cell.surface, spaceKind: cell.volume_id ? "建筑内部" : "港区地表",
+      area: runtimeRoomsFor().get(cell.room_id)?.name || cell.room_id || cell.surface,
+      spaceKind: cell.volume_id ? "可聚焦空间" : currentScene === "old_clock" ? "旧钟区地表" : "港区地表",
       walkable: true, movement: `消耗 ${cell.movement.walk ?? 1} · 5 尺`,
     };
   }
@@ -1588,13 +1690,13 @@ function cellFromHit(hit: THREE.Intersection): CellSelection | null {
 function groundHeight(layer: number): number {
   if (currentScene === "church") return (layer - 1) * CHURCH_FLOOR_HEIGHT;
   if (currentScene === "city") return layer === 0 ? 0 : (layer - 1) * CITY_FLOOR_HEIGHT;
-  if (currentScene === "harbor") return 0;
+  if (isRuntimeScene(currentScene)) return 0;
   if (isV22Scene(currentScene)) return v22WorldHeight(layer);
   return layer * UNDERDARK_ELEVATION_HEIGHT;
 }
 
 function showSelection(cell: CellSelection): void {
-  const markerHeight = currentScene === "harbor" ? harborWorldHeight(cell.zBaseFt ?? 0) : groundHeight(cell.layer);
+  const markerHeight = isRuntimeScene(currentScene) ? harborWorldHeight(cell.zBaseFt ?? 0) : groundHeight(cell.layer);
   selectionMarker.position.set(cell.col + 0.5, markerHeight + 0.035, -cell.row - 0.5);
   selectionMarker.visible = true;
   const labels = currentScene === "church"
@@ -1611,12 +1713,12 @@ function showSelection(cell: CellSelection): void {
       <div><dt>移动</dt><dd>${labels[3]}</dd></div>`;
     return;
   }
-  if (currentScene === "harbor") {
+  if (isRuntimeScene(currentScene)) {
     const level = harborLevel(cell.levelId ?? "");
     cellInspector.innerHTML = `
       <div><dt>坐标</dt><dd>row ${cell.row} · col ${cell.col}</dd></div>
       <div><dt>层级</dt><dd>${level?.label ?? cell.levelId ?? "—"} · ${cell.zBaseFt ?? 0} ft</dd></div>
-      <div><dt>焦点</dt><dd>${cell.volumeId || "港区地表"}</dd></div>
+      <div><dt>焦点</dt><dd>${cell.volumeId || (currentScene === "old_clock" ? "旧钟区地表" : "港区地表")}</dd></div>
       <div><dt>区域</dt><dd>${cell.area}</dd></div>
       <div><dt>移动</dt><dd>${cell.movement}</dd></div>`;
     return;
@@ -1684,9 +1786,10 @@ function ensureTokenStates(sceneKey: SceneKey): TokenState[] {
       })
       .slice(0, TOKEN_NAMES.length)
       .map((cell) => ({ row: cell.row, col: cell.col, layer: cell.elevation }));
-  } else if (sceneKey === "harbor") {
-    const start = harborRuntime?.anchors.find((anchor) => anchor.id === "party_start");
-    const cells = [...harborCells.values()]
+  } else if (isRuntimeScene(sceneKey)) {
+    const runtime = runtimeFor(sceneKey);
+    const start = runtime?.anchors.find((anchor) => anchor.id === "party_start");
+    const cells = [...runtimeCellsFor(sceneKey).values()]
       .filter((cell) => cell.walkable && cell.level_id === (start?.level_id ?? "surface"))
       .sort((a, b) => {
         const da = Math.abs(a.row - (start?.row ?? 0)) + Math.abs(a.col - (start?.col ?? 0));
@@ -1738,7 +1841,7 @@ function rebuildTokens(): void {
   const states = ensureTokenStates(currentScene);
   states.forEach((state, index) => {
     const token = makeToken(index);
-    const height = currentScene === "harbor" ? harborWorldHeight(state.zBaseFt ?? 0) : groundHeight(state.layer);
+    const height = isRuntimeScene(currentScene) ? harborWorldHeight(state.zBaseFt ?? 0) : groundHeight(state.layer);
     token.position.set(state.col + 0.5, height + 0.035, -state.row - 0.5);
     token.userData.tokenIndex = index;
     tokenHolder.add(token);
@@ -1748,7 +1851,7 @@ function rebuildTokens(): void {
 }
 
 function tokenIsVisible(state: TokenState): boolean {
-  if (currentScene === "harbor") {
+  if (isRuntimeScene(currentScene)) {
     const cell = state.levelId ? harborCellAt(state.levelId, state.row, state.col) : undefined;
     return Boolean(cell && harborFocusAllows(cell) && (currentHarborLevelId === "all" || cell.level_id === currentHarborLevelId));
   }
@@ -1822,11 +1925,11 @@ function moveSelectedToken(cell: CellSelection): void {
     }
     clearCityNotice();
   }
-  if (currentScene === "harbor") {
+  if (isRuntimeScene(currentScene)) {
     const start = state.levelId ? harborCellAt(state.levelId, state.row, state.col) : undefined;
     const target = cell.levelId ? harborCellAt(cell.levelId, cell.row, cell.col) : undefined;
     if (!start || !target || !harborReachable(start.id, target.id)) {
-      showCityNotice("该格不可达：港区移动严格遵循 runtime.nav.edges，门、楼梯与暗门需点击连接点");
+      showCityNotice("该格不可达：移动严格遵循 runtime.nav.edges，门、楼梯、爬梯、舱口与暗门需点击连接点");
       return;
     }
     state.levelId = target.level_id;
@@ -1836,7 +1939,7 @@ function moveSelectedToken(cell: CellSelection): void {
   state.row = cell.row;
   state.col = cell.col;
   state.layer = cell.layer;
-  object.position.set(cell.col + 0.5, currentScene === "harbor" ? harborWorldHeight(state.zBaseFt ?? 0) + 0.035 : groundHeight(cell.layer) + 0.035, -cell.row - 0.5);
+  object.position.set(cell.col + 0.5, isRuntimeScene(currentScene) ? harborWorldHeight(state.zBaseFt ?? 0) + 0.035 : groundHeight(cell.layer) + 0.035, -cell.row - 0.5);
   object.visible = tokenIsVisible(state);
   selectedToken = null;
   renderTokenList();
@@ -1911,7 +2014,7 @@ function applyCityTransition(transition: CityTransition): boolean {
 
 function harborConnectorForObject(object: THREE.Object3D): GenericRuntimeConnector | undefined {
   const connectorId = objectMetadata(object, "connector_id");
-  if (connectorId) return harborConnectors.get(connectorId);
+  if (connectorId) return runtimeConnectorsFor().get(connectorId);
   return undefined;
 }
 
@@ -1920,11 +2023,12 @@ function applyHarborConnector(connector: GenericRuntimeConnector): boolean {
     showCityNotice("请先选择一个 Token，再移动到门、楼梯或暗门旁");
     return false;
   }
-  const states = ensureTokenStates("harbor");
+  if (!isRuntimeScene(currentScene)) return false;
+  const states = ensureTokenStates(currentScene);
   const state = states[selectedToken];
   if (!state?.levelId) return false;
   const candidates = connector.cell_ids
-    .map((id) => ({ id, cell: harborCells.get(id) }))
+    .map((id) => ({ id, cell: runtimeCellsFor().get(id) }))
     .filter((entry): entry is { id: string; cell: GenericRuntimeCell } => Boolean(entry.cell));
   const source = candidates
     .map((entry) => ({ ...entry, distance: entry.cell.level_id === state.levelId ? Math.abs(entry.cell.row - state.row) + Math.abs(entry.cell.col - state.col) : Number.POSITIVE_INFINITY }))
@@ -1935,8 +2039,8 @@ function applyHarborConnector(connector: GenericRuntimeConnector): boolean {
     return false;
   }
   const targetId = connector.cell_ids.find((id) => id !== source.id);
-  const edge = targetId ? (harborNav.get(source.id) ?? []).find((item) => item.connector_id === connector.id && (item.a === targetId || item.b === targetId)) : undefined;
-  const target = targetId ? harborCells.get(targetId) : undefined;
+  const edge = targetId ? (runtimeNavFor().get(source.id) ?? []).find((item) => item.connector_id === connector.id && (item.a === targetId || item.b === targetId)) : undefined;
+  const target = targetId ? runtimeCellsFor().get(targetId) : undefined;
   if (!edge || !target) {
     showCityNotice("该连接在 runtime.nav.edges 中不可用");
     return false;
@@ -1986,7 +2090,7 @@ function pick(event: PointerEvent): void {
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
   if (currentScene === "city" && pickCityTransition()) return;
-  if (currentScene === "harbor" && pickHarborTransition()) return;
+  if (isRuntimeScene(currentScene) && pickHarborTransition()) return;
   const candidates = tacticalSurfaces.filter((surface) => surface.visible);
   for (const hit of raycaster.intersectObjects(candidates, false)) {
     const cell = cellFromHit(hit);
@@ -1999,7 +2103,7 @@ function pick(event: PointerEvent): void {
 
 function normalizeExperienceFocus(): void {
   if (viewerState.experienceMode === "theatre") {
-    if (currentScene === "harbor") currentHarborLevelId = "all";
+    if (isRuntimeScene(currentScene)) currentHarborLevelId = "all";
     else if (isV22Scene(currentScene)) {
       currentV22LevelId = "all";
       currentV22Elevation = "all";
@@ -2012,8 +2116,8 @@ function normalizeExperienceFocus(): void {
   if (currentScene === "city" && currentCityScope !== "outdoor" && currentLayer === "all") {
     currentLayer = cityBuildingById(currentCityScope)?.floors[0]?.floor_index ?? 1;
   }
-  if (currentScene === "harbor" && currentHarborLevelId === "all") {
-    const first = (harborRuntime?.scene.levels ?? []).find((level) => currentHarborFocus === "surface" ? level.id === "surface" : level.volume_id === currentHarborFocus);
+  if (isRuntimeScene(currentScene) && currentHarborLevelId === "all") {
+    const first = (runtimeFor()?.scene.levels ?? []).find((level) => currentHarborFocus === "surface" ? level.id === "surface" : level.volume_id === currentHarborFocus);
     currentHarborLevelId = first?.id ?? "surface";
   }
   if (isV22Scene(currentScene)) {
@@ -2056,8 +2160,8 @@ function updateDebugReadout(): void {
   const visibleMeshes = semanticCatalog.objects.filter((entry) => entry.mesh.visible).length;
   const visibleTactical = tacticalSurfaces.filter((surface) => surface.visible).length;
   const visibleTransitions = transitionSurfaces.filter((surface) => surface.visible).length;
-  const navEdges = currentScene === "harbor"
-    ? harborRuntime?.nav.edges.length ?? 0
+  const navEdges = isRuntimeScene(currentScene)
+    ? runtimeFor()?.nav.edges.length ?? 0
     : currentScene === "city"
       ? cityGrid?.transitions.length ?? 0
       : isV22Scene(currentScene)
@@ -2077,6 +2181,7 @@ function setExperienceMode(next: ExperienceMode): void {
   renderHarborFocusControls();
   applyLayerFilter();
   renderExperienceUi();
+  renderRuntimePresets();
   if (next === "theatre") resetView();
   else if (next === "tactical") fitView();
   updateCutaway(performance.now(), true);
@@ -2099,8 +2204,8 @@ function updateDmTuningFromControls(): void {
 }
 
 function renderLayerControls(): void {
-  if (currentScene === "harbor") {
-    const levels = (harborRuntime?.scene.levels ?? []).filter((level) => currentHarborFocus === "surface" ? level.id === "surface" : level.volume_id === currentHarborFocus);
+  if (isRuntimeScene(currentScene)) {
+    const levels = (runtimeFor()?.scene.levels ?? []).filter((level) => currentHarborFocus === "surface" ? level.id === "surface" : level.volume_id === currentHarborFocus);
     layerControls.innerHTML = "";
     const choices: Array<string | "all"> = levels.length > 1 ? ["all", ...levels.map((level) => level.id)] : levels.map((level) => level.id);
     for (const value of choices) {
@@ -2191,34 +2296,66 @@ function renderLayerControls(): void {
 }
 
 function renderHarborFocusControls(): void {
-  const active = currentScene === "harbor" && viewerState.experienceMode !== "theatre";
+  const runtimeSceneKey = isRuntimeScene(currentScene) ? currentScene : null;
+  const active = runtimeSceneKey !== null && viewerState.experienceMode !== "theatre";
   harborFocusPanel.hidden = !active;
-  if (!active) return;
-  const levels = harborRuntime?.scene.levels ?? [];
-  const volumeIds = [...new Set(levels.map((level) => level.volume_id).filter(Boolean))];
-  const volumeNames = new Map((harborRuntime?.volumes ?? []).map((volume) => [volume.id, volume.name]));
-  harborFocusNote.textContent = currentHarborFocus === "surface" ? "港区地表 · 查看模式" : `${volumeNames.get(currentHarborFocus) ?? currentHarborFocus} · 查看模式`;
+  if (!active || runtimeSceneKey === null) return;
+  const runtime = runtimeFor();
+  const descriptor = RUNTIME_SCENES[runtimeSceneKey];
+  const levels = runtime?.scene.levels ?? [];
+  const allVolumeIds = [...new Set(levels.map((level) => level.volume_id).filter(Boolean))];
+  const allowed = descriptor.visibleFocusIds;
+  const volumeIds = allowed ? allVolumeIds.filter((id) => allowed.includes(id)) : allVolumeIds;
+  const volumeNames = new Map((runtime?.volumes ?? []).map((volume) => [volume.id, volume.name]));
+  const surfaceName = currentScene === "old_clock" ? "旧钟区地表" : "港区地表";
+  harborFocusNote.textContent = currentHarborFocus === "surface" ? `${surfaceName} · 查看模式` : `${volumeNames.get(currentHarborFocus) ?? currentHarborFocus} · 查看模式`;
   harborFocusControls.innerHTML = "";
   for (const focus of ["surface", ...volumeIds]) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `building-button${currentHarborFocus === focus ? " active" : ""}`;
-    button.textContent = focus === "surface" ? "查看 · 港区地表" : `查看 · ${volumeNames.get(focus) ?? focus.replaceAll("_", " ")}`;
+    button.textContent = focus === "surface" ? `查看 · ${surfaceName}` : `查看 · ${volumeNames.get(focus) ?? focus.replaceAll("_", " ")}`;
     button.addEventListener("click", () => setHarborFocus(focus));
     harborFocusControls.append(button);
   }
 }
 
 function setHarborFocus(focus: string): void {
-  if (currentScene !== "harbor" || focus === currentHarborFocus) return;
+  if (!isRuntimeScene(currentScene) || focus === currentHarborFocus) return;
   currentHarborFocus = focus;
-  const levels = (harborRuntime?.scene.levels ?? []).filter((level) => focus === "surface" ? level.id === "surface" : level.volume_id === focus);
+  const levels = (runtimeFor()?.scene.levels ?? []).filter((level) => focus === "surface" ? level.id === "surface" : level.volume_id === focus);
   currentHarborLevelId = levels[0]?.id ?? "all";
   clearCityNotice();
   clearCellSelection();
   applyLayerFilter();
   updateUi();
   fitView();
+}
+
+function renderRuntimePresets(): void {
+  const active = currentScene === "old_clock";
+  runtimePresetPanel.hidden = !active;
+  runtimePresetControls.innerHTML = "";
+  if (!active) return;
+  for (const preset of RUNTIME_SCENES.old_clock.presets) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `building-button${currentHarborFocus === preset.focus && currentHarborLevelId === preset.levelId && viewerState.experienceMode === preset.experience ? " active" : ""}`;
+    button.textContent = preset.label;
+    button.addEventListener("click", () => {
+      currentHarborFocus = preset.focus;
+      currentHarborLevelId = preset.levelId;
+      viewerState.experienceMode = preset.experience;
+      selectedToken = null;
+      clearCityNotice();
+      clearCellSelection();
+      syncViewerState();
+      applyLayerFilter();
+      updateUi();
+      fitView();
+    });
+    runtimePresetControls.append(button);
+  }
 }
 
 function renderCityScopeControls(): void {
@@ -2264,8 +2401,8 @@ function updateHud(): void {
     ? "教堂"
     : currentScene === "city"
       ? "城市街区"
-      : currentScene === "harbor"
-        ? "潮钟港区 V2"
+      : isRuntimeScene(currentScene)
+        ? RUNTIME_SCENES[currentScene].shortName
         : isV22Scene(currentScene)
           ? V22_SCENES[currentScene].name
           : "幽暗地域";
@@ -2275,7 +2412,7 @@ function updateHud(): void {
     hudFilter.textContent = cityNotice;
     return;
   }
-  if (currentScene === "harbor") {
+  if (isRuntimeScene(currentScene)) {
     const level = currentHarborLevelId === "all" ? undefined : harborLevel(currentHarborLevelId);
     const levelLabel = level?.label ?? currentHarborLevelId;
     hudFilter.textContent = currentHarborLevelId === "all"
@@ -2300,15 +2437,16 @@ function updateUi(): void {
   syncViewerState();
   const church = currentScene === "church";
   const city = currentScene === "city";
-  const harbor = currentScene === "harbor";
+  const runtimeDescriptor = isRuntimeScene(currentScene) ? RUNTIME_SCENES[currentScene] : undefined;
+  const runtimeScene = Boolean(runtimeDescriptor);
   const v22Descriptor = isV22Scene(currentScene) ? V22_SCENES[currentScene] : undefined;
   const v22 = Boolean(v22Descriptor);
   sceneTitle.textContent = church
     ? churchSpec?.site.name ?? "圣烛教堂"
     : city
       ? citySpec?.name ?? "暮钟区 · 灰石街区"
-      : harbor
-        ? harborRuntime?.scene.name ?? "潮钟港区 · 塔影与暗渠"
+      : runtimeDescriptor
+        ? runtimeFor()?.scene.name ?? runtimeDescriptor.name
         : v22Descriptor
           ? v22Descriptor.name
           : "幽暗地域 · 紫晶裂谷";
@@ -2316,24 +2454,25 @@ function updateUi(): void {
     ? churchSpec?.site.brief ?? "三层建筑、房间、楼梯与 DM 隐藏密室。"
     : city
       ? "街道、广场与 7 栋可进入建筑；切换内部战术范围。"
-      : harbor
-        ? "地表、塔楼、暗渠与密室；移动严格读取 runtime 导航图。"
+      : runtimeDescriptor
+        ? runtimeDescriptor.description
         : v22Descriptor
           ? v22Descriptor.description
           : "48×36 格的裂谷、桥梁、高地、遗迹与菌林。";
-  modeNote.textContent = church ? "独立模型 · 权限" : v22 ? "同一资产 · public / DM 专属" : "当前仅 DM 资产";
-  layerTitle.textContent = currentScene === "underdark" ? "高度" : harbor ? "层级" : v22 ? "层级 / 高度" : "楼层";
+  modeNote.textContent = church ? "独立模型 · 权限" : v22 || runtimeDescriptor?.supportsPlayer ? "同一资产 · public / DM 专属" : "当前仅 DM 资产";
+  layerTitle.textContent = currentScene === "underdark" ? "高度" : runtimeScene ? "层级" : v22 ? "层级 / 高度" : "楼层";
   sceneButtons.forEach((button) => button.classList.toggle("active", button.dataset.scene === currentScene));
   modeButtons.forEach((button) => {
     const mode = button.dataset.mode as ViewMode;
-    const playerModeSupported = church || v22;
+    const playerModeSupported = church || v22 || Boolean(runtimeDescriptor?.supportsPlayer);
     button.disabled = !playerModeSupported && mode === "player";
-    button.title = !playerModeSupported && mode === "player" ? `${city ? "城市街区" : harbor ? "潮钟港区" : "幽暗地域"}当前没有独立玩家资产` : "";
+    button.title = !playerModeSupported && mode === "player" ? `${city ? "城市街区" : runtimeScene ? runtimeDescriptor?.shortName : "幽暗地域"}当前没有独立玩家资产` : "";
     button.classList.toggle("active", mode === currentMode);
   });
   renderLayerControls();
   renderCityScopeControls();
   renderHarborFocusControls();
+  renderRuntimePresets();
   renderExperienceUi();
   updateHud();
 }
@@ -2346,7 +2485,7 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
   if (sceneChanged) {
     currentLayer = "all";
     if (sceneKey === "city") currentCityScope = "outdoor";
-    if (sceneKey === "harbor") {
+    if (isRuntimeScene(sceneKey)) {
       currentHarborFocus = "surface";
       currentHarborLevelId = "surface";
     }
@@ -2363,6 +2502,7 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
   showLoading("正在加载场景");
   try {
     await ensureData();
+    if (isRuntimeScene(currentScene)) await ensureRuntimeScene(currentScene);
     if (isV22Scene(currentScene)) await ensureV22Grid(currentScene);
     normalizeExperienceFocus();
     const root = await loadModel(sceneAsset(currentScene, currentMode));
@@ -2407,7 +2547,8 @@ sceneButtons.forEach((button) => {
 modeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const next = button.dataset.mode as ViewMode;
-    if ((currentScene !== "church" && !isV22Scene(currentScene)) || next === currentMode) return;
+    const playerRuntime = isRuntimeScene(currentScene) && RUNTIME_SCENES[currentScene].supportsPlayer;
+    if ((currentScene !== "church" && !isV22Scene(currentScene) && !playerRuntime) || next === currentMode) return;
     void activateScene(currentScene, next, false);
   });
 });
