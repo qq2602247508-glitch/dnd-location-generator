@@ -204,8 +204,16 @@ python3 -m generator.v2.location_cli specs/locations/old_clock_quarter.json \
 python3 tests/verify_location_compiler.py
 ```
 
-详细契约见 `docs/location-compiler-v2.3.md`。下一阶段将冻结的 LocationProgram 落到通用
-plan/runtime、Blender 和 Viewer，不修改现有 DND 项目。
+详细契约见 `docs/location-compiler-v2.3.md`。`generator/v2/location_realize.py` 已将冻结的
+LocationProgram 落到既有 `dnd-scene-plan-2.0 / dnd-scene-runtime-2.0`：72×64 格、9 个空间体、
+13 个层级、19 个房间、15 个连接器、10,117 条导航边，并提供街区、钟楼、屋顶和地下
+四个展示预设。公开锚点连通、DM 密室隔离、两处地表舍口、楼梯/爬梯/屋顶桥和字节级
+确定性均已自动验证。现有 DND 项目仍未修改。
+
+```bash
+python3 -m generator.v2.location_realize
+python3 tests/verify_old_clock_v23.py
+```
 
 ## 尚未接入
 
