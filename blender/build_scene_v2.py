@@ -40,6 +40,43 @@ Box = tuple[tuple[float, float, float], tuple[float, float, float]]
 Edge = tuple[tuple[int, int], tuple[int, int]]
 
 
+# The V2 plan already carries a capability-facing volume vocabulary: kind,
+# archetype, roof and facade.  Keep visual grammar here rather than assigning
+# details by scene id so any compatible plan gets a coherent, distinct block.
+DEFAULT_VISUAL_STYLE: dict[str, Any] = {
+    "roof_profile": "gable_ns",
+    "roof_material": "roof",
+    "wall_material": "wall",
+    "trim_material": "trim_building",
+    "detail_group": "building",
+    "window_stride": 5,
+}
+KIND_VISUAL_STYLES: dict[str, dict[str, Any]] = {
+    "tower": {"roof_profile": "parapet", "roof_material": "roof_tower", "wall_material": "facade_tower", "trim_material": "trim_tower", "detail_group": "tower", "window_stride": 3},
+    "building": {"roof_profile": "gable_ns", "roof_material": "roof", "wall_material": "wall", "trim_material": "trim_building", "detail_group": "building", "window_stride": 5},
+}
+ARCHETYPE_VISUAL_STYLES: dict[str, dict[str, Any]] = {
+    "clock_tower": {"roof_profile": "copper_cap", "roof_material": "roof_copper", "wall_material": "facade_tower", "trim_material": "trim_tower", "detail_group": "clock_tower", "window_stride": 2},
+    "signal_tower": {"roof_profile": "parapet", "roof_material": "roof_tower", "wall_material": "facade_tower", "trim_material": "trim_tower", "detail_group": "signal_tower", "window_stride": 3},
+    "inn": {"roof_profile": "gable_ns", "roof_material": "inn_roof", "wall_material": "facade_inn", "trim_material": "trim_inn", "detail_group": "harbor_inn", "window_stride": 3},
+    "guildhall": {"roof_profile": "stepped_gable", "roof_material": "roof_guild", "wall_material": "facade_guild", "trim_material": "trim_guild", "detail_group": "guildhall", "window_stride": 3},
+    "shrine": {"roof_profile": "hipped", "roof_material": "roof_shrine", "wall_material": "facade_shrine", "trim_material": "trim_shrine", "detail_group": "shrine", "window_stride": 2},
+    "shop": {"roof_profile": "shed_ew", "roof_material": "roof_shop", "wall_material": "facade_shop", "trim_material": "trim_shop", "detail_group": "shop", "window_stride": 4},
+    "tenement": {"roof_profile": "lean_to", "roof_material": "roof_tenement", "wall_material": "facade_tenement", "trim_material": "trim_tenement", "detail_group": "tenement", "window_stride": 4},
+    "watchhouse": {"roof_profile": "parapet", "roof_material": "roof_watchhouse", "wall_material": "facade_watchhouse", "trim_material": "trim_watchhouse", "detail_group": "watchhouse", "window_stride": 3},
+    "warehouse": {"roof_profile": "gable_ew", "roof_material": "roof", "wall_material": "wall", "trim_material": "trim_building", "detail_group": "warehouse", "window_stride": 5},
+    "manor": {"roof_profile": "hipped", "roof_material": "roof_guild", "wall_material": "facade_guild", "trim_material": "trim_guild", "detail_group": "manor", "window_stride": 4},
+    "market": {"roof_profile": "shed_ns", "roof_material": "roof_shop", "wall_material": "facade_shop", "trim_material": "trim_shop", "detail_group": "market", "window_stride": 5},
+}
+PRESENTATION_ROOF_PROFILES = {
+    "copper_belfry": "copper_cap",
+    "crooked_gable": "gable_ns",
+    "walkable_roofline": "parapet",
+    "pitched": "gable_ns",
+    "barrel_vault": "hipped",
+}
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -51,6 +88,31 @@ def cells_from_rle(mask: dict[str, Any]) -> set[tuple[int, int]]:
     for row, start_col, length in mask.get("runs", []):
         result.update((int(row), col) for col in range(int(start_col), int(start_col) + int(length)))
     return result
+
+
+def volume_visual_style(volume: dict[str, Any]) -> dict[str, Any]:
+    """Resolve a reusable visual grammar from plan capabilities/presentation."""
+    style = dict(DEFAULT_VISUAL_STYLE)
+    style.update(KIND_VISUAL_STYLES.get(str(volume.get("kind", "")), {}))
+    archetype = str(volume.get("archetype", ""))
+    archetype_style = ARCHETYPE_VISUAL_STYLES.get(archetype)
+    if archetype_style:
+        style.update(archetype_style)
+    else:
+        roof = volume.get("roof", {})
+        roof_shape = str(roof.get("shape", "")) if isinstance(roof, dict) else ""
+        if roof_shape in PRESENTATION_ROOF_PROFILES:
+            style["roof_profile"] = PRESENTATION_ROOF_PROFILES[roof_shape]
+    style["archetype"] = archetype or str(volume.get("kind", "building"))
+    style["presentation_roof"] = (
+        str(volume.get("roof", {}).get("shape", ""))
+        if isinstance(volume.get("roof"), dict) else ""
+    )
+    style["presentation_facade"] = (
+        str(volume.get("facade", {}).get("primary", ""))
+        if isinstance(volume.get("facade"), dict) else ""
+    )
+    return style
 
 
 def clean_scene() -> None:
@@ -78,6 +140,30 @@ def material(name: str, color: tuple[float, float, float, float], *, roughness: 
             sockets["Emission Strength"].default_value = emission
     MATERIALS[name] = value
     return value
+
+
+def weathered_ground_material(value: bpy.types.Material) -> None:
+    """Give city ground a procedural, texture-free cobble/weathering breakup."""
+    nodes = value.node_tree.nodes
+    links = value.node_tree.links
+    bsdf = next((node for node in nodes if node.type == "BSDF_PRINCIPLED"), None)
+    if not bsdf:
+        return
+    base_color = next((socket for socket in bsdf.inputs if socket.identifier == "Base Color"), None)
+    if not base_color:
+        return
+    noise = nodes.new("ShaderNodeTexNoise")
+    noise.noise_dimensions = "3D"
+    noise.inputs["Scale"].default_value = 7.5
+    noise.inputs["Detail"].default_value = 3.0
+    noise.inputs["Roughness"].default_value = .72
+    ramp = nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].position = .30
+    ramp.color_ramp.elements[0].color = (.045, .060, .068, 1)
+    ramp.color_ramp.elements[1].position = .72
+    ramp.color_ramp.elements[1].color = (.26, .30, .31, 1)
+    links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
+    links.new(ramp.outputs["Color"], base_color)
 
 
 def tag(obj: bpy.types.Object, *, kind: str, level_id: str = "", material_id: str = "", visibility: str = "public", pick_role: str = "none", **extras: Any) -> bpy.types.Object:
@@ -132,6 +218,26 @@ def boxes_mesh(name: str, boxes: Iterable[Box], mat: bpy.types.Material, **metad
 def cell_box(row: int, col: int, z: float, *, height: float = .12, inset: float = .018) -> Box:
     size = CELL - inset
     return ((col * CELL + CELL / 2, row * CELL + CELL / 2, z - height / 2), (size, size, height))
+
+
+def cell_run_boxes(cells: set[tuple[int, int]], z: float, *, height: float = .12, inset: float = .018) -> list[Box]:
+    """Collapse same-row tactical cells into floor slabs; grid overlays stay exact."""
+    by_row: dict[int, list[int]] = defaultdict(list)
+    for row, col in cells:
+        by_row[row].append(col)
+    boxes: list[Box] = []
+    for row, cols in sorted(by_row.items()):
+        ordered = sorted(cols)
+        start = previous = ordered[0]
+        for col in ordered[1:]:
+            if col != previous + 1:
+                span = previous - start + 1
+                boxes.append(((start * CELL + span * CELL / 2, row * CELL + CELL / 2, z - height / 2), (span * CELL - inset, CELL - inset, height)))
+                start = col
+            previous = col
+        span = previous - start + 1
+        boxes.append(((start * CELL + span * CELL / 2, row * CELL + CELL / 2, z - height / 2), (span * CELL - inset, CELL - inset, height)))
+    return boxes
 
 
 def edge_box(edge: Edge, z: float, height: float, thickness: float = .11) -> Box:
@@ -238,8 +344,7 @@ def build_terrain() -> None:
         height = .08 if kind == "water" else .12
         z_offset = -.12 if kind == "water" else 0.0
         boxes_mesh(
-            f"Surface_{level_id}_{kind}",
-            (cell_box(row, col, z + z_offset, height=height) for row, col in sorted(cells)),
+            f"Surface_{level_id}_{kind}", cell_run_boxes(cells, z + z_offset, height=height),
             MATERIALS[terrain_material.get(kind, "ground")],
             kind="surface", level_id=level_id, material_id=kind, visibility="public",
             pick_role="tactical_floor" if terrain.get("walkable") else "blocked_surface",
@@ -278,7 +383,7 @@ def build_level_floors_and_grids() -> None:
         volume_ids = sorted({cell.get("volume_id", "") for cell in cells if cell.get("volume_id")})
         boxes_mesh(
             f"Floor_{level_id}_{surface}_{visibility}",
-            (cell_box(int(cell["row"]), int(cell["col"]), z) for cell in cells), MATERIALS[material_name],
+            cell_run_boxes({(int(cell["row"]), int(cell["col"])) for cell in cells}, z), MATERIALS[material_name],
             kind="floor", level_id=level_id, material_id=material_name, visibility=visibility, pick_role="tactical_floor",
             room_ids=room_ids, volume_ids=volume_ids, surface_kind=surface, cell_count=len(cells),
         )
@@ -321,6 +426,7 @@ def build_walls() -> None:
         volume = VOLUMES.get(level.get("volume_id", ""), {})
         if volume.get("kind") == "roof_route":
             continue
+        style = volume_visual_style(volume)
         cells = cells_from_rle(level["cell_mask"])
         room_at: dict[tuple[int, int], dict[str, Any]] = {}
         for room in rooms_by_level[level_id]:
@@ -349,11 +455,43 @@ def build_walls() -> None:
         for visibility, edges in wall_groups.items():
             volume_ids = sorted({room.get("volume_id", "") for room in rooms_by_level[level_id] if room.get("volume_id")})
             room_ids = sorted(room["id"] for room in rooms_by_level[level_id] if room.get("visibility", "public") == visibility)
+            wall_material = "secret_wall" if visibility == "dm_only" else style["wall_material"]
             boxes_mesh(
-                f"Walls_{level_id}_{visibility}", (edge_box(edge, z, height) for edge in sorted(edges)), MATERIALS["secret_wall" if visibility == "dm_only" else "wall"],
-                kind="wall", level_id=level_id, material_id="wall", visibility=visibility, pick_role="occluder",
-                volume_ids=volume_ids, room_ids=room_ids, edge_count=len(edges),
+                f"Walls_{level_id}_{visibility}", (edge_box(edge, z, height) for edge in sorted(edges)), MATERIALS[wall_material],
+                kind="wall", level_id=level_id, material_id=wall_material, visibility=visibility, pick_role="occluder",
+                volume_ids=volume_ids, room_ids=room_ids, edge_count=len(edges), archetype=style["archetype"],
             )
+
+
+def roof_profile_boxes(cells: set[tuple[int, int]], z: float, profile: str) -> list[Box]:
+    """Create a single low-poly roof mesh whose silhouette follows its mask."""
+    min_row, min_col, max_row, max_col = mask_bounds(cells)
+    boxes: list[Box] = []
+    for row, col in sorted(cells):
+        row_distance = min(row - min_row, max_row - 1 - row)
+        col_distance = min(col - min_col, max_col - 1 - col)
+        if profile == "gable_ew":
+            rise = col_distance * .17
+        elif profile == "stepped_gable":
+            rise = min(row_distance, col_distance) * .13 + (abs(row - col) % 2) * .025
+        elif profile == "hipped":
+            rise = min(row_distance, col_distance) * .14
+        elif profile == "shed_ew":
+            rise = (col - min_col) * .065
+        elif profile == "shed_ns":
+            rise = (row - min_row) * .065
+        elif profile == "lean_to":
+            rise = (max_col - 1 - col) * .052 + row_distance * .025
+        elif profile == "parapet":
+            exterior = any(neighbor not in cells for neighbor in ((row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)))
+            rise = .22 if exterior else .02
+        elif profile == "copper_cap":
+            rise = min(row_distance, col_distance) * .11 + .05
+        else:
+            rise = row_distance * .17
+        height = .16 + rise
+        boxes.append(((col * CELL + CELL / 2, row * CELL + CELL / 2, z + rise / 2), (CELL - .04, CELL - .04, height)))
+    return boxes
 
 
 def build_roofs() -> None:
@@ -364,10 +502,12 @@ def build_roofs() -> None:
         level = LEVELS[level_id]
         cells = cells_from_rle(level["cell_mask"])
         z = (float(level["z_base_ft"]) + float(level["height_ft"]) * .82) * FT
+        style = volume_visual_style(volume)
         boxes_mesh(
-            f"Roof_{volume['id']}_{level_id}", (cell_box(row, col, z, height=.16, inset=.04) for row, col in sorted(cells)), MATERIALS["roof"],
-            kind="roof", level_id=level_id, material_id="roof", visibility="public", pick_role="hideable",
-            volume_id=volume["id"], archetype=volume.get("archetype", ""), cell_count=len(cells),
+            f"Roof_{volume['id']}_{level_id}", roof_profile_boxes(cells, z, style["roof_profile"]), MATERIALS[style["roof_material"]],
+            kind="roof", level_id=level_id, material_id=style["roof_material"], visibility="public", pick_role="hideable",
+            volume_id=volume["id"], archetype=style["archetype"], cell_count=len(cells), roof_profile=style["roof_profile"],
+            presentation_roof=style["presentation_roof"], detail_group=style["detail_group"],
         )
 
 
@@ -380,10 +520,36 @@ def connector_boxes(connector: dict[str, Any]) -> list[Box]:
         edge = ((int(left["row"]), int(left["col"])), (int(right["row"]), int(right["col"])))
         center, dims = edge_box(edge, z_left + .035, .07, .52)
         return [(center, dims)]
-    return [
-        ((int(endpoint["col"]) * CELL + CELL / 2, int(endpoint["row"]) * CELL + CELL / 2, z + .12), (.82, .82, .22))
-        for endpoint, z in points
-    ]
+    connector_type = str(connector.get("type", ""))
+    boxes: list[Box] = []
+    for endpoint, z in points:
+        x = int(endpoint["col"]) * CELL + CELL / 2
+        y = int(endpoint["row"]) * CELL + CELL / 2
+        if connector_type == "stairs":
+            # Four unequal treads form an arrow-like ramp in plan view. The
+            # high endpoint reverses the taper, so paired up/down landings can
+            # be distinguished without labels or scene-specific metadata.
+            lengths = (.34, .52, .70, .88)
+            if z > min(z_left, z_right):
+                lengths = tuple(reversed(lengths))
+            for index, length in enumerate(lengths):
+                boxes.append(((x, y - .30 + index * .20, z + .17 + index * .012), (length, .12, .20)))
+        elif connector_type == "ladder":
+            boxes.extend([
+                ((x - .34, y, z + .18), (.10, .88, .22)),
+                ((x + .34, y, z + .18), (.10, .88, .22)),
+                *[((x, y - .30 + index * .20, z + .19), (.72, .09, .24)) for index in range(4)],
+            ])
+        elif connector_type in {"hatch", "secret_door"}:
+            boxes.extend([
+                ((x - .38, y, z + .18), (.10, .86, .24)),
+                ((x + .38, y, z + .18), (.10, .86, .24)),
+                ((x, y - .38, z + .18), (.66, .10, .24)),
+                ((x, y + .38, z + .18), (.66, .10, .24)),
+            ])
+        else:
+            boxes.append(((x, y, z + .16), (.92, .92, .26)))
+    return boxes
 
 
 def connector_visual_boxes(connector: dict[str, Any]) -> list[Box]:
@@ -465,7 +631,10 @@ def build_connectors() -> None:
         for box in connector_visual_boxes(connector):
             signature = (primary_level, tuple(level_ids), tuple(volume_ids), connector_type, connector.get("visibility", "public"))
             visual_batches[signature].append((connector, box))
-    visual_materials = {"door": "door_frame", "stairs": "stair_wood", "ladder": "hatch_metal", "bridge": "stair_wood", "hatch": "hatch_metal", "secret_door": "secret_portal"}
+    # Vertical transitions share a luminous cyan language; doors remain warm
+    # and secrets magenta. This is type-based, never scene-ID based, and lets
+    # a DM parse level changes from either tactical camera without a legend.
+    visual_materials = {"door": "door_frame", "stairs": "connector_vertical", "ladder": "connector_vertical", "bridge": "stair_wood", "hatch": "connector_vertical", "secret_door": "secret_portal"}
     for (level_id, signature_levels, signature_volumes, connector_type, visibility), items in visual_batches.items():
         connector_ids = sorted({connector["id"] for connector, _ in items})
         level_ids = list(signature_levels)
@@ -480,104 +649,110 @@ def build_connectors() -> None:
         )
 
 
-def facade_window_boxes(cells: set[tuple[int, int]], z: float) -> list[Box]:
-    min_row, min_col, max_row, max_col = mask_bounds(cells)
-    mid_row = (min_row + max_row) / 2 * CELL
-    mid_col = (min_col + max_col) / 2 * CELL
-    inset = .035
-    return [
-        ((mid_col, min_row * CELL - inset, z + 1.15), (.48, .06, .42)),
-        ((mid_col, max_row * CELL + inset, z + 1.15), (.48, .06, .42)),
-        ((min_col * CELL - inset, mid_row, z + 1.15), (.06, .48, .42)),
-        ((max_col * CELL + inset, mid_row, z + 1.15), (.06, .48, .42)),
-    ]
+def facade_window_boxes(cells: set[tuple[int, int]], z: float, wall_height: float, stride: int) -> list[Box]:
+    """Place low-poly windows on actual exterior edges, including L-shapes."""
+    boxes: list[Box] = []
+    for index, edge in enumerate(sorted(boundary_edges(cells))):
+        if index % max(2, stride):
+            continue
+        (row, col), (other_row, other_col) = edge
+        window_z = z + wall_height * .56
+        if row == other_row:
+            x, y = max(col, other_col) * CELL, row * CELL + CELL / 2
+            boxes.append(((x, y, window_z), (.06, .46, .46)))
+        else:
+            x, y = col * CELL + CELL / 2, max(row, other_row) * CELL
+            boxes.append(((x, y, window_z), (.46, .06, .46)))
+    return boxes
+
+
+def facade_band_and_eave_boxes(cells: set[tuple[int, int]], z: float, wall_height: float, *, top_level: bool) -> list[Box]:
+    boxes: list[Box] = []
+    for index, edge in enumerate(sorted(boundary_edges(cells))):
+        if index % 2 == 0:
+            boxes.append(edge_box(edge, z + wall_height * .48, .09, .055))
+        if top_level:
+            boxes.append(edge_box(edge, z + wall_height - .10, .14, .075))
+    return boxes
 
 
 def build_archetype_details() -> None:
+    window_boxes: list[Box] = []
+    window_volume_ids: list[str] = []
+    window_level_ids: list[str] = []
+    window_archetypes: list[str] = []
     for volume in PLAN["volumes"]:
-        archetype = volume.get("archetype", "")
-        if archetype not in {"signal_tower", "clock_tower", "inn"}:
+        if volume.get("kind") in {"sewer", "roof_route"} or not volume.get("level_ids"):
             continue
-        for level_id in volume["level_ids"]:
-            level = LEVELS[level_id]
-            cells = cells_from_rle(level["cell_mask"])
-            z = float(level["z_base_ft"]) * FT
-            boxes_mesh(
-                f"Windows_{volume['id']}_{level_id}", facade_window_boxes(cells, z), MATERIALS["window_glow"],
-                kind="archetype_detail", level_id=level_id, material_id="window_glow", visibility="public", pick_role="none",
-                detail_group=archetype, detail_role="windows", volume_id=volume["id"],
-            )
-
+        style = volume_visual_style(volume)
+        grammar_boxes: list[Box] = []
         top_level_id = volume["level_ids"][-1]
         top_level = LEVELS[top_level_id]
         top_cells = cells_from_rle(top_level["cell_mask"])
         min_row, min_col, max_row, max_col = mask_bounds(top_cells)
         roof_z = (float(top_level["z_base_ft"]) + float(top_level["height_ft"]) * .82) * FT
-        if archetype in {"signal_tower", "clock_tower"}:
+        for level_id in volume["level_ids"]:
+            level = LEVELS[level_id]
+            cells = cells_from_rle(level["cell_mask"])
+            z = float(level["z_base_ft"]) * FT
+            wall_height = max(1.35, float(level["height_ft"]) * FT * .78)
+            grammar_boxes.extend(facade_band_and_eave_boxes(cells, z, wall_height, top_level=level_id == top_level_id))
+            window_boxes.extend(facade_window_boxes(cells, z, wall_height, int(style["window_stride"])))
+            window_volume_ids.append(volume["id"])
+            window_level_ids.append(level_id)
+            window_archetypes.append(style["archetype"])
+        if style["archetype"] in {"signal_tower", "clock_tower", "tower"}:
             perimeter = sorted({edge[0] for edge in boundary_edges(top_cells)})
-            battlements = [
+            grammar_boxes.extend(
                 ((col * CELL + CELL / 2, row * CELL + CELL / 2, roof_z + .24), (.38, .38, .48))
                 for index, (row, col) in enumerate(perimeter) if index % 2 == 0
+            )
+        detail_role = "stepped_gable" if style["archetype"] == "inn" else "facade_grammar"
+        boxes_mesh(
+            f"FacadeGrammar_{volume['id']}", grammar_boxes, MATERIALS[style["trim_material"]],
+            kind="archetype_detail", level_id=top_level_id, material_id=style["trim_material"], visibility="public", pick_role="none",
+            detail_group=style["detail_group"], detail_role=detail_role, volume_id=volume["id"], level_ids=volume["level_ids"],
+            grammar_roles=["windows", "eaves", "facade_band"], roof_profile=style["roof_profile"],
+            presentation_facade=style["presentation_facade"],
+        )
+        cx, cy = (min_col + max_col) * CELL / 2, (min_row + max_row) * CELL / 2
+        if style["archetype"] == "clock_tower":
+            boxes_mesh(
+                f"ClockBelfry_{volume['id']}", [
+                    ((cx, cy, roof_z + .42), (1.42, 1.42, .18)),
+                    ((cx, cy, roof_z + 1.02), (.82, .82, 1.05)),
+                    ((cx, cy, roof_z + 1.65), (1.18, 1.18, .18)),
+                ], MATERIALS["clock_gold"],
+                kind="archetype_detail", level_id=top_level_id, material_id="clock_gold", visibility="public", pick_role="none",
+                detail_group="clock_tower", detail_role="great_bell", volume_id=volume["id"],
+            )
+            face_boxes = [
+                ((cx, min_row * CELL - .07, roof_z - .50), (1.08, .08, 1.08)),
+                ((cx, max_row * CELL + .07, roof_z - .50), (1.08, .08, 1.08)),
+                ((min_col * CELL - .07, cy, roof_z - .50), (.08, 1.08, 1.08)),
+                ((max_col * CELL + .07, cy, roof_z - .50), (.08, 1.08, 1.08)),
             ]
             boxes_mesh(
-                f"TowerBattlements_{volume['id']}", battlements, MATERIALS["tower_stone"],
-                kind="archetype_detail", level_id=top_level_id, material_id="tower_stone", visibility="public", pick_role="none",
-                detail_group="signal_tower", detail_role="battlements", volume_id=volume["id"],
+                f"ClockFaces_{volume['id']}", face_boxes, MATERIALS["clock_face"],
+                kind="archetype_detail", level_id=top_level_id, material_id="clock_face", visibility="public", pick_role="none",
+                detail_group="clock_tower", detail_role="clock_faces", volume_id=volume["id"],
             )
-            cx, cy = (min_col + max_col) * CELL / 2, (min_row + max_row) * CELL / 2
-            if archetype == "clock_tower":
-                boxes_mesh(
-                    f"ClockBelfry_{volume['id']}", [
-                        ((cx, cy, roof_z + .42), (1.42, 1.42, .18)),
-                        ((cx, cy, roof_z + 1.02), (.82, .82, 1.05)),
-                        ((cx, cy, roof_z + 1.65), (1.18, 1.18, .18)),
-                    ], MATERIALS["clock_gold"],
-                    kind="archetype_detail", level_id=top_level_id, material_id="clock_gold", visibility="public", pick_role="none",
-                    detail_group="clock_tower", detail_role="great_bell", volume_id=volume["id"],
-                )
-                face_boxes = [
-                    ((cx, min_row * CELL - .07, roof_z - .50), (1.08, .08, 1.08)),
-                    ((cx, max_row * CELL + .07, roof_z - .50), (1.08, .08, 1.08)),
-                    ((min_col * CELL - .07, cy, roof_z - .50), (.08, 1.08, 1.08)),
-                    ((max_col * CELL + .07, cy, roof_z - .50), (.08, 1.08, 1.08)),
-                ]
-                boxes_mesh(
-                    f"ClockFaces_{volume['id']}", face_boxes, MATERIALS["clock_face"],
-                    kind="archetype_detail", level_id=top_level_id, material_id="clock_face", visibility="public", pick_role="none",
-                    detail_group="clock_tower", detail_role="clock_faces", volume_id=volume["id"],
-                )
-            else:
-                boxes_mesh(
-                    f"TowerBeacon_{volume['id']}", [
-                        ((cx, cy, roof_z + .20), (1.25, 1.25, .24)),
-                        ((cx, cy, roof_z + .88), (.22, .22, 1.25)),
-                        ((cx, cy, roof_z + 1.58), (.70, .70, .34)),
-                    ], MATERIALS["beacon"],
-                    kind="archetype_detail", level_id=top_level_id, material_id="beacon", visibility="public", pick_role="none",
-                    detail_group="signal_tower", detail_role="beacon", volume_id=volume["id"],
-                )
-        else:
-            # A cell-stepped gable follows arbitrary L-shaped inn masks while
-            # preserving the same single batched mesh and hideable roof role.
-            roof_boxes = []
-            for row, col in sorted(top_cells):
-                rise = min(row - min_row, max_row - 1 - row) * .20
-                roof_boxes.append(((col * CELL + CELL / 2, row * CELL + CELL / 2, roof_z + .10 + rise), (CELL - .025, CELL - .025, .18)))
+        elif style["archetype"] == "signal_tower":
             boxes_mesh(
-                f"InnGableRoof_{volume['id']}", roof_boxes, MATERIALS["inn_roof"],
-                kind="archetype_detail", level_id=top_level_id, material_id="inn_roof", visibility="public", pick_role="hideable",
-                detail_group="harbor_inn", detail_role="stepped_gable", volume_id=volume["id"],
+                f"TowerBeacon_{volume['id']}", [
+                    ((cx, cy, roof_z + .20), (1.25, 1.25, .24)),
+                    ((cx, cy, roof_z + .88), (.22, .22, 1.25)),
+                    ((cx, cy, roof_z + 1.58), (.70, .70, .34)),
+                ], MATERIALS["beacon"],
+                kind="archetype_detail", level_id=top_level_id, material_id="beacon", visibility="public", pick_role="none",
+                detail_group="signal_tower", detail_role="beacon", volume_id=volume["id"],
             )
-            cx = (min_col + max_col) * CELL / 2
-            boxes_mesh(
-                f"InnDetails_{volume['id']}", [
-                    (((max_col - .8) * CELL, (min_row + 1.0) * CELL, roof_z + .80), (.42, .42, 1.45)),
-                    ((cx, min_row * CELL - .20, .82), (1.15, .16, .62)),
-                    ((cx, min_row * CELL - .16, 1.48), (.10, .10, .75)),
-                ], MATERIALS["inn_trim"],
-                kind="archetype_detail", level_id=top_level_id, material_id="inn_trim", visibility="public", pick_role="none",
-                detail_group="harbor_inn", detail_role="chimney_sign", volume_id=volume["id"],
-            )
+    boxes_mesh(
+        "FacadeWindows", window_boxes, MATERIALS["window_glow"],
+        kind="archetype_detail", level_id="", material_id="window_glow", visibility="public", pick_role="none",
+        detail_group="building_grammar", detail_role="windows", volume_ids=sorted(set(window_volume_ids)),
+        level_ids=sorted(set(window_level_ids)), archetypes=sorted(set(window_archetypes)),
+    )
 
 
 def build_sewer_details() -> None:
@@ -833,34 +1008,101 @@ def look_at(obj: bpy.types.Object, target: tuple[float, float, float]) -> None:
     obj.rotation_euler = (Vector(target) - obj.location).to_track_quat("-Z", "Y").to_euler()
 
 
+def content_camera_frame() -> dict[str, Any]:
+    """Frame authored content, not the full allocation rectangle, with padding."""
+    cells: set[tuple[int, int]] = set()
+    for volume in PLAN["volumes"]:
+        for level_id in volume.get("level_ids", []):
+            cells.update(cells_from_rle(LEVELS[level_id]["cell_mask"]))
+    for terrain in PLAN["terrain"]:
+        if terrain.get("kind") != "ground":
+            cells.update(cells_from_rle(terrain["cell_mask"]))
+    cells.update((int(item["row"]), int(item["col"])) for item in PLAN["features"])
+    cells.update((int(item["row"]), int(item["col"])) for item in PLAN["anchors"])
+    if not cells:
+        cells = {
+            (row, col)
+            for row in range(int(PLAN["grid"]["height"]))
+            for col in range(int(PLAN["grid"]["width"]))
+        }
+    min_row, min_col, max_row, max_col = mask_bounds(cells)
+    # Once the visual grammar exists, include its real XY bounds. Roofs,
+    # eaves, stairs and landmarks may legitimately extend beyond semantic
+    # masks; certification captures must never crop those additions. Terrain
+    # and grid objects are excluded because they span the allocation canvas.
+    framed_objects = [
+        obj for obj in OBJECTS
+        if str(obj.get("prototype_kind", "")) not in {"surface", "grid"}
+    ]
+    if framed_objects:
+        corners = [obj.matrix_world @ Vector(corner) for obj in framed_objects for corner in obj.bound_box]
+        min_col = min(min_col, math.floor(min(point.x for point in corners) / CELL))
+        max_col = max(max_col, math.ceil(max(point.x for point in corners) / CELL))
+        min_row = min(min_row, math.floor(min(point.y for point in corners) / CELL))
+        max_row = max(max_row, math.ceil(max(point.y for point in corners) / CELL))
+    span_rows, span_cols = max_row - min_row, max_col - min_col
+    padding = max(2.0, min(5.0, max(span_rows, span_cols) * .08))
+    framed_rows, framed_cols = span_rows + padding * 2, span_cols + padding * 2
+    frame_span = max(framed_rows, framed_cols) * CELL
+    target_x = (min_col + max_col) * CELL / 2
+    target_y = (min_row + max_row) * CELL / 2
+    top_z = max(
+        (float(level["z_base_ft"]) + float(level.get("height_ft", 0))) * FT
+        for level in PLAN["levels"]
+    )
+    target = (target_x, target_y, max(1.25, top_z * .28))
+    return {
+        "target": target,
+        "iso_location": (target_x + frame_span * .72, target_y - frame_span * 1.05, top_z + frame_span * .78),
+        "top_location": (target_x, target_y, top_z + frame_span * 1.48),
+        "iso_ortho": frame_span * 1.10,
+        # The certification top-down is an atlas view, not a beauty crop.
+        # Extra margin also contains roof/eave grammar that can extend beyond
+        # semantic cell masks, so unseen archetypes cannot be clipped.
+        "top_ortho": frame_span * 1.35,
+        "content_bounds_cells": [min_row, min_col, max_row, max_col],
+        "content_padding_cells": padding,
+    }
+
+
 def configure_scene() -> bpy.types.Object:
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE_NEXT"
     scene.render.resolution_x, scene.render.resolution_y, scene.render.resolution_percentage = 1400, 1000, 100
     scene.render.image_settings.file_format = "PNG"
-    scene.view_settings.look = "AgX - Medium High Contrast"
+    scene.view_settings.look = "AgX - Medium Low Contrast"
     # Large tactical maps clip into AgX's desaturated highlight shoulder very
     # quickly. Keep headroom so material hue, not white light, carries zones.
-    scene.view_settings.exposure = -.28
+    scene.view_settings.exposure = .72
     scene.world.use_nodes = True
     background = next(node for node in scene.world.node_tree.nodes if node.type == "BACKGROUND")
     background.inputs["Color"].default_value = (.004, .010, .022, 1)
-    background.inputs["Strength"].default_value = .20
+    background.inputs["Strength"].default_value = .48
     width, height = float(PLAN["grid"]["width"]) * CELL, float(PLAN["grid"]["height"]) * CELL
-    target = (width / 2, height / 2, 2.0)
+    frame = content_camera_frame()
+    target = frame["target"]
     for name, location, energy, color, size in (
-        ("HarborKey", (width * .25, -height * .25, 52), 1150, (1.0, .62, .34), 22),
-        ("HarborFill", (width * 1.15, height * .85, 35), 720, (.20, .43, 1.0), 20),
+        ("HarborKey", (width * .25, -height * .25, 52), 1350, (1.0, .68, .42), 24),
+        ("HarborFill", (width * 1.15, height * .85, 35), 1050, (.30, .52, 1.0), 24),
     ):
         bpy.ops.object.light_add(type="AREA", location=location)
         light = bpy.context.object
         light.name = name
         light.data.energy, light.data.color, light.data.size = energy, color, size
         look_at(light, target)
+    bpy.ops.object.light_add(type="AREA", location=(target[0], target[1], 70))
+    tactical_fill = bpy.context.object
+    tactical_fill.name = "TacticalAmbientFill"
+    tactical_fill.data.energy = 1500
+    tactical_fill.data.color = (.42, .54, .72)
+    tactical_fill.data.size = 120
+    tactical_fill.data.use_shadow = False
+    look_at(tactical_fill, target)
     bpy.ops.object.light_add(type="SUN", location=(0, 0, 30))
     sun = bpy.context.object
     sun.name = "HarborSun"
-    sun.data.energy = .58
+    sun.data.energy = .90
+    sun.data.angle = math.radians(22)
     sun.rotation_euler = (math.radians(30), math.radians(-20), math.radians(-35))
     # Broad, low-energy pools produce harbor haze/depth without volumetrics,
     # which keeps headless Eevee renders deterministic and avoids black frames.
@@ -875,11 +1117,11 @@ def configure_scene() -> bpy.types.Object:
         haze.data.energy = energy
         haze.data.color = color
         haze.data.shadow_soft_size = 7.0
-    bpy.ops.object.camera_add(location=(width * 1.2, -height * .65, max(width, height) * .78))
+    bpy.ops.object.camera_add(location=frame["iso_location"])
     camera = bpy.context.object
     camera.name = "SceneV2Camera"
     camera.data.type = "ORTHO"
-    camera.data.ortho_scale = max(width, height) * 1.24
+    camera.data.ortho_scale = frame["iso_ortho"]
     look_at(camera, target)
     scene.camera = camera
     return camera
@@ -911,17 +1153,40 @@ def export_glb() -> None:
 
 
 def create_materials() -> None:
-    material("ground", (.09, .29, .20, 1), roughness=.94, emission=.04)
-    material("road", (.10, .115, .15, 1), roughness=.9, emission=.025)
+    material("ground", (.16, .20, .22, 1), roughness=.98, emission=.012)
+    weathered_ground_material(MATERIALS["ground"])
+    material("road", (.17, .23, .31, 1), roughness=.9, emission=.09)
     material("water", (.006, .25, .49, 1), roughness=.2, metallic=.12, emission=.42)
     material("sewage", (.03, .52, .24, 1), roughness=.48, emission=1.15)
     material("interior", (.43, .16, .055, 1), roughness=.8, emission=.025)
     material("secret_floor", (.47, .015, .62, 1), roughness=.48, emission=.5)
-    material("grid", (.055, .48, .62, 1), roughness=.42, metallic=.08, emission=.32)
-    material("grid_surface", (.12, .42, .48, 1), roughness=.5, emission=.22)
+    material("grid", (.035, .27, .34, 1), roughness=.48, metallic=.06, emission=.14)
+    material("grid_surface", (.075, .25, .30, 1), roughness=.56, emission=.10)
     material("wall", (.42, .34, .30, 1), roughness=.88, emission=.018)
     material("secret_wall", (.58, .025, .72, 1), roughness=.55, emission=.42)
     material("roof", (.61, .105, .025, 1), roughness=.78, emission=.025)
+    material("trim_building", (.55, .37, .22, 1), roughness=.86)
+    material("facade_tower", (.23, .30, .34, 1), roughness=.90)
+    material("trim_tower", (.50, .60, .63, 1), roughness=.66, metallic=.16)
+    material("roof_tower", (.20, .29, .34, 1), roughness=.66, metallic=.32)
+    material("roof_copper", (.08, .36, .35, 1), roughness=.46, metallic=.56)
+    material("facade_inn", (.32, .15, .075, 1), roughness=.92)
+    material("trim_inn", (.68, .28, .09, 1), roughness=.78)
+    material("facade_guild", (.37, .30, .22, 1), roughness=.90)
+    material("trim_guild", (.62, .50, .30, 1), roughness=.72)
+    material("roof_guild", (.34, .17, .08, 1), roughness=.82)
+    material("facade_shrine", (.19, .32, .31, 1), roughness=.78, metallic=.12)
+    material("trim_shrine", (.70, .50, .16, 1), roughness=.50, metallic=.38)
+    material("roof_shrine", (.18, .44, .39, 1), roughness=.48, metallic=.42)
+    material("facade_shop", (.39, .20, .08, 1), roughness=.92)
+    material("trim_shop", (.76, .40, .12, 1), roughness=.74)
+    material("roof_shop", (.46, .11, .045, 1), roughness=.84)
+    material("facade_tenement", (.25, .23, .27, 1), roughness=.94)
+    material("trim_tenement", (.46, .38, .34, 1), roughness=.86)
+    material("roof_tenement", (.16, .18, .24, 1), roughness=.88)
+    material("facade_watchhouse", (.18, .28, .36, 1), roughness=.86)
+    material("trim_watchhouse", (.54, .65, .64, 1), roughness=.65, metallic=.14)
+    material("roof_watchhouse", (.16, .27, .33, 1), roughness=.68, metallic=.24)
     material("connector", (1.0, .28, .015, 1), roughness=.35, metallic=.12, emission=.62)
     material("connector_vertical", (.015, .66, 1.0, 1), roughness=.3, metallic=.12, emission=2.2)
     material("connector_secret", (1.0, .015, .58, 1), roughness=.26, emission=2.4)
@@ -978,13 +1243,12 @@ def build() -> None:
     build_clock_district_details()
     build_features()
     build_anchors()
-    width, height = float(PLAN["grid"]["width"]) * CELL, float(PLAN["grid"]["height"]) * CELL
-    target = (width / 2, height / 2, 2.0)
-    render(camera, "scene-isometric.png", (width * 1.2, -height * .65, max(width, height) * .78), target, max(width, height) * 1.24)
-    render(camera, "scene-topdown.png", (width / 2, height / 2, max(width, height) * 1.55), (width / 2, height / 2, 0), max(width, height) * 1.07)
-    camera.location = (width * 1.2, -height * .65, max(width, height) * .78)
-    camera.data.ortho_scale = max(width, height) * 1.24
-    look_at(camera, target)
+    frame = content_camera_frame()
+    render(camera, "scene-isometric.png", frame["iso_location"], frame["target"], frame["iso_ortho"])
+    render(camera, "scene-topdown.png", frame["top_location"], (frame["target"][0], frame["target"][1], 0), frame["top_ortho"])
+    camera.location = frame["iso_location"]
+    camera.data.ortho_scale = frame["iso_ortho"]
+    look_at(camera, frame["target"])
     bpy.context.preferences.filepaths.save_version = 0
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT / "scene-prototype.blend"))
     export_glb()
@@ -995,6 +1259,7 @@ def build() -> None:
         "connectors": len(PLAN["connectors"]), "features": len(PLAN["features"]), "prototype_objects": len(OBJECTS),
         "estimated_draw_calls": len(OBJECTS), "visual_layer_version": "2.3" if PLAN["scene"].get("id") == "old_clock_quarter_v23" else "2.1",
         "batched_boxes": STATS["batched_boxes"], "mesh_vertices": STATS["mesh_vertices"],
+        "camera": {"content_bounds_cells": frame["content_bounds_cells"], "content_padding_cells": frame["content_padding_cells"], "iso_ortho": frame["iso_ortho"], "top_ortho": frame["top_ortho"]},
         "object_kinds": {key[5:]: value for key, value in sorted(STATS.items()) if key.startswith("kind_")},
         "outputs": ["scene.glb", "scene-prototype.blend", "scene-isometric.png", "scene-topdown.png"],
     }

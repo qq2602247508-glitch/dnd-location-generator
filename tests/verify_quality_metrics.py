@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 import struct
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -14,8 +15,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from generator.v2.quality import (  # noqa: E402
+    CERTIFIED_REPORT_SCHEMA,
     COHORT_SCHEMA,
     QUALITY_SCHEMA,
+    VISUAL_CERTIFICATE_SCHEMA,
+    certify_quality,
     evaluate_cohort,
     evaluate_paths,
     evaluate_scene,
@@ -171,11 +175,108 @@ def main() -> None:
         if performance["draw_calls"] != 1 or performance["vertices"] != 3:
             raise AssertionError("quality evaluator trusted estimates instead of actual GLB metrics")
 
+        image_path = directory / "scene-isometric.png"
+        certificate = {
+            "schema_version": VISUAL_CERTIFICATE_SCHEMA,
+            "scene_id": path_report["scene"]["id"],
+            "programmatic_report_sha256": path_report["report_sha256"],
+            "images": [{"path": image_path.name, "sha256": hashlib.sha256(image_path.read_bytes()).hexdigest()}],
+            "ratings": {
+                "silhouette_naturalness": 5,
+                "landmark_hierarchy": 5,
+                "route_level_readability": 5,
+                "lived_in_plausibility": 5,
+                "tactical_clarity": 5,
+            },
+            "critical_defects": [],
+        }
+        source_before = json.dumps(path_report, sort_keys=True)
+        certified = certify_quality(path_report, certificate, certificate_directory=directory)
+        expected_final = round(float(path_report["soft_score"]) * 0.70 + 100 * 0.30, 2)
+        if certified["schema_version"] != CERTIFIED_REPORT_SCHEMA or certified["status"] != "certified":
+            raise AssertionError("valid visual certificate did not complete certification")
+        if certified["final_score"] != expected_final or certified["programmatic"]["score"] != path_report["soft_score"] or certified["visual"]["score"] != 100:
+            raise AssertionError("certified report did not preserve and combine the two scores at 70/30")
+        if certified["semantic_scene_hash_modified"] or json.dumps(path_report, sort_keys=True) != source_before:
+            raise AssertionError("visual certification mutated semantic/programmatic input")
+
+        defect_certificate = copy.deepcopy(certificate)
+        defect_certificate["critical_defects"] = ["major route is hidden by foreground geometry"]
+        defect_report = certify_quality(path_report, defect_certificate, certificate_directory=directory)
+        if defect_report["status"] != "visual_rejected" or "critical_defects_present" not in defect_report["rejection_reasons"]:
+            raise AssertionError("critical visual defect did not block certification")
+
+        low_item_certificate = copy.deepcopy(certificate)
+        low_item_certificate["ratings"]["tactical_clarity"] = 2.5
+        low_item_report = certify_quality(path_report, low_item_certificate, certificate_directory=directory)
+        if low_item_report["status"] != "visual_rejected" or "visual_item_below_threshold" not in low_item_report["rejection_reasons"]:
+            raise AssertionError("a visual item below 3 incorrectly passed certification")
+
+        low_mean_certificate = copy.deepcopy(certificate)
+        low_mean_certificate["ratings"] = {key: 3 for key in low_mean_certificate["ratings"]}
+        low_mean_report = certify_quality(path_report, low_mean_certificate, certificate_directory=directory)
+        if low_mean_report["status"] != "visual_rejected" or "visual_mean_below_threshold" not in low_mean_report["rejection_reasons"]:
+            raise AssertionError("visual mean below 3.5 incorrectly passed certification")
+
+        hard_failure_certificate = copy.deepcopy(certificate)
+        hard_failure_certificate["scene_id"] = rejected["scene"]["id"]
+        hard_failure_certificate["programmatic_report_sha256"] = rejected["report_sha256"]
+        hard_failure_report = certify_quality(rejected, hard_failure_certificate, certificate_directory=directory)
+        if hard_failure_report["status"] != "visual_rejected" or "programmatic_hard_gates_failed" not in hard_failure_report["rejection_reasons"]:
+            raise AssertionError("visual scores certified a programmatic hard-gate failure")
+
+        stale_certificate = copy.deepcopy(certificate)
+        stale_certificate["images"][0]["sha256"] = "0" * 64
+        try:
+            certify_quality(path_report, stale_certificate, certificate_directory=directory)
+        except ValueError as error:
+            if "image hash is stale" not in str(error):
+                raise
+        else:
+            raise AssertionError("stale visual image hash was accepted")
+
+        malformed_certificate = copy.deepcopy(certificate)
+        malformed_certificate["ratings"].pop("landmark_hierarchy")
+        try:
+            certify_quality(path_report, malformed_certificate, certificate_directory=directory)
+        except ValueError as error:
+            if "exactly the five" not in str(error):
+                raise
+        else:
+            raise AssertionError("incomplete five-item visual rubric was accepted")
+
+        wrong_schema_certificate = copy.deepcopy(certificate)
+        wrong_schema_certificate["schema_version"] = "unsupported"
+        try:
+            certify_quality(path_report, wrong_schema_certificate, certificate_directory=directory)
+        except ValueError as error:
+            if "certificate schema" not in str(error):
+                raise
+        else:
+            raise AssertionError("unsupported visual certificate schema was accepted")
+
+        quality_path, certificate_path, certified_path = (
+            directory / "quality.report.json", directory / "quality.visual-certificate.json", directory / "quality.certified.json"
+        )
+        quality_path.write_text(json.dumps(path_report), encoding="utf-8")
+        certificate_path.write_text(json.dumps(certificate), encoding="utf-8")
+        completed = subprocess.run(
+            [
+                sys.executable, "-m", "generator.v2.quality_cli", "certify",
+                "--quality-report", str(quality_path), "--visual-certificate", str(certificate_path),
+                "--out", str(certified_path),
+            ],
+            cwd=ROOT, check=False, capture_output=True, text=True,
+        )
+        cli_report = json.loads(certified_path.read_text(encoding="utf-8")) if certified_path.is_file() else {}
+        if completed.returncode or cli_report.get("status") != "certified":
+            raise AssertionError(f"quality_cli certify failed: {completed.stderr}")
+
     print(json.dumps({
         "status": "passed", "scene_score": report["soft_score"],
         "hard_gate_count": len(report["hard_gates"]["checks"]),
         "layout_fingerprint": report["layout"]["fingerprint"],
-        "clone_round_failures": round_report["failure_ids"],
+        "clone_round_failures": round_report["failure_ids"], "certified_final_score": certified["final_score"],
     }, ensure_ascii=False, indent=2))
 
 

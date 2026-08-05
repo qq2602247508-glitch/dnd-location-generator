@@ -1,0 +1,339 @@
+{
+  "schema_version": "dnd-scene-quality-report-1.0",
+  "evaluator_version": "2.4.0-prototype.1",
+  "policy_version": "2.4.0-prototype.1",
+  "scene": {
+    "id": "old_clock_quarter_v23",
+    "seed": 20260806,
+    "archetype": "built_district"
+  },
+  "status": "programmatic_pass_visual_pending",
+  "hard_gates": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "schema.plan",
+        "passed": true,
+        "evidence": "dnd-scene-plan-2.0"
+      },
+      {
+        "id": "schema.runtime",
+        "passed": true,
+        "evidence": "dnd-scene-runtime-2.0"
+      },
+      {
+        "id": "scene.identity",
+        "passed": true,
+        "evidence": {
+          "plan": "old_clock_quarter_v23",
+          "runtime": "old_clock_quarter_v23"
+        }
+      },
+      {
+        "id": "cells.unique_nonempty",
+        "passed": true,
+        "evidence": 5386
+      },
+      {
+        "id": "nav.references",
+        "passed": true,
+        "evidence": 0
+      },
+      {
+        "id": "nav.walk_edges_are_same_level_neighbors",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "entities.globally_unique",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "anchors.walkable_cells",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "navigation.public_anchors_reachable",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "permissions.no_dm_cell_publicly_reachable",
+        "passed": true,
+        "evidence": 0
+      },
+      {
+        "id": "permissions.dm_anchors_reachable_in_dm_graph",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "connectors.projected",
+        "passed": true,
+        "evidence": {
+          "planned": 15,
+          "runtime": 15
+        }
+      },
+      {
+        "id": "connectors.clear_endpoints",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "features.inside_runtime",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "render.manifest_present",
+        "passed": true,
+        "evidence": true
+      },
+      {
+        "id": "render.scene_identity",
+        "passed": true,
+        "evidence": {
+          "plan": "old_clock_quarter_v23",
+          "render": "old_clock_quarter_v23"
+        }
+      },
+      {
+        "id": "render.outputs_declared",
+        "passed": true,
+        "evidence": [
+          "scene.glb",
+          "scene-prototype.blend",
+          "scene-isometric.png",
+          "scene-topdown.png"
+        ]
+      },
+      {
+        "id": "render.semantic_counts",
+        "passed": true,
+        "evidence": {}
+      },
+      {
+        "id": "render.input_hashes",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "render.outputs_present",
+        "passed": true,
+        "evidence": []
+      },
+      {
+        "id": "performance.runtime_bytes",
+        "passed": true,
+        "evidence": {
+          "value": 1950399,
+          "limit": 10000000
+        }
+      },
+      {
+        "id": "performance.glb_bytes",
+        "passed": true,
+        "evidence": {
+          "value": 2808308,
+          "limit": 16000000
+        }
+      },
+      {
+        "id": "performance.draw_calls",
+        "passed": true,
+        "evidence": {
+          "value": 141,
+          "limit": 250
+        }
+      },
+      {
+        "id": "performance.vertices",
+        "passed": true,
+        "evidence": {
+          "value": 100296,
+          "limit": 450000
+        }
+      },
+      {
+        "id": "performance.build_seconds",
+        "passed": true,
+        "evidence": {
+          "value": 2.34,
+          "limit": 180
+        }
+      }
+    ],
+    "failure_ids": []
+  },
+  "dimensions": {
+    "diversity": {
+      "score": 78.49,
+      "weight": 15,
+      "raw": {
+        "feature_kind_entropy": 0.9422014162582216,
+        "feature_variant_entropy": 0.9154076939002208,
+        "surface_entropy": 0.5405825604584922,
+        "spatial_entropy": 0.7416017444121694
+      }
+    },
+    "silhouette": {
+      "score": 89.33,
+      "weight": 15,
+      "raw": {
+        "mask_count": 20,
+        "duplicate_mask_ratio": 0.15,
+        "single_cell_spur_ratio": 0.007239756367663344,
+        "mean_compactness": 1.2790776540900377
+      }
+    },
+    "routes_landmarks_levels": {
+      "score": 95.76,
+      "weight": 20,
+      "raw": {
+        "levels": 13,
+        "walkable_level_coverage": 1.0,
+        "connector_type_entropy": 0.8303663197842323,
+        "landmark_anchors": 5,
+        "anchor_count": 7
+      }
+    },
+    "life_traces": {
+      "score": 90.66,
+      "weight": 15,
+      "raw": {
+        "feature_density_per_100_walkable_cells": 1.5083798882681565,
+        "feature_kind_entropy": 0.9422014162582216,
+        "room_or_site_coverage": 0.6842105263157895,
+        "explicit_trace_ratio": 0.7160493827160493
+      }
+    },
+    "tactical_readability": {
+      "score": 98.51,
+      "weight": 20,
+      "raw": {
+        "average_nav_degree": 3.7415270018621976,
+        "blocked_cell_ratio": 0.002970664686223534,
+        "blocking_feature_density": 0.0029795158286778397,
+        "anchor_clearance": 1.0,
+        "connector_projection_coverage": 1.0
+      }
+    },
+    "performance": {
+      "score": 91.26,
+      "weight": 15,
+      "raw": {
+        "utilization": {
+          "runtime_bytes": 0.1950399,
+          "glb_bytes": 0.17551925,
+          "draw_calls": 0.564,
+          "vertices": 0.22288,
+          "build_seconds": 0.013
+        },
+        "runtime_bytes": 1950399,
+        "glb_bytes": 2808308,
+        "draw_calls": 141,
+        "vertices": 100296,
+        "build_seconds": 2.34
+      }
+    }
+  },
+  "soft_score": 91.31,
+  "soft_threshold": 80.0,
+  "weak_dimensions": [],
+  "visual_certification": "pending",
+  "layout": {
+    "fingerprint": "670912e4b409e2ac5ae7ac9e85decc7a96d9722724ead8e5485a09e97c92148f",
+    "tokens": [
+      "connector:19d10cc0ce8d4855",
+      "connector:1cc9e1644bc0502d",
+      "connector:1dabac7ea6604eb1",
+      "connector:3ee37b92b98fe14b",
+      "connector:3f2aca1583b570e7",
+      "connector:43cc5b60e00d2095",
+      "connector:4fbfbc3f24ea506e",
+      "connector:7624ffcbaaa382ce",
+      "connector:87c816335fd2232d",
+      "connector:9008d75666527e0c",
+      "connector:a78e36612b1eb6aa",
+      "connector:a7d9e40d3fdcc9b2",
+      "connector:a9af15329bb54c13",
+      "connector:ba294f94d24aef7d",
+      "connector:c65fb49f0c0d9ca4",
+      "level:0:b78f56e0eb8ac61e",
+      "level:10:0e9348a1e15eaa34",
+      "level:11:7abcce4e55fc816e",
+      "level:12:e66093412069209f",
+      "level:1:aff7f3896c185e05",
+      "level:2:4abb27a224081bea",
+      "level:3:de5b4551883f76b6",
+      "level:4:a8be5f424d82cf87",
+      "level:5:0b432c23379444d6",
+      "level:6:499adf7184c621e3",
+      "level:7:1d1e73538f22b81d",
+      "level:8:d26caea268285a55",
+      "level:9:b60bb09c53961717",
+      "room:0e74d0f88e3887dd",
+      "room:2c7758d6684fef35",
+      "room:3fcd5b24022c62f5",
+      "room:45f151d1abad9edf",
+      "room:66ad926a4a37c4d1",
+      "room:73f2c99462e6bab2",
+      "room:7bdcd6c960c995eb",
+      "room:7d2d180269f355bc",
+      "room:808d4a5cc52927a6",
+      "room:832504eacf4bdaeb",
+      "room:93bbce16433e3cf6",
+      "room:a146da891784e1e9",
+      "room:aedf3ca11609ab69",
+      "room:b43a0e90dc7a82fe",
+      "room:b6a032d021918c95",
+      "room:bcf44913e2e689f3",
+      "room:c14659be934d140f",
+      "room:cb7aab75cde95e25",
+      "room:f18aa26dfc0c2cd3",
+      "surface:0577c8a243b52047",
+      "surface:204306b4a299c7db",
+      "surface:222c9a00e7d7ab0b",
+      "surface:314f703180a93e36",
+      "surface:36a2f5c611a9ea19",
+      "surface:482ece9b375fb26b",
+      "surface:4a4b86ca6d0c3aa8",
+      "surface:749b4c4470c8d08d",
+      "surface:a2e438335c4895d1",
+      "surface:a43ba5a7ec98d118",
+      "surface:a6b14ae98191bf94",
+      "surface:cd765f345b3074ef",
+      "surface:d0dbd31b6a5b2053",
+      "surface:d5ddaefdd1fa5b0d",
+      "surface:d616424d21648088",
+      "surface:db15a42e776935d1",
+      "surface:df42a6b909b59677",
+      "surface:e93662bd179ba6de",
+      "surface:ed014d8a5f55d77d",
+      "surface:edcd1774d566bc32",
+      "surface:f139678049755b9a",
+      "terrain:1ad0490eac2cd110",
+      "terrain:469c0b07ec2b7ff8",
+      "terrain:aa06839f50b3a679",
+      "terrain:af7f55d0a6b8a68c"
+    ]
+  },
+  "inputs": {
+    "plan": {
+      "path": "/Users/inagi/我的/500-软件测试/510-软件/dnd-multilevel-scene-prototype/output/old-clock-v23/scene.plan.json",
+      "sha256": "3a730b2fec70b416a9a0875ef9718023b4b20e3c84541db14a82dbb737dc4eb9"
+    },
+    "runtime": {
+      "path": "/Users/inagi/我的/500-软件测试/510-软件/dnd-multilevel-scene-prototype/output/old-clock-v23/scene.runtime.json",
+      "sha256": "c7213df39e84fa45140df2bfbe01ee48f33b00cff9314c79e7377b3b1cbd67a2"
+    },
+    "glb": {
+      "path": "/Users/inagi/我的/500-软件测试/510-软件/dnd-multilevel-scene-prototype/output/old-clock-v23/scene.glb",
+      "sha256": "03f64f862a6b44b991f353e7f5cdd9734b2c649380113397c987a1b7e75ff15b"
+    }
+  },
+  "report_sha256": "4e7fc8c807f13b8028cdca225bd944e9f07ef12100ed99fb7773c96dbe22b3c3"
+}

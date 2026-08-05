@@ -21,8 +21,9 @@ connector 端点、feature 落点、render receipt 和性能上限。硬门禁�
 | 战术可读性 | 20 | nav degree、anchor 净空、connector 投影、阻塞密度 |
 | 性能 | 15 | runtime/GLB/draw/vertex/build budget utilization |
 
-`programmatic_pass_visual_pending` 只表示程序化阶段通过。标准化 DM/player 渲染评审尚未
-写入 V2.4 evaluator，因此不能把该状态宣传为视觉认证完成。
+`programmatic_pass_visual_pending` 只表示程序化阶段通过，不能宣传为视觉认证完成。
+视觉评审由独立 certificate 完成，认证结果也写成独立文件，不回写 plan/runtime 或任何
+scene semantic hash。
 
 ## Layout fingerprint
 
@@ -61,6 +62,59 @@ python3 -m generator.v2.quality_cli evaluate \
 
 报告 schema 为 `dnd-scene-quality-report-1.0`，包括硬门禁逐项证据、六维原始指标、
 100 分软评分、layout fingerprint、输入 hash 与最终 report hash。
+
+## 视觉证书与最终认证
+
+视觉证书 schema 为 `dnd-scene-visual-certificate-1.0`：
+
+```json
+{
+  "schema_version": "dnd-scene-visual-certificate-1.0",
+  "scene_id": "example_scene",
+  "programmatic_report_sha256": "<quality.report.json 内的 report_sha256>",
+  "images": [
+    {"path": "quality-dm-isometric.png", "sha256": "<64 lowercase hex>"},
+    {"path": "quality-player-topdown.png", "sha256": "<64 lowercase hex>"}
+  ],
+  "ratings": {
+    "silhouette_naturalness": 4,
+    "landmark_hierarchy": 4,
+    "route_level_readability": 4,
+    "lived_in_plausibility": 4,
+    "tactical_clarity": 4
+  },
+  "critical_defects": []
+}
+```
+
+五项评分必须恰好齐全，取值为 1–5。CLI 会以证书目录为根读取每张相对路径图片，并验证
+实际文件 SHA-256；绝对路径、`..`、重复路径、缺失图片和 stale hash 都拒绝处理。
+
+```bash
+python3 -m generator.v2.quality_cli certify \
+  --quality-report output/example/quality.report.json \
+  --visual-certificate output/example/quality.visual-certificate.json \
+  --out output/example/quality.certified.json
+```
+
+输出 schema 为 `dnd-scene-certified-quality-1.0`，固定采用：
+
+```text
+visual_score = mean(five ratings) / 5 * 100
+final_score = programmatic_score * 0.70 + visual_score * 0.30
+```
+
+只有同时满足以下条件才返回 `status: certified`：
+
+- programmatic hard gates 全部通过；
+- visual mean `>=3.5`；
+- 每一项 `>=3`；
+- `critical_defects` 为空；
+- final score `>=80`。
+
+其余结构合法但质量未达标的证书返回 `visual_rejected` 和稳定的 `rejection_reasons`。
+programmatic hard gate 失败时即使视觉满分也不能认证。证书 hash、programmatic report hash、
+两部分原分、固定权重和最终分均保留在 certified report 中；输入 report 不会被修改。
 
 ## Baseline 与三轮 cohort
 

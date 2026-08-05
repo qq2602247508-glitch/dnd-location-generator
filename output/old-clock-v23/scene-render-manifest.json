@@ -24,8 +24,19 @@
   "prototype_objects": 141,
   "estimated_draw_calls": 141,
   "visual_layer_version": "2.3",
-  "batched_boxes": 8566,
-  "mesh_vertices": 68528,
+  "batched_boxes": 4179,
+  "mesh_vertices": 33432,
+  "camera": {
+    "content_bounds_cells": [
+      7,
+      12,
+      64,
+      61
+    ],
+    "content_padding_cells": 4.5600000000000005,
+    "iso_ortho": 72.73200000000001,
+    "top_ortho": 89.26200000000001
+  },
   "object_kinds": {
     "anchor": 6,
     "archetype_detail": 14,

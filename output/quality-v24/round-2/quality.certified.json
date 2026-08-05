@@ -1,0 +1,54 @@
+{
+  "schema_version": "dnd-scene-certified-quality-1.0",
+  "evaluator_version": "2.4.0-prototype.1",
+  "scene": {
+    "id": "old_clock_quarter_v23",
+    "seed": 20260806,
+    "archetype": "built_district"
+  },
+  "status": "visual_rejected",
+  "source": {
+    "programmatic_report_sha256": "4e7fc8c807f13b8028cdca225bd944e9f07ef12100ed99fb7773c96dbe22b3c3",
+    "visual_certificate_sha256": "81d74853bba29738f1fba8a210363e7df178089042d62cfdb5718f81f24a5f6c"
+  },
+  "programmatic": {
+    "status": "programmatic_pass_visual_pending",
+    "hard_gates_passed": true,
+    "score": 91.31,
+    "weight": 0.7
+  },
+  "visual": {
+    "mean_rating": 3.4,
+    "score": 68.0,
+    "weight": 0.3,
+    "ratings": {
+      "silhouette_naturalness": 3.0,
+      "landmark_hierarchy": 4.0,
+      "route_level_readability": 3.0,
+      "lived_in_plausibility": 3.0,
+      "tactical_clarity": 4.0
+    },
+    "images": [
+      {
+        "path": "scene-isometric.png",
+        "sha256": "96972012f431db07ea1b9511f8bed87f32b0451c7467685ebf8f8385b0dc6901"
+      },
+      {
+        "path": "scene-topdown.png",
+        "sha256": "ed7abedbc6e89064a096c75923c81fee4af24d416d3f79f965a44d2669f9330e"
+      }
+    ],
+    "critical_defects": [],
+    "thresholds": {
+      "mean_min": 3.5,
+      "item_min": 3.0
+    }
+  },
+  "final_score": 84.32,
+  "final_score_min": 80.0,
+  "rejection_reasons": [
+    "visual_mean_below_threshold"
+  ],
+  "semantic_scene_hash_modified": false,
+  "report_sha256": "7a41c59b59e4e198c21b703ac97af65d7dff10eb42cd23e9638802659e261b34"
+}

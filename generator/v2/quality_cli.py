@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .quality import discover_scene_directories, evaluate_cohort, evaluate_paths, load_policy
+from .quality import certify_quality, discover_scene_directories, evaluate_cohort, evaluate_paths, load_policy
 
 
 def _write(report: dict[str, Any], output: Path | None) -> None:
@@ -43,6 +43,11 @@ def main() -> None:
     single.add_argument("--build-seconds", type=float, default=0.0)
     single.add_argument("--out", type=Path)
 
+    certify = subparsers.add_parser("certify", help="bind a visual certificate to a programmatic quality report")
+    certify.add_argument("--quality-report", type=Path, required=True)
+    certify.add_argument("--visual-certificate", type=Path, required=True)
+    certify.add_argument("--out", type=Path, required=True)
+
     for name, help_text in (("baseline", "record a non-enforcing cohort baseline"), ("round", "evaluate an enforcing multi-seed round")):
         cohort = subparsers.add_parser(name, help=help_text)
         cohort.add_argument("--sample", type=Path, action="append", default=[], help="scene directory; repeatable")
@@ -54,6 +59,16 @@ def main() -> None:
 
     args = parser.parse_args()
     policy = load_policy(args.policy)
+    if args.command == "certify":
+        quality_report = json.loads(args.quality_report.read_text(encoding="utf-8"))
+        visual_certificate = json.loads(args.visual_certificate.read_text(encoding="utf-8"))
+        report = certify_quality(
+            quality_report,
+            visual_certificate,
+            certificate_directory=args.visual_certificate.resolve().parent,
+        )
+        _write(report, args.out)
+        return
     if args.command == "evaluate":
         report = evaluate_paths(
             args.plan.resolve(), args.runtime.resolve(),

@@ -21,7 +21,18 @@ from typing import Any, Iterable, Mapping, Sequence
 QUALITY_SCHEMA = "dnd-scene-quality-report-1.0"
 COHORT_SCHEMA = "dnd-scene-quality-cohort-1.0"
 POLICY_SCHEMA = "dnd-scene-quality-policy-1.0"
+VISUAL_CERTIFICATE_SCHEMA = "dnd-scene-visual-certificate-1.0"
+CERTIFIED_REPORT_SCHEMA = "dnd-scene-certified-quality-1.0"
 EVALUATOR_VERSION = "2.4.0-prototype.1"
+PROGRAMMATIC_WEIGHT = 0.70
+VISUAL_WEIGHT = 0.30
+VISUAL_RATING_FIELDS = (
+    "silhouette_naturalness",
+    "landmark_hierarchy",
+    "route_level_readability",
+    "lived_in_plausibility",
+    "tactical_clarity",
+)
 
 DEFAULT_POLICY_PATH = Path(__file__).resolve().parents[2] / "specs" / "quality" / "v2.4-policy.json"
 DIMENSIONS = (
@@ -595,6 +606,147 @@ def evaluate_scene(
     }
     report["report_sha256"] = sha256_bytes(canonical_bytes(report))
     return report
+
+
+def _validate_report_hash(report: Mapping[str, Any]) -> str:
+    unsigned = dict(report)
+    claimed = str(unsigned.pop("report_sha256", ""))
+    actual = sha256_bytes(canonical_bytes(unsigned))
+    if not claimed or claimed != actual:
+        raise ValueError("programmatic quality report hash is missing or stale")
+    return claimed
+
+
+def _is_sha256(value: Any) -> bool:
+    text = str(value)
+    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+
+
+def certify_quality(
+    programmatic_report: Mapping[str, Any],
+    visual_certificate: Mapping[str, Any],
+    *,
+    certificate_directory: Path | None = None,
+    final_score_min: float = 80.0,
+    visual_mean_min: float = 3.5,
+    visual_item_min: float = 3.0,
+) -> dict[str, Any]:
+    """Bind a visual review receipt to a programmatic quality report.
+
+    Certification is downstream-only: neither input is mutated and no value is
+    written into a scene semantic hash.  Invalid receipt structure raises a
+    ``ValueError``; a structurally valid but low-scoring review produces an
+    auditable ``visual_rejected`` report.
+    """
+
+    if programmatic_report.get("schema_version") != QUALITY_SCHEMA:
+        raise ValueError("unsupported programmatic quality report schema")
+    source_report_sha256 = _validate_report_hash(programmatic_report)
+    if visual_certificate.get("schema_version") != VISUAL_CERTIFICATE_SCHEMA:
+        raise ValueError("unsupported visual certificate schema")
+    scene_id = str(programmatic_report.get("scene", {}).get("id", ""))
+    certificate_scene_id = str(visual_certificate.get("scene_id", ""))
+    if not scene_id or certificate_scene_id != scene_id:
+        raise ValueError("visual certificate scene identity does not match the programmatic report")
+    if visual_certificate.get("programmatic_report_sha256") != source_report_sha256:
+        raise ValueError("visual certificate is not bound to this programmatic report")
+
+    images = visual_certificate.get("images")
+    if not isinstance(images, list) or not images:
+        raise ValueError("visual certificate requires at least one image receipt")
+    image_paths: set[str] = set()
+    normalized_images: list[dict[str, str]] = []
+    for image in images:
+        if not isinstance(image, Mapping):
+            raise ValueError("visual certificate image receipt must be an object")
+        path = str(image.get("path", ""))
+        digest = str(image.get("sha256", ""))
+        if not path or path in image_paths or not _is_sha256(digest):
+            raise ValueError("visual certificate image paths must be unique and carry lowercase SHA-256")
+        if Path(path).is_absolute() or ".." in Path(path).parts:
+            raise ValueError("visual certificate image path must be relative and contained")
+        if certificate_directory is not None:
+            target = certificate_directory / path
+            if not target.is_file():
+                raise ValueError(f"visual certificate image is missing: {path}")
+            if sha256_bytes(target.read_bytes()) != digest:
+                raise ValueError(f"visual certificate image hash is stale: {path}")
+        image_paths.add(path)
+        normalized_images.append({"path": path, "sha256": digest})
+
+    ratings = visual_certificate.get("ratings")
+    if not isinstance(ratings, Mapping) or set(ratings) != set(VISUAL_RATING_FIELDS):
+        raise ValueError("visual certificate must contain exactly the five standard rating fields")
+    normalized_ratings: dict[str, float] = {}
+    for field in VISUAL_RATING_FIELDS:
+        value = ratings[field]
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not 1.0 <= float(value) <= 5.0:
+            raise ValueError(f"visual rating must be between 1 and 5: {field}")
+        normalized_ratings[field] = float(value)
+    critical_defects = visual_certificate.get("critical_defects", [])
+    if not isinstance(critical_defects, list) or any(not isinstance(item, str) or not item.strip() for item in critical_defects):
+        raise ValueError("critical_defects must be a list of non-empty strings")
+
+    certificate_sha256 = sha256_bytes(canonical_bytes(visual_certificate))
+    hard_gates_passed = bool(programmatic_report.get("hard_gates", {}).get("passed"))
+    programmatic_score_value = programmatic_report.get("soft_score")
+    if programmatic_score_value is None:
+        programmatic_score = None
+    elif isinstance(programmatic_score_value, bool) or not isinstance(programmatic_score_value, (int, float)):
+        raise ValueError("programmatic score must be a number or null")
+    else:
+        programmatic_score = float(programmatic_score_value)
+        if not math.isfinite(programmatic_score) or not 0.0 <= programmatic_score <= 100.0:
+            raise ValueError("programmatic score must be between 0 and 100")
+    visual_mean = statistics.fmean(normalized_ratings.values())
+    visual_score = visual_mean / 5.0 * 100.0
+    final_score = None if programmatic_score is None else programmatic_score * PROGRAMMATIC_WEIGHT + visual_score * VISUAL_WEIGHT
+
+    rejection_reasons: list[str] = []
+    if not hard_gates_passed:
+        rejection_reasons.append("programmatic_hard_gates_failed")
+    if programmatic_score is None:
+        rejection_reasons.append("programmatic_score_unavailable")
+    if visual_mean < visual_mean_min:
+        rejection_reasons.append("visual_mean_below_threshold")
+    if min(normalized_ratings.values()) < visual_item_min:
+        rejection_reasons.append("visual_item_below_threshold")
+    if critical_defects:
+        rejection_reasons.append("critical_defects_present")
+    if final_score is None or final_score < final_score_min:
+        rejection_reasons.append("final_score_below_threshold")
+
+    result = {
+        "schema_version": CERTIFIED_REPORT_SCHEMA,
+        "evaluator_version": EVALUATOR_VERSION,
+        "scene": dict(programmatic_report.get("scene", {})),
+        "status": "certified" if not rejection_reasons else "visual_rejected",
+        "source": {
+            "programmatic_report_sha256": source_report_sha256,
+            "visual_certificate_sha256": certificate_sha256,
+        },
+        "programmatic": {
+            "status": programmatic_report.get("status", ""),
+            "hard_gates_passed": hard_gates_passed,
+            "score": programmatic_score,
+            "weight": PROGRAMMATIC_WEIGHT,
+        },
+        "visual": {
+            "mean_rating": round(visual_mean, 4),
+            "score": round(visual_score, 2),
+            "weight": VISUAL_WEIGHT,
+            "ratings": normalized_ratings,
+            "images": normalized_images,
+            "critical_defects": list(critical_defects),
+            "thresholds": {"mean_min": visual_mean_min, "item_min": visual_item_min},
+        },
+        "final_score": round(final_score, 2) if final_score is not None else None,
+        "final_score_min": final_score_min,
+        "rejection_reasons": rejection_reasons,
+        "semantic_scene_hash_modified": False,
+    }
+    result["report_sha256"] = sha256_bytes(canonical_bytes(result))
+    return result
 
 
 def _render_manifest_path(directory: Path) -> Path | None:
