@@ -187,6 +187,26 @@ Viewer 提供与 DM / 玩家权限正交的剧场、探索、战术三模式。�
 探索保留环境阅读，战术收敛到可操作层；DM 还能调整近侧墙剖切、格子、雾、曝光、
 Token 尺寸、权限对象、连接点和质量预设。
 
+### V2.3 一键地点编译器
+
+V2.3 新增 `LocationBrief -> pack resolver -> LocationProgram` 层。用户可以给出结构化
+capability，也可以仅给一段中英文地点描述；原型使用确定性关键词适配层选择本地、
+版本锁定的组合式 packs。未安装的 capability 会明确拒绝，不会让自由文本越过
+门、楼梯、导航和权限验证。
+
+首个压力 Brief 是「旧钟区 · 钟影与密渠」：11 个 packs、7 栋建筑、可进入的三层钟楼和
+两层旅店、市场/窄巷/屋顶路线、负 15 尺排水网、DM-only 走私密室以及 10 个
+NPC/遭遇/奖励/任务接口槽位。
+
+```bash
+python3 -m generator.v2.location_cli specs/locations/old_clock_quarter.json \
+  --out output/locations/old_clock_quarter.location.json
+python3 tests/verify_location_compiler.py
+```
+
+详细契约见 `docs/location-compiler-v2.3.md`。下一阶段将冻结的 LocationProgram 落到通用
+plan/runtime、Blender 和 Viewer，不修改现有 DND 项目。
+
 ## 尚未接入
 
 - 现有数据库和 API；

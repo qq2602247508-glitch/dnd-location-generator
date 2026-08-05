@@ -1,0 +1,14 @@
+{
+  "schema_version": "dnd-location-brief-1.0",
+  "scene": {"id": "old_clock_quarter_v23", "name": "旧钟区 · 钟影与密渠", "seed": 20260806},
+  "grid": {"width": 72, "height": 64, "cell_size_ft": 5},
+  "theme": "deepwater_old_quarter",
+  "prompt": "生成一个深水城风格的不规则旧城区，包含三层钟楼、两层旅店、市场、窄巷、屋顶路线、下水道和走私密室，并加入真实的生活痕迹。",
+  "required_capabilities": [
+    "district", "deepwater_style", "irregular_streets", "clock_tower", "inn", "market",
+    "roof_route", "sewer", "smuggler_route", "lived_in_dressing",
+    "npc_slots", "encounter_slots", "reward_slots", "hook_slots"
+  ],
+  "content_profile": {"party_level": 5, "party_size": 4, "encounter_difficulty": "hard", "reward_tier": 2}
+}
+

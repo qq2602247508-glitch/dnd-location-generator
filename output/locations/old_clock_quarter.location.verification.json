@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "scene_id": "old_clock_quarter_v23",
+  "quality_score": 100,
+  "packs": 11,
+  "capabilities": 14,
+  "buildings": 7,
+  "enterable_buildings": 2,
+  "floors": 6,
+  "rooms": 13,
+  "routes": 6,
+  "content_slots": 10,
+  "location_sha256": "fcfd304036c9138065ee297bcada38b9f17a80e8b37a925965fbd3ba56ec1dac"
+}
