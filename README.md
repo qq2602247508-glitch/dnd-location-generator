@@ -215,6 +215,17 @@ python3 -m generator.v2.location_realize
 python3 tests/verify_old_clock_v23.py
 ```
 
+Blender 继续复用同一个 V2 编译器，新增钟面/大钟、屋顶栏杆和跨屋桥、市场雨棚/摊位/
+手推车、晾衣绳、积水/车辙、湿砖管线与密室货物。战术屋顶是独立 runtime level，
+不会被当成纯装饰屋顶。最终为 139 objects/draw calls、148,648 vertices、GLB 约 12.8 MB；
+钟楼、旅店、市场、屋顶与下水道 metadata 及 DM-only 批次均通过产物门禁。
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python blender/build_scene_v2.py -- --input-dir output/old-clock-v23
+python3 tests/verify_old_clock_v23_outputs.py
+```
+
 ## 尚未接入
 
 - 现有数据库和 API；

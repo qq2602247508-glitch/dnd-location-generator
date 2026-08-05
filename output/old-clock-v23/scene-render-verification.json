@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "scene_id": "old_clock_quarter_v23",
+  "blender_version": "4.5.10 LTS",
+  "runtime_cells": 5429,
+  "prototype_objects": 139,
+  "mesh_vertices": 148648,
+  "connector_pick_nodes": 15,
+  "mesh_count": 139,
+  "draw_calls": 139,
+  "images": {
+    "scene-isometric.png": {
+      "bytes": 1569939,
+      "sha256": "f90e7f18b890cac18da9d8c561bd22e233f1b2fd167461205a62de7622ef684f"
+    },
+    "scene-topdown.png": {
+      "bytes": 1502524,
+      "sha256": "0358e9cae4902c9213fc711774d89d872bd2612bc36cf48f64b4174e6de5ca13"
+    }
+  },
+  "glb": {
+    "version": 2,
+    "bytes": 12826936,
+    "sha256": "6321589e1aa7e093b3f9893671a9d29f860fea1b05e681938089983159c82af7"
+  },
+  "blend_bytes": 10487561
+}

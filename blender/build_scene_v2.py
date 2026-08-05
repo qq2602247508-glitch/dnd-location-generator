@@ -284,6 +284,9 @@ def build_walls() -> None:
     for level_id, level in LEVELS.items():
         if level_id == "surface" or float(level.get("height_ft", 0)) <= 0:
             continue
+        volume = VOLUMES.get(level.get("volume_id", ""), {})
+        if volume.get("kind") == "roof_route":
+            continue
         cells = cells_from_rle(level["cell_mask"])
         room_at: dict[tuple[int, int], dict[str, Any]] = {}
         for room in rooms_by_level[level_id]:
@@ -321,7 +324,7 @@ def build_walls() -> None:
 
 def build_roofs() -> None:
     for volume in PLAN["volumes"]:
-        if volume.get("kind") == "sewer" or not volume.get("level_ids"):
+        if volume.get("kind") in {"sewer", "roof_route"} or not volume.get("level_ids"):
             continue
         level_id = volume["level_ids"][-1]
         level = LEVELS[level_id]
@@ -371,14 +374,14 @@ def connector_visual_boxes(connector: dict[str, Any]) -> list[Box]:
                 ((x, y - .39, z + .10), (.70, .09, .18)), ((x, y + .39, z + .10), (.70, .09, .18)),
             ])
         return boxes
-    if connector_type == "stairs":
+    if connector_type in {"stairs", "ladder"}:
         low, high = sorted((z_left, z_right))
         x = int(left["col"]) * CELL + CELL / 2
         y = int(left["row"]) * CELL + CELL / 2
         volume_id = left.get("volume_id") or right.get("volume_id", "")
         archetype = VOLUMES.get(volume_id, {}).get("archetype", "")
         boxes = []
-        if archetype == "signal_tower":
+        if archetype in {"signal_tower", "clock_tower"}:
             # A square spiral reads clearly from the tactical camera while
             # remaining boxes-only and inexpensive.
             offsets = [(-.28, -.28), (0, -.34), (.28, -.28), (.34, 0), (.28, .28), (0, .34), (-.28, .28), (-.34, 0)]
@@ -386,7 +389,7 @@ def connector_visual_boxes(connector: dict[str, Any]) -> list[Box]:
                 dx, dy = offsets[index % len(offsets)]
                 z = low + (high - low) * (index + 1) / 17
                 boxes.append(((x + dx, y + dy, z), (.30, .30, .13)))
-        else:
+        elif connector_type == "stairs":
             for index in range(12):
                 run = index if index < 6 else 11 - index
                 dx = -.23 if index < 6 else .23
@@ -394,7 +397,20 @@ def connector_visual_boxes(connector: dict[str, Any]) -> list[Box]:
                 z = low + (high - low) * (index + 1) / 13
                 boxes.append(((x + dx, y + dy, z), (.38, .18, .14)))
             boxes.append(((x, y + .42, (low + high) / 2), (.92, .34, .12)))
+        else:
+            for index in range(9):
+                z = low + (high - low) * (index + 1) / 10
+                boxes.append(((x, y, z), (.72, .14, .08)))
+            boxes.extend([((x - .38, y, (low + high) / 2), (.08, .12, high - low)), ((x + .38, y, (low + high) / 2), (.08, .12, high - low))])
         return boxes
+    if connector_type == "bridge":
+        x0, y0 = left_point[1] * CELL + CELL / 2, left_point[0] * CELL + CELL / 2
+        x1, y1 = right_point[1] * CELL + CELL / 2, right_point[0] * CELL + CELL / 2
+        steps = max(2, int(max(abs(x1 - x0), abs(y1 - y0)) / .28))
+        return [
+            ((x0 + (x1 - x0) * index / steps, y0 + (y1 - y0) * index / steps, max(z_left, z_right) + .08), (.34, .82, .14))
+            for index in range(steps + 1)
+        ]
     return []
 
 
@@ -405,7 +421,7 @@ def build_connectors() -> None:
         volume_ids = sorted({endpoint.get("volume_id", "") for endpoint in connector["endpoints"]})
         primary_level = level_ids[0]
         connector_type = connector["type"]
-        material_name = "connector_secret" if connector.get("visibility") == "dm_only" else ("connector_vertical" if connector_type in {"stairs", "hatch"} else "connector")
+        material_name = "connector_secret" if connector.get("visibility") == "dm_only" else ("connector_vertical" if connector_type in {"stairs", "hatch", "ladder", "bridge"} else "connector")
         boxes_mesh(
             f"Connector_{connector['id']}", connector_boxes(connector), MATERIALS[material_name],
             kind="connector", level_id=primary_level, material_id=material_name, visibility=connector.get("visibility", "public"), pick_role="connector",
@@ -415,7 +431,7 @@ def build_connectors() -> None:
         for box in connector_visual_boxes(connector):
             signature = (primary_level, tuple(level_ids), tuple(volume_ids), connector_type, connector.get("visibility", "public"))
             visual_batches[signature].append((connector, box))
-    visual_materials = {"door": "door_frame", "stairs": "stair_wood", "hatch": "hatch_metal", "secret_door": "secret_portal"}
+    visual_materials = {"door": "door_frame", "stairs": "stair_wood", "ladder": "hatch_metal", "bridge": "stair_wood", "hatch": "hatch_metal", "secret_door": "secret_portal"}
     for (level_id, signature_levels, signature_volumes, connector_type, visibility), items in visual_batches.items():
         connector_ids = sorted({connector["id"] for connector, _ in items})
         level_ids = list(signature_levels)
@@ -446,7 +462,7 @@ def facade_window_boxes(cells: set[tuple[int, int]], z: float) -> list[Box]:
 def build_archetype_details() -> None:
     for volume in PLAN["volumes"]:
         archetype = volume.get("archetype", "")
-        if archetype not in {"signal_tower", "inn"}:
+        if archetype not in {"signal_tower", "clock_tower", "inn"}:
             continue
         for level_id in volume["level_ids"]:
             level = LEVELS[level_id]
@@ -463,7 +479,7 @@ def build_archetype_details() -> None:
         top_cells = cells_from_rle(top_level["cell_mask"])
         min_row, min_col, max_row, max_col = mask_bounds(top_cells)
         roof_z = (float(top_level["z_base_ft"]) + float(top_level["height_ft"]) * .82) * FT
-        if archetype == "signal_tower":
+        if archetype in {"signal_tower", "clock_tower"}:
             perimeter = sorted({edge[0] for edge in boundary_edges(top_cells)})
             battlements = [
                 ((col * CELL + CELL / 2, row * CELL + CELL / 2, roof_z + .24), (.38, .38, .48))
@@ -475,15 +491,37 @@ def build_archetype_details() -> None:
                 detail_group="signal_tower", detail_role="battlements", volume_id=volume["id"],
             )
             cx, cy = (min_col + max_col) * CELL / 2, (min_row + max_row) * CELL / 2
-            boxes_mesh(
-                f"TowerBeacon_{volume['id']}", [
-                    ((cx, cy, roof_z + .20), (1.25, 1.25, .24)),
-                    ((cx, cy, roof_z + .88), (.22, .22, 1.25)),
-                    ((cx, cy, roof_z + 1.58), (.70, .70, .34)),
-                ], MATERIALS["beacon"],
-                kind="archetype_detail", level_id=top_level_id, material_id="beacon", visibility="public", pick_role="none",
-                detail_group="signal_tower", detail_role="beacon", volume_id=volume["id"],
-            )
+            if archetype == "clock_tower":
+                boxes_mesh(
+                    f"ClockBelfry_{volume['id']}", [
+                        ((cx, cy, roof_z + .42), (1.42, 1.42, .18)),
+                        ((cx, cy, roof_z + 1.02), (.82, .82, 1.05)),
+                        ((cx, cy, roof_z + 1.65), (1.18, 1.18, .18)),
+                    ], MATERIALS["clock_gold"],
+                    kind="archetype_detail", level_id=top_level_id, material_id="clock_gold", visibility="public", pick_role="none",
+                    detail_group="clock_tower", detail_role="great_bell", volume_id=volume["id"],
+                )
+                face_boxes = [
+                    ((cx, min_row * CELL - .07, roof_z - .50), (1.08, .08, 1.08)),
+                    ((cx, max_row * CELL + .07, roof_z - .50), (1.08, .08, 1.08)),
+                    ((min_col * CELL - .07, cy, roof_z - .50), (.08, 1.08, 1.08)),
+                    ((max_col * CELL + .07, cy, roof_z - .50), (.08, 1.08, 1.08)),
+                ]
+                boxes_mesh(
+                    f"ClockFaces_{volume['id']}", face_boxes, MATERIALS["clock_face"],
+                    kind="archetype_detail", level_id=top_level_id, material_id="clock_face", visibility="public", pick_role="none",
+                    detail_group="clock_tower", detail_role="clock_faces", volume_id=volume["id"],
+                )
+            else:
+                boxes_mesh(
+                    f"TowerBeacon_{volume['id']}", [
+                        ((cx, cy, roof_z + .20), (1.25, 1.25, .24)),
+                        ((cx, cy, roof_z + .88), (.22, .22, 1.25)),
+                        ((cx, cy, roof_z + 1.58), (.70, .70, .34)),
+                    ], MATERIALS["beacon"],
+                    kind="archetype_detail", level_id=top_level_id, material_id="beacon", visibility="public", pick_role="none",
+                    detail_group="signal_tower", detail_role="beacon", volume_id=volume["id"],
+                )
         else:
             # A cell-stepped gable follows arbitrary L-shaped inn masks while
             # preserving the same single batched mesh and hideable roof role.
@@ -536,6 +574,31 @@ def build_sewer_details() -> None:
     )
 
 
+def build_clock_district_details() -> None:
+    roof_volume = next((item for item in PLAN["volumes"] if item.get("kind") == "roof_route"), None)
+    if roof_volume:
+        level_id = roof_volume["level_ids"][0]
+        z = float(LEVELS[level_id]["z_base_ft"]) * FT
+        cells = cells_from_rle(LEVELS[level_id]["cell_mask"])
+        rail_boxes = [edge_box(edge, z + .02, .42, .08) for edge in boundary_edges(cells)]
+        boxes_mesh(
+            "OldClockRoofRails", rail_boxes, MATERIALS["roof_rail"], kind="archetype_detail", level_id=level_id,
+            material_id="roof_rail", visibility="public", pick_role="none", detail_group="old_clock",
+            detail_role="roof_route_parapets", volume_id=roof_volume["id"],
+        )
+    if PLAN["scene"].get("id") != "old_clock_quarter_v23":
+        return
+    street = next((item for item in PLAN["terrain"] if item["id"] == "old_clock_streets"), None)
+    if street:
+        cells = cells_from_rle(street["cell_mask"])
+        curb_boxes = [edge_box(edge, .015, .14, .08) for edge in boundary_edges(cells) if edge[1] not in cells]
+        boxes_mesh(
+            "OldClockStreetCurbs", curb_boxes, MATERIALS["curb_stone"], kind="life_trace", level_id="surface",
+            material_id="curb_stone", visibility="public", pick_role="none", detail_group="old_clock",
+            detail_role="irregular_street_edges",
+        )
+
+
 def build_harbor_details() -> None:
     water = next((item for item in PLAN["terrain"] if item["kind"] == "water"), None)
     if not water:
@@ -576,6 +639,26 @@ def build_harbor_details() -> None:
 def feature_boxes(feature: dict[str, Any], z: float) -> list[Box]:
     x, y = int(feature["col"]) * CELL + CELL / 2, int(feature["row"]) * CELL + CELL / 2
     kind = feature["kind"]
+    if kind == "market_stall":
+        return [((x, y, z + .52), (.86, .62, .12)), ((x - .33, y - .22, z + .26), (.10, .10, .52)), ((x + .33, y - .22, z + .26), (.10, .10, .52)), ((x - .33, y + .22, z + .26), (.10, .10, .52)), ((x + .33, y + .22, z + .26), (.10, .10, .52))]
+    if kind == "canvas_awning":
+        return [((x, y, z + 1.18), (1.05, .82, .10)), ((x - .42, y - .30, z + .58), (.08, .08, 1.16)), ((x + .42, y - .30, z + .58), (.08, .08, 1.16))]
+    if kind == "handcart":
+        return [((x, y, z + .35), (.82, .48, .32)), ((x - .33, y, z + .18), (.18, .62, .36)), ((x + .33, y, z + .18), (.18, .62, .36)), ((x, y - .45, z + .24), (.16, .72, .12))]
+    if kind in {"puddle", "wheel_rut"}:
+        return [((x, y, z + .018), (.82, .34 if kind == "wheel_rut" else .68, .035))]
+    if kind == "notice_board":
+        return [((x, y, z + .72), (.82, .12, .72)), ((x - .30, y, z + .34), (.10, .10, .68)), ((x + .30, y, z + .34), (.10, .10, .68))]
+    if kind == "laundry_line":
+        return [((x - .42, y, z + .75), (.08, .08, 1.50)), ((x + .42, y, z + .75), (.08, .08, 1.50)), ((x, y, z + 1.38), (.92, .06, .06)), ((x - .18, y, z + 1.16), (.28, .05, .40)), ((x + .22, y, z + 1.12), (.30, .05, .46))]
+    if kind == "drain_grate":
+        return [((x, y, z + .025), (.70, .52, .05))]
+    if kind == "great_bell":
+        return [((x, y, z + .72), (.82, .82, 1.18)), ((x, y, z + 1.38), (1.02, 1.02, .18))]
+    if kind in {"bell_rope", "counterweight"}:
+        return [((x, y, z + .82), (.14, .14, 1.64)), ((x, y, z + .14), (.42, .42, .28))]
+    if kind == "hearth":
+        return [((x, y, z + .48), (.82, .52, .90)), ((x, y, z + 1.05), (.42, .42, .38))]
     if kind == "cargo_cluster":
         return [((x - .18, y, z + .18), (.34, .42, .36)), ((x + .18, y + .13, z + .13), (.28, .3, .26))]
     if kind == "harbor_lantern":
@@ -637,6 +720,16 @@ def feature_material_name(kind: str) -> str:
     exact = f"feature_{kind}"
     if exact in MATERIALS:
         return exact
+    if kind in {"market_stall", "handcart", "notice_board"}:
+        return "market_wood"
+    if kind in {"canvas_awning", "laundry_line"}:
+        return "market_canvas"
+    if kind == "puddle":
+        return "puddle"
+    if kind in {"wheel_rut", "drain_grate"}:
+        return "street_wear"
+    if kind in {"great_bell", "bell_rope", "counterweight"}:
+        return "clock_gold"
     if any(token in kind for token in ("lamp", "lantern", "sconce", "forge")):
         return "feature_lamp"
     if "fungus" in kind:
@@ -825,6 +918,14 @@ def create_materials() -> None:
     material("feature_fabric", (.26, .055, .08, 1), roughness=.94)
     material("anchor", (.015, 1.0, .52, 1), roughness=.25, emission=2.1)
     material("anchor_secret", (1.0, .015, .55, 1), roughness=.25, emission=2.2)
+    material("clock_gold", (.62, .31, .035, 1), roughness=.34, metallic=.72, emission=.10)
+    material("clock_face", (.08, .36, .42, 1), roughness=.30, metallic=.46, emission=.52)
+    material("roof_rail", (.22, .12, .055, 1), roughness=.84)
+    material("curb_stone", (.31, .30, .32, 1), roughness=.94)
+    material("market_wood", (.39, .16, .045, 1), roughness=.88)
+    material("market_canvas", (.46, .08, .12, 1), roughness=.92)
+    material("puddle", (.015, .18, .30, 1), roughness=.18, metallic=.12, emission=.18)
+    material("street_wear", (.055, .065, .075, 1), roughness=.96)
 
 
 def build() -> None:
@@ -840,6 +941,7 @@ def build() -> None:
     build_archetype_details()
     build_sewer_details()
     build_harbor_details()
+    build_clock_district_details()
     build_features()
     build_anchors()
     width, height = float(PLAN["grid"]["width"]) * CELL, float(PLAN["grid"]["height"]) * CELL
@@ -857,7 +959,7 @@ def build() -> None:
         "generator_version": PLAN.get("generator_version", ""), "plan_sha256": sha256(PLAN_PATH), "runtime_sha256": sha256(RUNTIME_PATH),
         "blender_version": bpy.app.version_string, "grid": PLAN["grid"], "levels": len(PLAN["levels"]), "rooms": len(PLAN["rooms"]),
         "connectors": len(PLAN["connectors"]), "features": len(PLAN["features"]), "prototype_objects": len(OBJECTS),
-        "estimated_draw_calls": len(OBJECTS), "visual_layer_version": "2.1",
+        "estimated_draw_calls": len(OBJECTS), "visual_layer_version": "2.3" if PLAN["scene"].get("id") == "old_clock_quarter_v23" else "2.1",
         "batched_boxes": STATS["batched_boxes"], "mesh_vertices": STATS["mesh_vertices"],
         "object_kinds": {key[5:]: value for key, value in sorted(STATS.items()) if key.startswith("kind_")},
         "outputs": ["scene.glb", "scene-prototype.blend", "scene-isometric.png", "scene-topdown.png"],
