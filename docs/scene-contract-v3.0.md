@@ -112,6 +112,31 @@ python3 -m generator.v2.district_composer_cli \
 街区的视觉验收仍需远景（整体布局/天际线）、中景（街道和地块）、建筑近景以及
 战术视角四类证据；结构验证通过不等于视觉完成。
 
+## OutdoorComposer（户外/特殊战术空间入口）
+
+`OutdoorComposer` 处理不适合“房间堆叠”的空间：山谷、河流、洞穴入口、裂谷、
+幽暗地域开阔战场和其他具有强地形关系的地点。它按规模和 `elevation_bands` 生成
+高低差带，并额外规划：
+
+- 水系的源头、瀑布阶、河口与可争夺的渡口；
+- 崖阶、山脊和可读的高地平台；
+- 主径、险径、回环和 DM-only 隐秘路线；
+- 洞口、掩体、交叉火力点等战术平台，而不是虚假的房间依赖。
+
+输出是 `dnd-outdoor-profile-1.0`。`room_policy=optional_only` 表示户外可以承载
+建筑或洞穴 realizer，但没有房间也必须是完整、可战斗、可导航的场景。结构验证会检查
+高程顺序、路网连通、水流从高到低、秘密路线权限和战术平台边界。
+
+```bash
+python3 tests/verify_outdoor_composer.py
+python3 -m generator.v2.outdoor_composer_cli \
+  specs/outdoor/silverfall_outdoor_composer.json \
+  --out output/outdoor/silverfall_outdoor.profile.json
+```
+
+它可以复用同一合同生成河谷、龙骨裂谷或幽暗地域式开阔战场；旧样本仅是回归样本，
+不是视觉黄金标准。
+
 ## 验证
 
 ```bash

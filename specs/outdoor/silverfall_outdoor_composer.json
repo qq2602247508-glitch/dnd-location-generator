@@ -1,0 +1,17 @@
+{
+  "schema_version": "dnd-scene-brief-1.0",
+  "scene": {"id": "silverfall_outdoor_composer", "name": "银瀑河谷·户外编排", "seed": 20260807},
+  "category": "outdoor",
+  "kind": "wilderness_valley",
+  "scale": "large",
+  "traits": ["open_terrain", "terrain_elevation", "watershed", "landmark", "cave", "secret_route"],
+  "planning": {
+    "landmarks": [
+      {"id": "silverfall", "name": "银瀑", "role": "orientation"},
+      {"id": "cave_mouth", "name": "回声洞口", "role": "objective"}
+    ],
+    "routes": ["valley_trail", "ridge_path", "waterfall_secret"],
+    "elevation_bands": {"mode": "derived", "minimum": 5}
+  },
+  "gameplay": {"focus": "crossfire_and_elevation", "encounter_density": "low", "entry_points": ["trailhead"]}
+}

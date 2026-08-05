@@ -288,6 +288,21 @@ python3 -m generator.v2.district_composer_cli \
 黄金标准。当前阶段只输出确定性的规划 profile，Blender 视觉层和多视角门禁在后续阶段
 接入。
 
+户外/特殊战术空间编排入口（第四阶段）：
+
+```bash
+python3 tests/verify_outdoor_composer.py
+python3 -m generator.v2.outdoor_composer_cli \
+  specs/outdoor/silverfall_outdoor_composer.json \
+  --out output/outdoor/silverfall_outdoor.profile.json
+```
+
+`generator/v2/outdoor_composer.py` 以高程带为主轴生成山谷、河流、崖阶、洞口、主径/险径/
+秘密路线和战术平台；它不要求大量房间，适合幽暗地域、龙骨裂谷等开阔战场。水系、
+高低差和路线先由确定性规划层锁定，后续 Blender 层再负责地形网格、材质、植被和
+可视化。`room_policy=optional_only` 保持与建筑/地下入口的兼容，不把户外强行做成
+房间列表。
+
 ### V2.3 一键地点编译器
 
 V2.3 新增 `LocationBrief -> pack resolver -> LocationProgram` 层。用户可以给出结构化
