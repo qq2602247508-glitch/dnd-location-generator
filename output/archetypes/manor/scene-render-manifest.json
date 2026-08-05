@@ -1,0 +1,51 @@
+{
+  "status": "generated",
+  "schema_version": "dnd-scene-render-manifest-2.0",
+  "scene_id": "manor_archetype",
+  "generator_version": "2.5.0-prototype.1",
+  "plan_sha256": "0e025bc45c4834a51c6dc970ff1e820fd99567bb1b9313c1e748c2a85d38762b",
+  "runtime_sha256": "cec711852950e930576b429d033b3b6e24425ff461633069ad6450c1e2817d24",
+  "blender_version": "4.5.10 LTS",
+  "grid": {
+    "cell_size_ft": 5,
+    "coordinate_contract": "cell(row,col)->world_ft(col*5,-row*5,z_base_ft)",
+    "height": 18,
+    "width": 24
+  },
+  "levels": 2,
+  "rooms": 8,
+  "connectors": 11,
+  "features": 8,
+  "prototype_objects": 37,
+  "estimated_draw_calls": 37,
+  "visual_layer_version": "2.1",
+  "batched_boxes": 695,
+  "mesh_vertices": 5560,
+  "camera": {
+    "content_bounds_cells": [
+      -1,
+      -1,
+      19,
+      25
+    ],
+    "content_padding_cells": 2.08,
+    "iso_ortho": 33.176,
+    "top_ortho": 40.716
+  },
+  "object_kinds": {
+    "anchor": 3,
+    "archetype_detail": 2,
+    "connector": 11,
+    "connector_visual": 4,
+    "feature": 8,
+    "floor": 3,
+    "grid": 3,
+    "wall": 3
+  },
+  "outputs": [
+    "scene.glb",
+    "scene-prototype.blend",
+    "scene-isometric.png",
+    "scene-topdown.png"
+  ]
+}

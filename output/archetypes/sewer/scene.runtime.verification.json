@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "scene_id": "sewer_archetype",
+  "levels": 1,
+  "rooms": 4,
+  "cells": 432,
+  "connectors": 5,
+  "nav_edges": 785,
+  "anchors": 3,
+  "features": 4,
+  "runtime_sha256": "31267e28a1667238abe6d71cc7fcec5d0a7a15ed68f6ceddcbb5e57f8b31f3e7"
+}

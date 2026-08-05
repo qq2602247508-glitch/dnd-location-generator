@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "scene_id": "tower_archetype",
+  "levels": 3,
+  "rooms": 9,
+  "cells": 1296,
+  "connectors": 12,
+  "nav_edges": 2392,
+  "anchors": 3,
+  "features": 9,
+  "runtime_sha256": "99b3f84d910524200b0cb2f9e3fdbd42319636bd37d6aaa2b8adef0ae2422dac"
+}

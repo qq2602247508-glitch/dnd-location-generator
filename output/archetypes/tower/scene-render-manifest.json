@@ -1,0 +1,51 @@
+{
+  "status": "generated",
+  "schema_version": "dnd-scene-render-manifest-2.0",
+  "scene_id": "tower_archetype",
+  "generator_version": "2.5.0-prototype.1",
+  "plan_sha256": "c60c208c2d17a5278a2d6f6d039ccef50482a2d3faf9162a843428ecce8997eb",
+  "runtime_sha256": "ac1f6d9208cd00443388ac55dede21a21269fce4a9194babf7a702e701733c9f",
+  "blender_version": "4.5.10 LTS",
+  "grid": {
+    "cell_size_ft": 5,
+    "coordinate_contract": "cell(row,col)->world_ft(col*5,-row*5,z_base_ft)",
+    "height": 18,
+    "width": 24
+  },
+  "levels": 3,
+  "rooms": 9,
+  "connectors": 12,
+  "features": 9,
+  "prototype_objects": 44,
+  "estimated_draw_calls": 44,
+  "visual_layer_version": "2.1",
+  "batched_boxes": 970,
+  "mesh_vertices": 7760,
+  "camera": {
+    "content_bounds_cells": [
+      -1,
+      -1,
+      19,
+      25
+    ],
+    "content_padding_cells": 2.08,
+    "iso_ortho": 33.176,
+    "top_ortho": 40.716
+  },
+  "object_kinds": {
+    "anchor": 3,
+    "archetype_detail": 2,
+    "connector": 12,
+    "connector_visual": 6,
+    "feature": 9,
+    "floor": 4,
+    "grid": 4,
+    "wall": 4
+  },
+  "outputs": [
+    "scene.glb",
+    "scene-prototype.blend",
+    "scene-isometric.png",
+    "scene-topdown.png"
+  ]
+}

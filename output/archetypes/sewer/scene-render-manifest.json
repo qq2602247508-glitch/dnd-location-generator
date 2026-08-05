@@ -1,0 +1,51 @@
+{
+  "status": "generated",
+  "schema_version": "dnd-scene-render-manifest-2.0",
+  "scene_id": "sewer_archetype",
+  "generator_version": "2.5.0-prototype.1",
+  "plan_sha256": "65952b1254890ce3bf4187dce00eb551689f0c9f50d2cdb0ec994c22b8870292",
+  "runtime_sha256": "3a5b715b27433c30ccf014e37fa5ad8965eee916c2bb842e9ed6a27ea7bb237a",
+  "blender_version": "4.5.10 LTS",
+  "grid": {
+    "cell_size_ft": 5,
+    "coordinate_contract": "cell(row,col)->world_ft(col*5,-row*5,z_base_ft)",
+    "height": 18,
+    "width": 24
+  },
+  "levels": 1,
+  "rooms": 4,
+  "connectors": 5,
+  "features": 4,
+  "prototype_objects": 19,
+  "estimated_draw_calls": 19,
+  "visual_layer_version": "2.1",
+  "batched_boxes": 229,
+  "mesh_vertices": 1832,
+  "camera": {
+    "content_bounds_cells": [
+      -1,
+      -1,
+      19,
+      25
+    ],
+    "content_padding_cells": 2.08,
+    "iso_ortho": 33.176,
+    "top_ortho": 40.716
+  },
+  "object_kinds": {
+    "anchor": 2,
+    "archetype_detail": 2,
+    "connector": 5,
+    "connector_visual": 2,
+    "feature": 4,
+    "grid": 1,
+    "surface": 1,
+    "wall": 2
+  },
+  "outputs": [
+    "scene.glb",
+    "scene-prototype.blend",
+    "scene-isometric.png",
+    "scene-topdown.png"
+  ]
+}

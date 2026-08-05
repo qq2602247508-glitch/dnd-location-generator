@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "scene_id": "manor_archetype",
+  "levels": 2,
+  "rooms": 8,
+  "cells": 864,
+  "connectors": 11,
+  "nav_edges": 1562,
+  "anchors": 3,
+  "features": 8,
+  "runtime_sha256": "5d9fb5717436b3cb2dcfe3d092fea09bb5c284d42d79cb79e51052a3933ab4b6"
+}

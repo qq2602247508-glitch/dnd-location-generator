@@ -496,7 +496,7 @@ def roof_profile_boxes(cells: set[tuple[int, int]], z: float, profile: str) -> l
 
 def build_roofs() -> None:
     for volume in PLAN["volumes"]:
-        if volume.get("kind") in {"sewer", "roof_route"} or not volume.get("level_ids"):
+        if volume.get("kind") in {"sewer", "roof_route"} or not volume.get("level_ids") or str(volume.get("roof", {}).get("shape", "")) == "none":
             continue
         level_id = volume["level_ids"][-1]
         level = LEVELS[level_id]
