@@ -1,0 +1,41 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "harbor_district_composer",
+    "name": "潮钟港区·街区编排",
+    "seed": 20260805
+  },
+  "category": "district",
+  "profile_hash": "2a1ef08acbe8252168fb95af88a4a8666a5503ce46a4a20fe16a9afa72446609",
+  "visual_plan_hash": "7a1df8619e617ef05253fb5a93948c24794245a7947425076e9497d1f50d83e4",
+  "prototype_objects": 50,
+  "mesh_vertices": 296,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 357468,
+      "sha256": "16a5daa805b93dd29facc45ed475294a8dc9e609601426ef6cfeeadcd32c5985"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 875570,
+      "sha256": "74250d449c9d20a0a86623bc543083c23e216a719edd0949e1ceae6d0b6ef17f"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1148831,
+      "sha256": "90525c11c3744e4815c3915230986b96e43182e30a3a124668398b14d13ed362"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1121047,
+      "sha256": "1ef6842c61f3dfdf0b1aeded16c07c9b7a3d05806ddcadf2bc30396ad2675803"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

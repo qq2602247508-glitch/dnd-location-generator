@@ -80,6 +80,7 @@ h2 { margin: 2px 0 4px; font-size: 17px; }
 .chip-grid .v22-filter.active { color: #081219; border-color: transparent; background: linear-gradient(135deg, var(--cyan), #b5a2ff); }
 .runtime-preset-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
 .scene-button-v23 { border-color: rgba(255,192,91,.48); }
+.scene-button-profile { border-color: rgba(97,247,191,.42); color: #9fe9cf; }
 .inspector dl { margin: 0; display: grid; gap: 7px; }
 .inspector dl div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed rgba(130,156,190,.13); padding-bottom: 6px; }
 .inspector dl div:last-child { border-bottom: 0; padding-bottom: 0; }

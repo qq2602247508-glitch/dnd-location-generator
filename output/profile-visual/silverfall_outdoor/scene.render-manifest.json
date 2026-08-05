@@ -1,0 +1,41 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "silverfall_outdoor_composer",
+    "name": "银瀑河谷·户外编排",
+    "seed": 20260807
+  },
+  "category": "outdoor",
+  "profile_hash": "66ecb76ee9f59e9f9459d1f7ca42ad9c9f2e71b3dcd15247d1ff3da0a5255338",
+  "visual_plan_hash": "e361ef32856395904b6e182cc8b21a2affc0a4e40156c266cb3d0764ee99ced0",
+  "prototype_objects": 25,
+  "mesh_vertices": 182,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 405532,
+      "sha256": "4a945e922fa0d3cbec7cde029677937d25d0848d46c0aee57c7739b3fee5cb34"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 735343,
+      "sha256": "4598417849c332d14eb1847b5839725c087cd7477e15b8ee517dfce0cbc0d314"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1144331,
+      "sha256": "46571cdef9536bf70288a1485874e297a11d3a9e461a431d59b66e5d7ef75334"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1115412,
+      "sha256": "59a57d80fbfc9e495e10a0d993bc092d344e2773f1cb9100e7fb2c276497104e"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}

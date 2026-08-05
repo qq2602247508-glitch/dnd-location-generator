@@ -4,9 +4,10 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "tower" | "manor" | "sewer" | "river_valley" | "sewer_dungeon" | "dragonbone_rift";
+type SceneKey = "church" | "underdark" | "city" | "harbor" | "old_clock" | "tower" | "manor" | "sewer" | "river_valley" | "sewer_dungeon" | "dragonbone_rift" | "profile_harbor" | "profile_outdoor" | "profile_pump_house";
 type V22SceneKey = "river_valley" | "sewer_dungeon" | "dragonbone_rift";
 type RuntimeSceneKey = "harbor" | "old_clock" | "tower" | "manor" | "sewer";
+type ProfileSceneKey = "profile_harbor" | "profile_outdoor" | "profile_pump_house";
 type ViewMode = "dm" | "player";
 type ExperienceMode = "theatre" | "exploration" | "tactical";
 type QualityPreset = "quality" | "balanced" | "performance";
@@ -350,6 +351,16 @@ interface RuntimeSceneDescriptor {
   presets: RuntimePreset[];
 }
 
+interface ProfileSceneDescriptor {
+  name: string;
+  description: string;
+  category: "district" | "outdoor" | "building";
+  asset: string;
+  inputAsset: string;
+  manifestAsset: string;
+  camera: CameraState;
+}
+
 interface CellSelection {
   row: number;
   col: number;
@@ -459,6 +470,35 @@ const RUNTIME_SCENES: Record<RuntimeSceneKey, RuntimeSceneDescriptor> = {
     ],
   },
 };
+const PROFILE_SCENES: Record<ProfileSceneKey, ProfileSceneDescriptor> = {
+  profile_harbor: {
+    name: "潮钟港区·编排版",
+    description: "由街区规划器编排的港口样本：路网、地块、建筑层数与地标统一导出为 Blender 资产。",
+    category: "district",
+    asset: "profile-harbor-district.glb",
+    inputAsset: "profile-harbor-district.input.json",
+    manifestAsset: "profile-harbor-district.render-manifest.json",
+    camera: { position: new THREE.Vector3(31, 27, 34), target: new THREE.Vector3(12, 1.4, -9) },
+  },
+  profile_outdoor: {
+    name: "银瀑河谷·编排版",
+    description: "由户外规划器编排的开阔野外战术场：水系、坡带、悬崖、路线与战术平台保持同一输入。",
+    category: "outdoor",
+    asset: "profile-silverfall-outdoor.glb",
+    inputAsset: "profile-silverfall-outdoor.input.json",
+    manifestAsset: "profile-silverfall-outdoor.render-manifest.json",
+    camera: { position: new THREE.Vector3(34, 30, 36), target: new THREE.Vector3(14, 2.5, -10) },
+  },
+  profile_pump_house: {
+    name: "暗流泵房·独立建筑版",
+    description: "由建筑工厂编排的独立泵房样本：分层平台、设备核心与房间功能以统一建筑 profile 导出。",
+    category: "building",
+    asset: "profile-darkflow-pump-house.glb",
+    inputAsset: "profile-darkflow-pump-house.input.json",
+    manifestAsset: "profile-darkflow-pump-house.render-manifest.json",
+    camera: { position: new THREE.Vector3(7, 7, 8), target: new THREE.Vector3(1.3, 1.6, -1.3) },
+  },
+};
 
 function isV22Scene(sceneKey: SceneKey): sceneKey is V22SceneKey {
   return sceneKey in V22_SCENES;
@@ -466,6 +506,10 @@ function isV22Scene(sceneKey: SceneKey): sceneKey is V22SceneKey {
 
 function isRuntimeScene(sceneKey: SceneKey): sceneKey is RuntimeSceneKey {
   return sceneKey in RUNTIME_SCENES;
+}
+
+function isProfileScene(sceneKey: SceneKey): sceneKey is ProfileSceneKey {
+  return sceneKey in PROFILE_SCENES;
 }
 
 function required<T extends Element>(selector: string): T {
@@ -703,6 +747,8 @@ function syncViewerState(): void {
       ? currentHarborFocus
       : isV22Scene(currentScene)
         ? currentV22LevelId
+        : isProfileScene(currentScene)
+          ? PROFILE_SCENES[currentScene].category
         : `${currentScene}:${currentLayer}`;
   viewerState.layer = isRuntimeScene(currentScene)
     ? currentHarborLevelId
@@ -925,6 +971,7 @@ function loadModel(name: string): Promise<THREE.Group> {
 function sceneAsset(sceneKey: SceneKey, mode: ViewMode): string {
   if (isV22Scene(sceneKey)) return V22_SCENES[sceneKey].asset;
   if (isRuntimeScene(sceneKey)) return RUNTIME_SCENES[sceneKey].asset;
+  if (isProfileScene(sceneKey)) return PROFILE_SCENES[sceneKey].asset;
   if (sceneKey === "underdark") return "underdark-dm.glb";
   if (sceneKey === "city") return "city-dm.glb";
   return mode === "player" ? "church-player.glb" : "church-dm.glb";
@@ -945,6 +992,7 @@ function scenePreset(sceneKey: SceneKey): CameraState {
   if (sceneKey === "tower") return { position: new THREE.Vector3(34, 30, 34), target: new THREE.Vector3(12, 12, -9) };
   if (sceneKey === "manor") return { position: new THREE.Vector3(34, 26, 34), target: new THREE.Vector3(12, 6, -9) };
   if (sceneKey === "sewer") return { position: new THREE.Vector3(34, 20, 34), target: new THREE.Vector3(12, -3, -9) };
+  if (isProfileScene(sceneKey)) return PROFILE_SCENES[sceneKey].camera;
   if (isV22Scene(sceneKey)) {
     const grid = v22Grid(sceneKey);
     if (grid) {
@@ -1889,6 +1937,8 @@ function ensureTokenStates(sceneKey: SceneKey): TokenState[] {
     states = cells.slice(0, TOKEN_NAMES.length).map((cell) => ({
       row: cell.row, col: cell.col, layer: cell.elevation, levelId: cell.level_id, zBaseFt: cell.elevation,
     }));
+  } else if (isProfileScene(sceneKey)) {
+    states = [];
   } else {
     const start = cityGrid?.anchors.party_start ?? [14, 15];
     const outdoor = [...cityCells.values()]
@@ -2216,8 +2266,8 @@ function renderExperienceUi(): void {
     button.classList.toggle("active", button.dataset.experience === viewerState.experienceMode);
   });
   dmSettingsPanel.hidden = currentMode !== "dm";
-  if (layerPanel) layerPanel.hidden = theatre;
-  if (tokenPanel) tokenPanel.hidden = theatre;
+  if (layerPanel) layerPanel.hidden = theatre || isProfileScene(currentScene);
+  if (tokenPanel) tokenPanel.hidden = theatre || isProfileScene(currentScene);
   dmCutawayEnabled.checked = dmTuning.cutawayEnabled;
   dmCutawayOpacity.value = String(Math.round(dmTuning.cutawayOpacity * 100));
   dmGridOpacity.value = String(Math.round(dmTuning.gridOpacity * 100));
@@ -2283,6 +2333,10 @@ function updateDmTuningFromControls(): void {
 }
 
 function renderLayerControls(): void {
+  if (isProfileScene(currentScene)) {
+    layerControls.innerHTML = "";
+    return;
+  }
   if (isRuntimeScene(currentScene)) {
     const levels = (runtimeFor()?.scene.levels ?? []).filter((level) => currentHarborFocus === "surface" ? level.id === "surface" : level.volume_id === currentHarborFocus);
     layerControls.innerHTML = "";
@@ -2486,7 +2540,9 @@ function updateHud(): void {
       : isRuntimeScene(currentScene)
         ? RUNTIME_SCENES[currentScene].shortName
         : isV22Scene(currentScene)
-          ? V22_SCENES[currentScene].name
+        ? V22_SCENES[currentScene].name
+          : isProfileScene(currentScene)
+            ? PROFILE_SCENES[currentScene].name
           : "幽暗地域";
   const experience = viewerState.experienceMode === "theatre" ? "剧场" : viewerState.experienceMode === "exploration" ? "探索" : "战术";
   hudScene.textContent = `${name} · ${currentMode === "dm" ? "DM" : "玩家"} · ${experience}`;
@@ -2510,6 +2566,10 @@ function updateHud(): void {
       : `${levelLabel} · ${currentV22Elevation >= 0 ? "+" : ""}${currentV22Elevation} ft`;
     return;
   }
+  if (isProfileScene(currentScene)) {
+    hudFilter.textContent = `${PROFILE_SCENES[currentScene].category} · Blender 静态预览`;
+    return;
+  }
   hudFilter.textContent = currentLayer === "all"
     ? currentScene === "underdark" ? "全部高度" : currentScene === "city" && currentCityScope === "outdoor" ? "街区外景" : "全部楼层"
     : currentScene === "underdark" ? `仅 E${currentLayer}` : `仅 L${currentLayer}`;
@@ -2523,6 +2583,8 @@ function updateUi(): void {
   const runtimeScene = Boolean(runtimeDescriptor);
   const v22Descriptor = isV22Scene(currentScene) ? V22_SCENES[currentScene] : undefined;
   const v22 = Boolean(v22Descriptor);
+  const profileDescriptor = isProfileScene(currentScene) ? PROFILE_SCENES[currentScene] : undefined;
+  const profileScene = Boolean(profileDescriptor);
   sceneTitle.textContent = church
     ? churchSpec?.site.name ?? "圣烛教堂"
     : city
@@ -2530,7 +2592,9 @@ function updateUi(): void {
       : runtimeDescriptor
         ? runtimeFor()?.scene.name ?? runtimeDescriptor.name
         : v22Descriptor
-          ? v22Descriptor.name
+        ? v22Descriptor.name
+          : profileDescriptor
+            ? profileDescriptor.name
           : "幽暗地域 · 紫晶裂谷";
   sceneDescription.textContent = church
     ? churchSpec?.site.brief ?? "三层建筑、房间、楼梯与 DM 隐藏密室。"
@@ -2540,15 +2604,17 @@ function updateUi(): void {
         ? runtimeDescriptor.description
         : v22Descriptor
           ? v22Descriptor.description
+          : profileDescriptor
+            ? profileDescriptor.description
           : "48×36 格的裂谷、桥梁、高地、遗迹与菌林。";
-  modeNote.textContent = church ? "独立模型 · 权限" : v22 || runtimeDescriptor?.supportsPlayer ? "同一资产 · public / DM 专属" : "当前仅 DM 资产";
-  layerTitle.textContent = currentScene === "underdark" ? "高度" : runtimeScene ? "层级" : v22 ? "层级 / 高度" : "楼层";
+  modeNote.textContent = church ? "独立模型 · 权限" : v22 || runtimeDescriptor?.supportsPlayer ? "同一资产 · public / DM 专属" : profileScene ? "Blender 静态资产 · 规划输入" : "当前仅 DM 资产";
+  layerTitle.textContent = currentScene === "underdark" ? "高度" : runtimeScene ? "层级" : v22 ? "层级 / 高度" : profileScene ? "编排输入" : "楼层";
   sceneButtons.forEach((button) => button.classList.toggle("active", button.dataset.scene === currentScene));
   modeButtons.forEach((button) => {
     const mode = button.dataset.mode as ViewMode;
     const playerModeSupported = church || v22 || Boolean(runtimeDescriptor?.supportsPlayer);
     button.disabled = !playerModeSupported && mode === "player";
-    button.title = !playerModeSupported && mode === "player" ? `${city ? "城市街区" : runtimeScene ? runtimeDescriptor?.shortName : "幽暗地域"}当前没有独立玩家资产` : "";
+    button.title = !playerModeSupported && mode === "player" ? `${city ? "城市街区" : runtimeScene ? runtimeDescriptor?.shortName : profileScene ? profileDescriptor?.name : "幽暗地域"}当前没有独立玩家资产` : "";
     button.classList.toggle("active", mode === currentMode);
   });
   renderLayerControls();
@@ -2563,7 +2629,7 @@ async function activateScene(sceneKey: SceneKey, mode: ViewMode, sceneChanged: b
   const request = ++loadSequence;
   if (sceneChanged) saveCameraState();
   currentScene = sceneKey;
-  currentMode = sceneKey === "underdark" || sceneKey === "city" || (sceneKey === "harbor" && !RUNTIME_SCENES.harbor.supportsPlayer) ? "dm" : mode;
+  currentMode = sceneKey === "underdark" || sceneKey === "city" || isProfileScene(sceneKey) || (sceneKey === "harbor" && !RUNTIME_SCENES.harbor.supportsPlayer) ? "dm" : mode;
   if (sceneChanged) {
     currentLayer = "all";
     if (sceneKey === "city") currentCityScope = "outdoor";

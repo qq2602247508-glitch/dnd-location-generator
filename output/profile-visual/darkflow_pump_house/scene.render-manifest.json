@@ -1,0 +1,42 @@
+{
+  "schema_version": "dnd-profile-render-manifest-1.0",
+  "scene": {
+    "id": "darkflow_pump_house",
+    "name": "暗流泵房",
+    "type": "pump_house",
+    "seed": 20301003
+  },
+  "category": "building",
+  "profile_hash": "1c1af4e5fa93c2740c18558a0a66e201bc2196f9d4c9e3fa26891bfb02a2c208",
+  "visual_plan_hash": "50f6c7443b7cb51390ac141009330d8d6ab63d57da005e05dfe6c6cc5c3c0888",
+  "prototype_objects": 35,
+  "mesh_vertices": 296,
+  "outputs": [
+    {
+      "path": "scene.glb",
+      "bytes": 62564,
+      "sha256": "a8778d07f335c20482e1f8e408c1bba19f8ba3a9491dd86c0f07eb65d556b1b4"
+    },
+    {
+      "path": "scene-prototype.blend",
+      "bytes": 737256,
+      "sha256": "906d573fe149968ffbff7ca72a464b8bb4e4d2a1710c72b7fbca989df24ce9c1"
+    },
+    {
+      "path": "scene-isometric.png",
+      "bytes": 1042345,
+      "sha256": "0c6ca5dccdc0f895511a4a5abbca594f766a0eb821eaac1352d86dd6d56f8f36"
+    },
+    {
+      "path": "scene-topdown.png",
+      "bytes": 1035342,
+      "sha256": "0685581c971953b5371e211897c0ed756b3a98644ec0093bccc2eb3b8cd9679a"
+    }
+  ],
+  "visual_evidence_views": [
+    "far",
+    "mid",
+    "near",
+    "tactical"
+  ]
+}
