@@ -49,6 +49,28 @@ program spec
 当前四个 fixture 的质量分为 97–100。质量分是进入下一阶段的门槛，不代替后续的
 几何连通、D&D 规则、Blender 预算和真实浏览器视觉验收。
 
+## Spatial Grammar V2.4
+
+V2.4 在原有字段验证之前增加一个跨 archetype 的空间约束层，代码位于
+`generator/v2/spatial_grammar.py`，由 `validate_program()` 强制调用。求解器是纯函数式
+的：输入冻结的 SceneProgram，输出稳定的 grammar report，不回写输入，也不参与
+`program_sha256`，所以旧的 Blender/Viewer 产物仍然可以复用。
+
+约束分为三层：
+
+1. 拓扑层：实体 ID 唯一，节点/区域/路线/流线/地标/基础设施引用完整；入口能到达
+   objective/boss；必须有 primary、alternate/loop 和 DM-only secret 路线；用
+   `E - V + components` 计算路线循环秩并满足 `required_cycles`。
+2. 因果层：`shoreline` 必须有作业水岸与流线；`watershed` 必须存在 `high_to_low`
+   水流；`infrastructure_flow` 必须同时有 utility flow 和 machine network；
+   `mythic_landmark` 必须有方向地标和垂直玩法。
+3. Archetype 层：城市要求 district + nested rooms，野外允许可选洞穴房间，基础设施
+   地下城要求 functional chambers，special site 必须是 `rooms: none`。
+
+这套约束是“规划可行性”门，不是视觉评分；几何连通、格子规则、Blender 预算和视觉
+认证仍在后续阶段独立执行。这样新增塔楼、庄园、船、矿坑或下水道 pack 时，AI 只需填入
+同一套空间语法，确定性 realizer 会在更早阶段拒绝自相矛盾的规划。
+
 ## AdventureDirector 与 DND 接口边界
 
 `AdventureDirector` 消费冻结后的 program 和 DM profile，生成六阶段节奏、路线选项、

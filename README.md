@@ -129,6 +129,19 @@ python3 -m generator.v2.program_cli \
 四个固定 seed fixture 均执行引用、路线选择、入口到目标、历史/地标/冒险节拍、
 特殊场景零房间依赖及字节级确定性验证。完整合同见 `docs/scene-program-v2.2.md`。
 
+V2.4 新增共享 `Spatial Grammar + Constraint Solver`。它位于 SceneProgram 与几何
+realizer 之间，统一检查实体引用、主路/替代路/回环/密道、入口到目标可达性、拓扑循环
+预算、岸线/流域/基础设施/奇观地标的因果关系，以及不同 archetype 的房间语义。它只
+生成稳定报告、不修改 SceneProgram 字节，因此不会让视觉优化破坏既有空间 hash。
+
+```bash
+python3 tests/verify_spatial_grammar.py
+```
+
+四类 fixture 当前的循环秩为 `city=3`、`wilderness=2`、`infrastructure=3`、
+`special_site=2`；故意把密道改成公开、把河流改成逆坡或提高不可能的循环预算都会在
+进入几何阶段前失败。实现见 `generator/v2/spatial_grammar.py`。
+
 AdventureDirector 使用独立 DM profile 生成 NPC、怪物遭遇、奖励和任务槽位；这些槽位
 只保存位置、阵营、难度与风险意图，不含具体怪物 statblock。默认 Null adapter 不访问
 或写入现有 DND 项目，未来正式 adapter 可以只重投内容而不重建场景几何。

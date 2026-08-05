@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .rng import named_rng
+from .spatial_grammar import solve_spatial_grammar
 
 
 PROGRAM_VERSION = "2.2.0-prototype.1"
@@ -342,6 +343,7 @@ def validate_program(program: dict[str, Any]) -> dict[str, Any]:
             if item["id"] in ids:
                 raise AssertionError(f"duplicate program entity: {item['id']}")
             ids.add(item["id"])
+    spatial_report = solve_spatial_grammar(program)
     nodes = {item["id"] for item in program["nodes"]}
     zones = {item["id"] for item in program["zones"]}
     routes = program["routes"]
@@ -384,6 +386,11 @@ def validate_program(program: dict[str, Any]) -> dict[str, Any]:
         "nodes": len(program["nodes"]), "routes": len(routes), "flows": len(program["flows"]),
         "landmarks": len(program["landmarks"]), "tactical_directives": len(program["tactical_directives"]),
         "quality_score": score, "program_sha256": program["program_sha256"],
+        "spatial_grammar": {
+            "version": spatial_report["version"],
+            "cycle_rank": spatial_report["topology"]["cycle_rank"],
+            "terrain_driver": spatial_report["causality"]["terrain_driver"],
+        },
     }
 
 
