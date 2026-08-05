@@ -173,6 +173,21 @@ profile proxy 检查五个维度：`composition`、`silhouette`、`material_cohe
 python3 tests/verify_visual_gate.py
 ```
 
+## Content Slots（NPC / 怪物 / 奖励挂载接口）
+
+`generator/v2/content_slots.py` 为三类 profile 提供同一组可挂载内容接口：
+`population`（NPC/居民）、`encounters`（怪物/遭遇）、`rewards`（奖励）和 `hooks`
+（任务钩子）。DM 只需要提供队伍等级、人数、难度、密度、Boss 比例、奖励等级和
+隐藏奖励比例，生成器就会把内容分布到地标、建筑、房间、洞口、渡口等合法锚点。
+
+输出只包含 `cr_range`、难度包络、角色标签和 `resolution_status=slot`，不会偷偷写入
+statblock、monster_id、item_id 或现有 DND 数据库。未来接入时只需实现
+`future_dnd_content_adapter`，不会改动地点规划和视觉层。
+
+```bash
+python3 tests/verify_content_slots.py
+```
+
 ## 验证
 
 ```bash

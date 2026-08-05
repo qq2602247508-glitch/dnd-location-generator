@@ -325,6 +325,17 @@ seed 和 profile hash；它不会用“结构测试通过”冒充“画面完�
 检查不同 seed 是否真的产生不同视觉签名，避免过拟合和随机性退化。当前是 Blender
 前置 proxy 门，后续真实截图评分可以沿用同一证书格式。
 
+NPC / 怪物 / 奖励挂载接口（第七阶段）：
+
+```bash
+python3 tests/verify_content_slots.py
+```
+
+`generator/v2/content_slots.py` 会把 DM 的队伍等级、人数、难度和奖励等级转成三大类
+场景都能使用的 `population/encounters/rewards/hooks` slots，并分布到地标、建筑、
+房间、洞口、渡口等锚点。原型只输出难度包络和语义标签，保持 unresolved，不生成
+具体 statblock，也不写入现有 DND 项目；未来适配器可以在这个边界接入。
+
 ### V2.3 一键地点编译器
 
 V2.3 新增 `LocationBrief -> pack resolver -> LocationProgram` 层。用户可以给出结构化
