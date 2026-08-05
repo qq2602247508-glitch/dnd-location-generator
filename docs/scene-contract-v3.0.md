@@ -158,6 +158,21 @@ Visual Pack 组合成同一个 `dnd-visual-plan-1.0`，提供材质角色、陈�
 python3 tests/verify_visual_packs.py
 ```
 
+## Multi-view Visual Gate（多视角视觉门禁）
+
+`generator/v2/visual_gate.py` 把结构检查和视觉检查明确分开。Blender 渲染前先用
+profile proxy 检查五个维度：`composition`、`silhouette`、`material_coherence`、
+`vertical_readability`、`tactical_legibility`。每个维度为 1–5，默认最低 3/5；证书
+固定记录 `far/mid/near/tactical` 四视角和源 profile hash。渲染后可以把截图人工或
+视觉模型评分写回同一证书，不改变上游合同。
+
+门禁还支持跨 seed cohort：至少两个 seed 必须产生不同的视觉签名，防止确定性算法
+退化成每次都长一样，也避免拿单个样本过拟合。
+
+```bash
+python3 tests/verify_visual_gate.py
+```
+
 ## 验证
 
 ```bash

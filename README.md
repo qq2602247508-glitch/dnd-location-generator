@@ -314,6 +314,17 @@ python3 tests/verify_visual_packs.py
 四视角证据。它按类别和 seed 组合视觉角色，不把港区、泵房、裂谷固化为三个专用
 生成器；视觉门禁仍独立于结构验证，默认最低证据分为 3/5。
 
+多视角视觉门禁（第六阶段）：
+
+```bash
+python3 tests/verify_visual_gate.py
+```
+
+`generator/v2/visual_gate.py` 会对五个视觉维度分别打 1–5 分，并固定记录四类镜头证据、
+seed 和 profile hash；它不会用“结构测试通过”冒充“画面完成”。跨 seed cohort 还会
+检查不同 seed 是否真的产生不同视觉签名，避免过拟合和随机性退化。当前是 Blender
+前置 proxy 门，后续真实截图评分可以沿用同一证书格式。
+
 ### V2.3 一键地点编译器
 
 V2.3 新增 `LocationBrief -> pack resolver -> LocationProgram` 层。用户可以给出结构化
